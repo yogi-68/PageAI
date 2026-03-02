@@ -1,129 +1,105 @@
-"use client";
+'use client';
 
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useAuth } from '@/lib/auth';
 import {
-    Bot,
-    MessageSquare,
-    TrendingUp,
-    Users,
-    ArrowUpRight,
-    ArrowDownRight,
-    Globe,
-    Zap,
-    Plus,
-    MoreHorizontal,
-    ExternalLink,
-} from "lucide-react";
-import Link from "next/link";
+    MessageSquare, Bot, TrendingUp, Users, Plus,
+    Globe, ArrowUpRight, ArrowDownRight, MoreHorizontal,
+    ExternalLink, Clock, Loader2, Sparkles,
+} from 'lucide-react';
 
-const stats = [
-    {
-        label: "Total Conversations",
-        value: "3,247",
-        change: "+12.5%",
-        up: true,
-        icon: MessageSquare,
-        color: "from-blue-500 to-cyan-400",
-    },
-    {
-        label: "Active Bots",
-        value: "3",
-        change: "+1",
-        up: true,
-        icon: Bot,
-        color: "from-purple-500 to-indigo-400",
-    },
-    {
-        label: "Resolution Rate",
-        value: "94.2%",
-        change: "+2.3%",
-        up: true,
-        icon: TrendingUp,
-        color: "from-emerald-500 to-teal-400",
-    },
-    {
-        label: "Unique Visitors",
-        value: "8,912",
-        change: "-1.2%",
-        up: false,
-        icon: Users,
-        color: "from-amber-500 to-orange-400",
-    },
-];
-
-const recentBots = [
-    {
-        name: "ShopFlow Support",
-        site: "shopflow.com",
-        status: "active",
-        conversations: 1247,
-        accuracy: 96,
-        pages: 34,
-    },
-    {
-        name: "Docs Helper",
-        site: "docs.myapp.io",
-        status: "active",
-        conversations: 892,
-        accuracy: 98,
-        pages: 156,
-    },
-    {
-        name: "Blog Assistant",
-        site: "myblog.com",
-        status: "training",
-        conversations: 0,
-        accuracy: 0,
-        pages: 12,
-    },
-];
-
-const recentConversations = [
-    {
-        question: "How do I reset my password?",
-        answer: "You can reset your password by visiting Settings > Security > Change Password...",
-        bot: "ShopFlow Support",
-        time: "2 min ago",
-        satisfied: true,
-    },
-    {
-        question: "What are the shipping rates to Europe?",
-        answer: "Based on the Shipping page, European rates start at $9.99 for standard...",
-        bot: "ShopFlow Support",
-        time: "5 min ago",
-        satisfied: true,
-    },
-    {
-        question: "How to integrate the API with Python?",
-        answer: "Check out the Python SDK documentation at /docs/sdk/python...",
-        bot: "Docs Helper",
-        time: "12 min ago",
-        satisfied: true,
-    },
-    {
-        question: "Do you have a referral program?",
-        answer: "I couldn't find specific information about a referral program on the website...",
-        bot: "ShopFlow Support",
-        time: "18 min ago",
-        satisfied: false,
-    },
-];
-
-const topQuestions = [
-    { question: "Shipping policy", count: 234 },
-    { question: "Return process", count: 189 },
-    { question: "API documentation", count: 156 },
-    { question: "Pricing plans", count: 143 },
-    { question: "Contact support", count: 98 },
-];
+interface DashboardData {
+    stats: {
+        totalConversations: number;
+        activeBots: number;
+        resolutionRate: string;
+        uniqueVisitors: number;
+    };
+    bots: any[];
+    recentConversations: any[];
+    usage: {
+        plan: string;
+        monthly_question_count: number;
+        monthly_question_limit: number;
+    };
+}
 
 export default function DashboardPage() {
+    const { user } = useAuth();
+    const [data, setData] = useState<DashboardData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (!user) return;
+
+        async function fetchData() {
+            try {
+                const res = await fetch(`/api/dashboard/stats?userId=${user!.id}`);
+                if (!res.ok) throw new Error('Failed to fetch');
+                const json = await res.json();
+                setData(json);
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchData();
+    }, [user]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-24">
+                <div className="text-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-[var(--primary-500)] mx-auto mb-4" />
+                    <p className="text-sm text-[var(--text-muted)]">Loading dashboard data...</p>
+                </div>
+            </div>
+        );
+    }
+
+    const stats = data?.stats || { totalConversations: 0, activeBots: 0, resolutionRate: '0', uniqueVisitors: 0 };
+    const bots = data?.bots || [];
+    const conversations = data?.recentConversations || [];
+    const usage = data?.usage || { plan: 'free', monthly_question_count: 0, monthly_question_limit: 1000 };
+
+    const statCards = [
+        {
+            label: 'Total Conversations',
+            value: stats.totalConversations.toLocaleString(),
+            icon: MessageSquare,
+            gradient: 'from-blue-500 to-cyan-400',
+        },
+        {
+            label: 'Active Bots',
+            value: stats.activeBots,
+            icon: Bot,
+            gradient: 'from-violet-500 to-purple-400',
+        },
+        {
+            label: 'Resolution Rate',
+            value: `${stats.resolutionRate}%`,
+            icon: TrendingUp,
+            gradient: 'from-emerald-500 to-teal-400',
+        },
+        {
+            label: 'Monthly Usage',
+            value: `${usage.monthly_question_count}/${usage.monthly_question_limit}`,
+            icon: Users,
+            gradient: 'from-amber-500 to-orange-400',
+        },
+    ];
+
     return (
         <div className="space-y-6">
-            {/* Page Header */}
+            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold">Dashboard</h1>
-                    <p className="text-text-secondary text-sm mt-1">
+                    <p className="text-[var(--text-secondary)] text-sm mt-1">
                         Overview of your AI chatbot performance
                     </p>
                 </div>
@@ -133,184 +109,125 @@ export default function DashboardPage() {
                 </Link>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {stats.map((stat) => (
-                    <div key={stat.label} className="card">
+            {/* Getting started — only show if no bots */}
+            {bots.length === 0 && (
+                <div className="card gradient-border !p-8 text-center">
+                    <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-4 shadow-xl shadow-indigo-500/20">
+                        <Sparkles className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-xl font-bold mb-2">Welcome to PageAI! 🎉</h2>
+                    <p className="text-[var(--text-secondary)] max-w-md mx-auto mb-6">
+                        Create your first AI chatbot in under 5 minutes. Just enter your website URL
+                        and we&apos;ll do the rest.
+                    </p>
+                    <Link href="/dashboard/bots/new" className="btn-primary !py-3 !px-8">
+                        <Plus className="w-5 h-5" />
+                        Create Your First Bot
+                    </Link>
+                </div>
+            )}
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {statCards.map((stat) => (
+                    <div key={stat.label} className="card !p-5">
                         <div className="flex items-center justify-between mb-3">
-                            <div
-                                className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg`}
-                            >
+                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-lg`}>
                                 <stat.icon className="w-5 h-5 text-white" />
-                            </div>
-                            <div
-                                className={`flex items-center gap-1 text-xs font-medium ${stat.up ? "text-emerald-400" : "text-rose-400"
-                                    }`}
-                            >
-                                {stat.up ? (
-                                    <ArrowUpRight className="w-3.5 h-3.5" />
-                                ) : (
-                                    <ArrowDownRight className="w-3.5 h-3.5" />
-                                )}
-                                {stat.change}
                             </div>
                         </div>
                         <p className="text-2xl font-bold">{stat.value}</p>
-                        <p className="text-sm text-text-muted mt-1">{stat.label}</p>
+                        <p className="text-xs text-[var(--text-muted)] mt-1">{stat.label}</p>
                     </div>
                 ))}
             </div>
 
-            {/* Main Grid */}
-            <div className="grid lg:grid-cols-3 gap-6">
-                {/* Bots Section */}
-                <div className="lg:col-span-2">
-                    <div className="card !p-0">
-                        <div className="flex items-center justify-between p-5 border-b border-border">
-                            <h2 className="text-lg font-semibold">Your Bots</h2>
-                            <Link
-                                href="/dashboard/bots"
-                                className="text-sm text-primary-400 hover:text-primary-300 flex items-center gap-1"
-                            >
-                                View All <ExternalLink className="w-3 h-3" />
+            {/* Content grid */}
+            <div className="grid lg:grid-cols-5 gap-6">
+                {/* Bots List */}
+                <div className="lg:col-span-3 card !p-0">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]">
+                        <h2 className="text-base font-semibold">Your Bots</h2>
+                        <Link href="/dashboard/bots" className="text-xs text-[var(--primary-400)] hover:underline flex items-center gap-1">
+                            View All <ExternalLink className="w-3 h-3" />
+                        </Link>
+                    </div>
+
+                    {bots.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <Bot className="w-10 h-10 text-[var(--text-dim)] mb-3" />
+                            <p className="text-sm text-[var(--text-muted)] mb-4">No bots yet</p>
+                            <Link href="/dashboard/bots/new" className="btn-primary text-sm">
+                                <Plus className="w-4 h-4" />
+                                Create Bot
                             </Link>
                         </div>
-                        <div className="divide-y divide-border">
-                            {recentBots.map((bot) => (
-                                <div
-                                    key={bot.name}
-                                    className="flex items-center gap-4 px-5 py-4 hover:bg-surface-hover/50 transition-colors"
-                                >
-                                    <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-lg shadow-indigo-500/10">
+                    ) : (
+                        <div className="divide-y divide-[var(--border-subtle)]">
+                            {bots.slice(0, 5).map((bot: any) => (
+                                <div key={bot.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-[var(--bg-hover)] transition-colors">
+                                    <div
+                                        className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0"
+                                        style={{ background: bot.primary_color || '#6366f1' }}
+                                    >
                                         <Bot className="w-5 h-5 text-white" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-sm truncate">{bot.name}</p>
-                                        <div className="flex items-center gap-1.5 text-xs text-text-muted">
+                                        <p className="text-sm font-medium truncate">{bot.name}</p>
+                                        <p className="text-xs text-[var(--text-muted)] flex items-center gap-1">
                                             <Globe className="w-3 h-3" />
-                                            {bot.site}
-                                        </div>
+                                            {bot.website?.name || bot.website?.url || 'No website'}
+                                        </p>
                                     </div>
-                                    <div className="hidden sm:flex items-center gap-6 text-sm">
-                                        <div className="text-center">
-                                            <p className="font-medium">{bot.conversations.toLocaleString()}</p>
-                                            <p className="text-xs text-text-muted">Chats</p>
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="font-medium">{bot.pages}</p>
-                                            <p className="text-xs text-text-muted">Pages</p>
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="font-medium">{bot.accuracy > 0 ? `${bot.accuracy}%` : "—"}</p>
-                                            <p className="text-xs text-text-muted">Accuracy</p>
-                                        </div>
+                                    <div className="text-right hidden sm:block">
+                                        <p className="text-sm font-medium">{bot.total_conversations || 0}</p>
+                                        <p className="text-xs text-[var(--text-muted)]">Chats</p>
                                     </div>
-                                    <div
-                                        className={`badge text-xs ${bot.status === "active"
-                                                ? "badge-emerald"
-                                                : "badge-amber"
-                                            }`}
-                                    >
-                                        {bot.status === "active" ? (
-                                            <>
-                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                                Active
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Zap className="w-3 h-3" />
-                                                Training
-                                            </>
-                                        )}
+                                    <div className={`badge text-[10px] ${bot.is_active ? 'badge-emerald' : 'badge-amber'}`}>
+                                        {bot.is_active ? 'Active' : 'Paused'}
                                     </div>
-                                    <button className="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted">
-                                        <MoreHorizontal className="w-4 h-4" />
-                                    </button>
                                 </div>
                             ))}
                         </div>
-                    </div>
+                    )}
                 </div>
 
-                {/* Top Questions */}
-                <div className="card !p-0">
-                    <div className="flex items-center justify-between p-5 border-b border-border">
-                        <h2 className="text-lg font-semibold">Top Questions</h2>
-                        <span className="text-xs text-text-muted">This week</span>
+                {/* Recent Conversations */}
+                <div className="lg:col-span-2 card !p-0">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]">
+                        <h2 className="text-base font-semibold">Recent Conversations</h2>
+                        <Link href="/dashboard/conversations" className="text-xs text-[var(--primary-400)] hover:underline flex items-center gap-1">
+                            View All <ExternalLink className="w-3 h-3" />
+                        </Link>
                     </div>
-                    <div className="p-5 space-y-4">
-                        {topQuestions.map((q, i) => (
-                            <div key={q.question} className="flex items-center gap-3">
-                                <span className="text-xs font-bold text-text-muted w-5">
-                                    {i + 1}.
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm truncate">{q.question}</p>
-                                    <div className="mt-1 h-1.5 bg-surface-elevated rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full gradient-bg rounded-full"
-                                            style={{
-                                                width: `${(q.count / topQuestions[0].count) * 100}%`,
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                                <span className="text-xs text-text-muted font-medium">
-                                    {q.count}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
 
-            {/* Recent Conversations */}
-            <div className="card !p-0">
-                <div className="flex items-center justify-between p-5 border-b border-border">
-                    <h2 className="text-lg font-semibold">Recent Conversations</h2>
-                    <Link
-                        href="/dashboard/conversations"
-                        className="text-sm text-primary-400 hover:text-primary-300 flex items-center gap-1"
-                    >
-                        View All <ExternalLink className="w-3 h-3" />
-                    </Link>
-                </div>
-                <div className="divide-y divide-border">
-                    {recentConversations.map((conv, i) => (
-                        <div
-                            key={i}
-                            className="px-5 py-4 hover:bg-surface-hover/50 transition-colors cursor-pointer"
-                        >
-                            <div className="flex items-start gap-4">
-                                <div className="w-8 h-8 rounded-lg bg-surface-card border border-border flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <MessageSquare className="w-4 h-4 text-text-muted" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <p className="text-sm font-medium truncate">
-                                            {conv.question}
-                                        </p>
-                                        <div
-                                            className={`badge text-[10px] !py-0 ${conv.satisfied ? "badge-emerald" : "badge-rose"
-                                                }`}
-                                        >
-                                            {conv.satisfied ? "Resolved" : "Unresolved"}
-                                        </div>
-                                    </div>
-                                    <p className="text-xs text-text-muted truncate">
-                                        {conv.answer}
-                                    </p>
-                                    <div className="flex items-center gap-3 mt-2 text-xs text-text-muted">
-                                        <span className="flex items-center gap-1">
-                                            <Bot className="w-3 h-3" />
-                                            {conv.bot}
-                                        </span>
-                                        <span>{conv.time}</span>
-                                    </div>
-                                </div>
-                            </div>
+                    {conversations.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <MessageSquare className="w-10 h-10 text-[var(--text-dim)] mb-3" />
+                            <p className="text-sm text-[var(--text-muted)]">No conversations yet</p>
+                            <p className="text-xs text-[var(--text-dim)] mt-1">They&apos;ll appear here once visitors start chatting</p>
                         </div>
-                    ))}
+                    ) : (
+                        <div className="divide-y divide-[var(--border-subtle)]">
+                            {conversations.slice(0, 6).map((conv: any) => (
+                                <div key={conv.id} className="px-5 py-3.5 hover:bg-[var(--bg-hover)] transition-colors">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <p className="text-sm font-medium truncate flex-1">{conv.question}</p>
+                                        <span className={`badge text-[10px] !py-0 ${conv.status === 'resolved' ? 'badge-emerald' :
+                                                conv.status === 'escalated' ? 'badge-rose' : 'badge-amber'
+                                            }`}>
+                                            {conv.status}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-[var(--text-muted)] truncate mb-1.5">{conv.answer}</p>
+                                    <div className="flex items-center gap-3 text-[10px] text-[var(--text-dim)]">
+                                        <span className="flex items-center gap-1"><Bot className="w-3 h-3" />{conv.botName}</span>
+                                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(conv.time).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

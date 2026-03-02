@@ -1,237 +1,147 @@
-"use client";
+'use client';
 
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 import {
-    User,
-    Bell,
-    Shield,
-    Globe,
-    Key,
-    Trash2,
-    Save,
-    Eye,
-    EyeOff,
-    Copy,
-    Plus,
-    RefreshCw,
-} from "lucide-react";
-import { useState } from "react";
+    User, Bell, Key, Shield, Save, Eye, EyeOff,
+    Copy, Plus, Loader2, Check, AlertTriangle,
+} from 'lucide-react';
 
 export default function SettingsPage() {
-    const [name, setName] = useState("Yogesh Kumar");
-    const [email] = useState("yogesh@example.com");
-    const [notifications, setNotifications] = useState({
-        usage: true,
-        weekly: true,
-        marketing: false,
-        security: true,
-    });
+    const { user, signOut } = useAuth();
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
+    const [profile, setProfile] = useState({ full_name: '', email: '', avatar_url: '' });
 
-    const apiKeys = [
-        {
-            id: "key_1",
-            name: "Production",
-            prefix: "pk_live_a8f2",
-            created: "Jan 15, 2026",
-            lastUsed: "2 hours ago",
-        },
-        {
-            id: "key_2",
-            name: "Development",
-            prefix: "pk_test_b3c9",
-            created: "Feb 1, 2026",
-            lastUsed: "Never",
-        },
-    ];
+    useEffect(() => {
+        if (!user) return;
+        supabase
+            .from('profiles')
+            .select('full_name, email, avatar_url')
+            .eq('id', user.id)
+            .single()
+            .then(({ data }) => {
+                if (data) setProfile(data as any);
+                setLoading(false);
+            });
+    }, [user]);
+
+    const handleSave = async () => {
+        if (!user) return;
+        setSaving(true);
+        await supabase
+            .from('profiles')
+            .update({ full_name: profile.full_name })
+            .eq('id', user.id);
+        setSaving(false);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-24">
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--primary-500)]" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6 max-w-3xl">
             <div>
                 <h1 className="text-2xl font-bold">Settings</h1>
-                <p className="text-text-secondary text-sm mt-1">
-                    Manage your account preferences
-                </p>
+                <p className="text-[var(--text-secondary)] text-sm mt-1">Manage your account</p>
             </div>
 
             {/* Profile */}
-            <div className="card !p-0">
-                <div className="flex items-center gap-2 p-5 border-b border-border">
-                    <User className="w-5 h-5 text-text-muted" />
-                    <h2 className="text-lg font-semibold">Profile</h2>
+            <div className="card">
+                <div className="flex items-center gap-3 mb-6">
+                    <User className="w-5 h-5 text-[var(--primary-400)]" />
+                    <h2 className="text-base font-semibold">Profile</h2>
                 </div>
-                <div className="p-5 space-y-4">
+
+                <div className="space-y-4">
                     <div className="flex items-center gap-6">
-                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                            YK
+                        <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center text-2xl font-bold text-white">
+                            {(profile.full_name || profile.email || 'U').charAt(0).toUpperCase()}
                         </div>
                         <div>
-                            <button className="btn-secondary text-sm !py-2">
-                                Change Avatar
-                            </button>
-                            <p className="text-xs text-text-muted mt-1">
-                                JPG, PNG • Max 2MB
-                            </p>
+                            <p className="text-sm font-medium">{profile.full_name || 'User'}</p>
+                            <p className="text-xs text-[var(--text-muted)]">{profile.email}</p>
                         </div>
                     </div>
 
-                    <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="grid sm:grid-cols-2 gap-4 pt-4">
                         <div>
-                            <label className="block text-sm font-medium mb-1.5">
-                                Full Name
-                            </label>
+                            <label className="block text-sm font-medium mb-1.5">Full Name</label>
                             <input
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
                                 className="input"
+                                value={profile.full_name || ''}
+                                onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1.5">Email</label>
-                            <input
-                                type="email"
-                                value={email}
-                                disabled
-                                className="input opacity-50 cursor-not-allowed"
-                            />
+                            <input className="input" value={profile.email} disabled />
                         </div>
                     </div>
 
-                    <div className="flex justify-end">
-                        <button className="btn-primary text-sm">
-                            <Save className="w-4 h-4" />
-                            Save Changes
+                    <div className="flex justify-end pt-2">
+                        <button onClick={handleSave} disabled={saving} className="btn-primary">
+                            {saving ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : saved ? (
+                                <><Check className="w-4 h-4" />Saved!</>
+                            ) : (
+                                <><Save className="w-4 h-4" />Save Changes</>
+                            )}
                         </button>
                     </div>
                 </div>
             </div>
 
             {/* Notifications */}
-            <div className="card !p-0">
-                <div className="flex items-center gap-2 p-5 border-b border-border">
-                    <Bell className="w-5 h-5 text-text-muted" />
-                    <h2 className="text-lg font-semibold">Notifications</h2>
+            <div className="card">
+                <div className="flex items-center gap-3 mb-6">
+                    <Bell className="w-5 h-5 text-[var(--primary-400)]" />
+                    <h2 className="text-base font-semibold">Notifications</h2>
                 </div>
-                <div className="p-5 space-y-4">
-                    {[
-                        {
-                            key: "usage",
-                            label: "Usage Alerts",
-                            desc: "Get notified when you approach plan limits",
-                        },
-                        {
-                            key: "weekly",
-                            label: "Weekly Reports",
-                            desc: "Receive weekly analytics summary by email",
-                        },
-                        {
-                            key: "marketing",
-                            label: "Product Updates",
-                            desc: "New features, tips, and offers",
-                        },
-                        {
-                            key: "security",
-                            label: "Security Alerts",
-                            desc: "Login attempts and account changes",
-                        },
-                    ].map((item) => (
-                        <div
-                            key={item.key}
-                            className="flex items-center justify-between py-2"
-                        >
-                            <div>
-                                <p className="text-sm font-medium">{item.label}</p>
-                                <p className="text-xs text-text-muted">{item.desc}</p>
-                            </div>
-                            <button
-                                onClick={() =>
-                                    setNotifications((prev) => ({
-                                        ...prev,
-                                        [item.key]:
-                                            !prev[item.key as keyof typeof notifications],
-                                    }))
-                                }
-                                className={`relative w-11 h-6 rounded-full transition-colors ${notifications[item.key as keyof typeof notifications]
-                                        ? "bg-primary-600"
-                                        : "bg-surface-elevated border border-border"
-                                    }`}
-                            >
-                                <div
-                                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${notifications[item.key as keyof typeof notifications]
-                                            ? "left-[22px]"
-                                            : "left-0.5"
-                                        }`}
-                                />
-                            </button>
-                        </div>
-                    ))}
-                </div>
-            </div>
 
-            {/* API Keys */}
-            <div className="card !p-0">
-                <div className="flex items-center justify-between p-5 border-b border-border">
-                    <div className="flex items-center gap-2">
-                        <Key className="w-5 h-5 text-text-muted" />
-                        <h2 className="text-lg font-semibold">API Keys</h2>
-                    </div>
-                    <button className="btn-primary text-sm !py-2">
-                        <Plus className="w-3.5 h-3.5" />
-                        New Key
-                    </button>
-                </div>
-                <div className="divide-y divide-border">
-                    {apiKeys.map((key) => (
-                        <div
-                            key={key.id}
-                            className="flex items-center justify-between px-5 py-4"
-                        >
+                <div className="space-y-4">
+                    {[
+                        { label: 'Weekly usage reports', desc: 'Summary of bot activity', enabled: true },
+                        { label: 'Unanswered question alerts', desc: 'When bot can\'t find an answer', enabled: true },
+                        { label: 'Usage limit warnings', desc: 'At 80% and 100% usage', enabled: true },
+                        { label: 'Product updates', desc: 'New features and improvements', enabled: false },
+                    ].map((notif) => (
+                        <div key={notif.label} className="flex items-center justify-between py-2">
                             <div>
-                                <p className="text-sm font-medium">{key.name}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <code className="text-xs text-text-muted bg-surface-elevated px-2 py-0.5 rounded">
-                                        {key.prefix}••••••••••••
-                                    </code>
-                                    <span className="text-xs text-text-muted">
-                                        Created {key.created}
-                                    </span>
-                                </div>
+                                <p className="text-sm font-medium">{notif.label}</p>
+                                <p className="text-xs text-[var(--text-muted)]">{notif.desc}</p>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs text-text-muted">
-                                    Last used: {key.lastUsed}
-                                </span>
-                                <button className="p-2 rounded-lg hover:bg-surface-hover text-text-muted hover:text-white">
-                                    <Copy className="w-4 h-4" />
-                                </button>
-                                <button className="p-2 rounded-lg hover:bg-rose-500/10 text-text-muted hover:text-rose-400">
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" defaultChecked={notif.enabled} className="sr-only peer" />
+                                <div className="w-10 h-5 rounded-full bg-[var(--bg-elevated)] peer-checked:bg-[var(--primary-500)] transition-colors peer-focus:ring-2 peer-focus:ring-[var(--primary-glow)] after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5" />
+                            </label>
                         </div>
                     ))}
                 </div>
             </div>
 
             {/* Danger Zone */}
-            <div className="card !p-0 !border-rose-500/20">
-                <div className="flex items-center gap-2 p-5 border-b border-rose-500/20">
-                    <Shield className="w-5 h-5 text-rose-400" />
-                    <h2 className="text-lg font-semibold text-rose-400">Danger Zone</h2>
+            <div className="card !border-rose-500/15">
+                <div className="flex items-center gap-3 mb-4">
+                    <AlertTriangle className="w-5 h-5 text-rose-400" />
+                    <h2 className="text-base font-semibold text-rose-400">Danger Zone</h2>
                 </div>
-                <div className="p-5 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium">Delete Account</p>
-                            <p className="text-xs text-text-muted">
-                                Permanently delete your account and all data
-                            </p>
-                        </div>
-                        <button className="px-4 py-2 rounded-xl text-sm font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-colors">
-                            <Trash2 className="w-4 h-4 inline mr-1" />
-                            Delete Account
-                        </button>
-                    </div>
-                </div>
+                <p className="text-sm text-[var(--text-muted)] mb-4">
+                    Once you delete your account, there is no going back. All data will be permanently removed.
+                </p>
+                <button className="btn-secondary !text-rose-400 !border-rose-500/15 hover:!bg-rose-500/5 text-sm">
+                    Delete Account
+                </button>
             </div>
         </div>
     );

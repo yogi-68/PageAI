@@ -1,204 +1,201 @@
-"use client";
+'use client';
 
+import { useState } from 'react';
 import {
-    CreditCard,
-    Check,
-    ArrowRight,
-    Sparkles,
-    Download,
-    Calendar,
-    Zap,
-} from "lucide-react";
-
-const currentPlan = {
-    name: "Starter",
-    price: 0,
-    period: "forever",
-    usage: {
-        questions: { used: 742, limit: 1000 },
-        pages: { used: 8, limit: 10 },
-        websites: { used: 1, limit: 1 },
-    },
-};
-
-const plans = [
-    {
-        id: "basic",
-        name: "Growth",
-        price: 39,
-        features: ["3 Websites", "10K Q&A/mo", "50 Pages", "GPT-4 Turbo"],
-    },
-    {
-        id: "pro",
-        name: "Professional",
-        price: 129,
-        popular: true,
-        features: [
-            "10 Websites",
-            "50K Q&A/mo",
-            "200 Pages",
-            "GPT-4 + Claude",
-            "API Access",
-        ],
-    },
-    {
-        id: "premium",
-        name: "Enterprise",
-        price: 399,
-        features: [
-            "Unlimited",
-            "200K Q&A/mo",
-            "1K+ Pages",
-            "All Models",
-            "SLA",
-        ],
-    },
-];
-
-const invoices = [
-    { id: "INV-001", date: "Feb 1, 2026", amount: "$0.00", status: "Free", plan: "Starter" },
-    { id: "INV-000", date: "Jan 1, 2026", amount: "$0.00", status: "Free", plan: "Starter" },
-];
+    CreditCard, Check, Sparkles, ArrowRight, Zap,
+    Calendar, Info, Clock, Loader2, ExternalLink,
+} from 'lucide-react';
+import { useAuth } from '@/lib/auth';
+import { useEffect } from 'react';
 
 export default function BillingPage() {
+    const { user } = useAuth();
+    const [usage, setUsage] = useState({ plan: 'free', monthly_question_count: 0, monthly_question_limit: 1000 });
+    const [upgrading, setUpgrading] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!user) return;
+        fetch(`/api/dashboard/stats?userId=${user.id}`)
+            .then(r => r.json())
+            .then(d => { if (d.usage) setUsage(d.usage); })
+            .catch(() => { });
+    }, [user]);
+
+    const usagePercent = (usage.monthly_question_count / usage.monthly_question_limit) * 100;
+
+    const handleUpgrade = async (planId: string) => {
+        if (!user || planId === 'free') return;
+        setUpgrading(planId);
+        try {
+            const res = await fetch('/api/billing/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ planId, userId: user.id }),
+            });
+            const data = await res.json();
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                console.error('No checkout URL returned');
+            }
+        } catch (err) {
+            console.error('Upgrade error:', err);
+        } finally {
+            setUpgrading(null);
+        }
+    };
+
+    const plans = [
+        {
+            id: 'free',
+            name: 'Starter',
+            price: 0,
+            current: usage.plan === 'free',
+            features: ['1 Website', '1,000 Q&A/mo', '10 Pages', 'GPT-3.5 Turbo', 'Basic Analytics'],
+        },
+        {
+            id: 'basic',
+            name: 'Growth',
+            price: 39,
+            current: usage.plan === 'basic',
+            features: ['3 Websites', '10,000 Q&A/mo', '50 Pages', 'GPT-4 Turbo', 'Remove Branding'],
+        },
+        {
+            id: 'pro',
+            name: 'Professional',
+            price: 129,
+            popular: true,
+            current: usage.plan === 'pro',
+            features: ['10 Websites', '50,000 Q&A/mo', '200 Pages', 'GPT-4 + Claude', 'API & Webhooks'],
+        },
+        {
+            id: 'premium',
+            name: 'Enterprise',
+            price: 399,
+            current: usage.plan === 'premium',
+            features: ['Unlimited', '200K+ Q&A/mo', '1,000+ Pages', 'All Models', 'SLA & SSO'],
+        },
+    ];
+
+    const currentPlanName = plans.find(p => p.current)?.name || 'Starter';
+
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold">Billing & Plans</h1>
-                <p className="text-text-secondary text-sm mt-1">
-                    Manage your subscription and view usage
+                <p className="text-[var(--text-secondary)] text-sm mt-1">
+                    Manage your subscription and monitor usage
                 </p>
             </div>
 
-            {/* Current Plan */}
-            <div className="card gradient-border !p-0 overflow-hidden">
-                <div className="p-6">
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <h2 className="text-lg font-semibold">Current Plan</h2>
-                                <div className="badge text-xs">
-                                    <Sparkles className="w-3 h-3" />
-                                    {currentPlan.name}
-                                </div>
-                            </div>
-                            <p className="text-sm text-text-muted">
-                                {currentPlan.price === 0
-                                    ? "Free forever — upgrade for more features"
-                                    : `$${currentPlan.price}/month`}
-                            </p>
+            {/* Current Usage */}
+            <div className="card gradient-border">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <h2 className="text-lg font-semibold">Current Plan</h2>
+                            <div className="badge text-xs"><Sparkles className="w-3 h-3" />{currentPlanName}</div>
                         </div>
-                        <button className="btn-primary">
-                            <Zap className="w-4 h-4" />
-                            Upgrade Plan
-                        </button>
+                        <p className="text-sm text-[var(--text-muted)]">
+                            {usage.plan === 'free'
+                                ? 'Free forever — upgrade for more features'
+                                : `You\'re on the ${currentPlanName} plan`}
+                        </p>
                     </div>
+                    {usage.plan !== 'free' && (
+                        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+                            <Calendar className="w-3.5 h-3.5" />
+                            Renews monthly
+                        </div>
+                    )}
+                </div>
 
-                    {/* Usage Bars */}
-                    <div className="grid sm:grid-cols-3 gap-6">
-                        {Object.entries(currentPlan.usage).map(([key, val]) => {
-                            const percentage = (val.used / val.limit) * 100;
-                            const isHigh = percentage > 80;
-                            return (
-                                <div key={key}>
-                                    <div className="flex justify-between text-sm mb-2">
-                                        <span className="text-text-secondary capitalize">{key}</span>
-                                        <span className={`font-medium ${isHigh ? "text-amber-400" : ""}`}>
-                                            {val.used.toLocaleString()} / {val.limit.toLocaleString()}
-                                        </span>
-                                    </div>
-                                    <div className="h-2.5 bg-surface-elevated rounded-full overflow-hidden">
-                                        <div
-                                            className={`h-full rounded-full transition-all duration-500 ${isHigh ? "bg-amber-500" : "gradient-bg"
-                                                }`}
-                                            style={{ width: `${Math.min(percentage, 100)}%` }}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-text-muted mt-1">
-                                        {(100 - percentage).toFixed(0)}% remaining
-                                    </p>
-                                </div>
-                            );
-                        })}
+                <div>
+                    <div className="flex justify-between text-sm mb-2">
+                        <span className="text-[var(--text-secondary)]">Monthly Q&A Usage</span>
+                        <span className={`font-medium ${usagePercent > 80 ? 'text-amber-400' : ''}`}>
+                            {usage.monthly_question_count.toLocaleString()} / {usage.monthly_question_limit.toLocaleString()}
+                        </span>
                     </div>
+                    <div className="h-3 bg-[var(--bg-elevated)] rounded-full overflow-hidden">
+                        <div
+                            className={`h-full rounded-full transition-all duration-500 ${usagePercent > 80 ? 'bg-amber-500' : 'gradient-bg'}`}
+                            style={{ width: `${Math.min(usagePercent, 100)}%` }}
+                        />
+                    </div>
+                    <p className="text-xs text-[var(--text-muted)] mt-2">
+                        {Math.max(0, 100 - usagePercent).toFixed(0)}% remaining this month
+                    </p>
                 </div>
             </div>
 
-            {/* Upgrade Plans */}
+            {/* Plans */}
             <div>
                 <h2 className="text-lg font-semibold mb-4">Available Plans</h2>
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
                     {plans.map((plan) => (
                         <div
-                            key={plan.id}
-                            className={`card ${plan.popular ? "gradient-border glow-purple" : ""
-                                } relative`}
+                            key={plan.name}
+                            className={`card ${plan.popular ? 'gradient-border glow-purple' : ''} ${plan.current ? '!border-emerald-500/30' : ''} relative`}
                         >
                             {plan.popular && (
                                 <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-                                    <div className="gradient-bg text-white text-xs font-semibold px-3 py-0.5 rounded-full">
-                                        Recommended
+                                    <div className="gradient-bg text-white text-[10px] font-semibold px-3 py-0.5 rounded-full">
+                                        Most Popular
                                     </div>
                                 </div>
                             )}
-                            <h3 className="text-base font-semibold mb-1">{plan.name}</h3>
+                            {plan.current && (
+                                <div className="absolute -top-2.5 right-4">
+                                    <div className="bg-emerald-500 text-white text-[10px] font-semibold px-3 py-0.5 rounded-full">
+                                        Current
+                                    </div>
+                                </div>
+                            )}
+                            <h3 className="text-sm font-semibold mb-1">{plan.name}</h3>
                             <div className="flex items-baseline gap-1 mb-4">
                                 <span className="text-3xl font-bold">${plan.price}</span>
-                                <span className="text-text-muted text-sm">/mo</span>
+                                <span className="text-[var(--text-muted)] text-xs">{plan.price > 0 ? '/mo' : 'forever'}</span>
                             </div>
                             <ul className="space-y-2 mb-6">
                                 {plan.features.map((f) => (
-                                    <li key={f} className="flex items-center gap-2 text-sm text-text-secondary">
-                                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                    <li key={f} className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                                        <Check className="w-3 h-3 text-emerald-400" />
                                         {f}
                                     </li>
                                 ))}
                             </ul>
                             <button
-                                className={`w-full ${plan.popular ? "btn-primary" : "btn-secondary"
-                                    }`}
+                                onClick={() => handleUpgrade(plan.id)}
+                                disabled={plan.current || plan.id === 'free' || upgrading === plan.id}
+                                className={`w-full ${plan.popular ? 'btn-primary' : 'btn-secondary'} disabled:opacity-40 disabled:cursor-not-allowed`}
                             >
-                                Upgrade
-                                <ArrowRight className="w-4 h-4" />
+                                {upgrading === plan.id ? (
+                                    <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                                ) : plan.current ? (
+                                    'Current Plan'
+                                ) : plan.id === 'free' ? (
+                                    'Free Plan'
+                                ) : (
+                                    <><Zap className="w-3.5 h-3.5" /> Upgrade</>
+                                )}
                             </button>
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* Invoices */}
-            <div className="card !p-0">
-                <div className="flex items-center justify-between p-5 border-b border-border">
-                    <h2 className="text-lg font-semibold">Invoice History</h2>
-                    <Calendar className="w-4 h-4 text-text-muted" />
-                </div>
-                <div className="divide-y divide-border">
-                    {invoices.map((inv) => (
-                        <div
-                            key={inv.id}
-                            className="flex items-center justify-between px-5 py-4 hover:bg-surface-hover/50 transition-colors"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-surface-card border border-border flex items-center justify-center">
-                                    <CreditCard className="w-5 h-5 text-text-muted" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium">{inv.id}</p>
-                                    <p className="text-xs text-text-muted">
-                                        {inv.date} • {inv.plan}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <span className="text-sm font-medium">{inv.amount}</span>
-                                <div className="badge-emerald text-xs">{inv.status}</div>
-                                <button className="p-2 rounded-lg hover:bg-surface-hover text-text-muted hover:text-white">
-                                    <Download className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
+            {/* Payment Info */}
+            <div className="card !p-5">
+                <div className="flex items-start gap-3">
+                    <CreditCard className="w-5 h-5 text-[var(--primary-400)] flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="text-sm font-medium">Secure Payments by Dodo Payments</p>
+                        <p className="text-xs text-[var(--text-muted)] mt-1">
+                            All payments are processed securely through Dodo Payments. Your payment information
+                            is never stored on our servers. Cancel anytime from your subscription settings.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

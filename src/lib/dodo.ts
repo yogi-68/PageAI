@@ -1,16 +1,25 @@
-import Stripe from 'stripe';
+import DodoPayments from 'dodopayments';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2026-01-28.clover',
-});
+// Initialize Dodo Payments client lazily (server-side only)
+let _dodoClient: DodoPayments | null = null;
 
+export function getDodoClient(): DodoPayments {
+    if (!_dodoClient) {
+        _dodoClient = new DodoPayments({
+            bearerToken: process.env.DODO_PAYMENTS_API_KEY || '',
+        });
+    }
+    return _dodoClient;
+}
+
+// ─── Plan Configuration ───────────────────────────────
 export const PLANS = {
     free: {
         id: 'free',
         name: 'Starter',
         description: 'Perfect for trying out PageAI',
         price: 0,
-        priceId: null,
+        productId: null,
         features: [
             '1 Website',
             '1,000 Q&A/month',
@@ -30,7 +39,7 @@ export const PLANS = {
         id: 'basic',
         name: 'Growth',
         price: 39,
-        priceId: process.env.STRIPE_BASIC_PRICE_ID,
+        productId: process.env.DODO_PRODUCT_GROWTH || null,
         description: 'For growing businesses',
         features: [
             '3 Websites',
@@ -54,7 +63,7 @@ export const PLANS = {
         name: 'Professional',
         price: 129,
         popular: true,
-        priceId: process.env.STRIPE_PRO_PRICE_ID,
+        productId: process.env.DODO_PRODUCT_PRO || null,
         description: 'For scaling companies',
         features: [
             '10 Websites',
@@ -78,7 +87,7 @@ export const PLANS = {
         id: 'premium',
         name: 'Enterprise',
         price: 399,
-        priceId: process.env.STRIPE_PREMIUM_PRICE_ID,
+        productId: process.env.DODO_PRODUCT_ENTERPRISE || null,
         description: 'For large organizations',
         features: [
             'Unlimited Websites',
@@ -103,3 +112,23 @@ export const PLANS = {
 } as const;
 
 export type PlanId = keyof typeof PLANS;
+
+// Map Dodo Product ID to our plan ID
+export function getPlanByProductId(productId: string): PlanId | null {
+    for (const [key, plan] of Object.entries(PLANS)) {
+        if (plan.productId === productId) {
+            return key as PlanId;
+        }
+    }
+    return null;
+}
+
+// Get plan limits for a given plan ID
+export function getPlanLimits(planId: PlanId) {
+    return PLANS[planId]?.limits || PLANS.free.limits;
+}
+
+// Get question limit for a plan
+export function getQuestionLimit(planId: PlanId): number {
+    return PLANS[planId]?.limits.questionsPerMonth || 1000;
+}

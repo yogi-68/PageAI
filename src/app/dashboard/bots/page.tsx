@@ -1,69 +1,41 @@
-"use client";
+'use client';
 
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useAuth } from '@/lib/auth';
 import {
-    Bot,
-    Globe,
-    Settings,
-    MoreHorizontal,
-    Plus,
-    Search,
-    Zap,
-    Eye,
-    Trash2,
-    Copy,
-    ExternalLink,
-} from "lucide-react";
-import Link from "next/link";
-
-const bots = [
-    {
-        id: "bot_1",
-        name: "ShopFlow Support",
-        website: "shopflow.com",
-        status: "active",
-        model: "GPT-4 Turbo",
-        conversations: 1247,
-        accuracy: 96,
-        pages: 34,
-        color: "#6366f1",
-        lastActive: "2 min ago",
-    },
-    {
-        id: "bot_2",
-        name: "Docs Helper",
-        website: "docs.myapp.io",
-        status: "active",
-        model: "GPT-3.5 Turbo",
-        conversations: 892,
-        accuracy: 98,
-        pages: 156,
-        color: "#3b82f6",
-        lastActive: "5 min ago",
-    },
-    {
-        id: "bot_3",
-        name: "Blog Assistant",
-        website: "myblog.com",
-        status: "training",
-        model: "GPT-3.5 Turbo",
-        conversations: 0,
-        accuracy: 0,
-        pages: 12,
-        color: "#10b981",
-        lastActive: "Training...",
-    },
-];
+    Bot, Globe, Settings, Plus, Search, Zap, Eye,
+    Copy, Loader2, Trash2, MoreHorizontal,
+} from 'lucide-react';
 
 export default function BotsPage() {
+    const { user } = useAuth();
+    const [bots, setBots] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!user) return;
+        fetch(`/api/bots?userId=${user.id}`)
+            .then(r => r.json())
+            .then(d => setBots(d.bots || []))
+            .catch(() => { })
+            .finally(() => setLoading(false));
+    }, [user]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-24">
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--primary-500)]" />
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold">My Bots</h1>
-                    <p className="text-text-secondary text-sm mt-1">
-                        Manage your AI chatbot assistants
-                    </p>
+                    <p className="text-[var(--text-secondary)] text-sm mt-1">Manage your AI chatbot assistants</p>
                 </div>
                 <Link href="/dashboard/bots/new" className="btn-primary">
                     <Plus className="w-4 h-4" />
@@ -71,130 +43,74 @@ export default function BotsPage() {
                 </Link>
             </div>
 
-            {/* Search & Filter */}
-            <div className="flex items-center gap-3">
-                <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                    <input
-                        type="text"
-                        placeholder="Search bots..."
-                        className="input !pl-10"
-                    />
-                </div>
-                <select className="input !w-auto">
-                    <option>All Status</option>
-                    <option>Active</option>
-                    <option>Training</option>
-                    <option>Paused</option>
-                </select>
+            {/* Search */}
+            <div className="relative max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                <input type="text" placeholder="Search bots..." className="input !pl-10" />
             </div>
 
-            {/* Bots Grid */}
+            {/* Grid */}
             <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
                 {bots.map((bot) => (
-                    <div key={bot.id} className="card group relative">
-                        {/* Status indicator */}
+                    <div key={bot.id} className="card group">
+                        {/* Status */}
                         <div className="absolute top-4 right-4">
-                            <div
-                                className={`badge text-xs ${bot.status === "active" ? "badge-emerald" : "badge-amber"
-                                    }`}
-                            >
-                                {bot.status === "active" ? (
-                                    <>
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                                        Active
-                                    </>
+                            <div className={`badge text-[10px] ${bot.is_active ? 'badge-emerald' : 'badge-amber'}`}>
+                                {bot.is_active ? (
+                                    <><div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />Active</>
                                 ) : (
-                                    <>
-                                        <Zap className="w-3 h-3" />
-                                        Training
-                                    </>
+                                    <><Zap className="w-3 h-3" />Paused</>
                                 )}
                             </div>
                         </div>
 
-                        {/* Bot Icon */}
                         <div
                             className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 shadow-lg"
-                            style={{ background: bot.color }}
+                            style={{ background: bot.primary_color || '#6366f1' }}
                         >
                             <Bot className="w-7 h-7 text-white" />
                         </div>
-
-                        {/* Info */}
                         <h3 className="text-lg font-semibold mb-1">{bot.name}</h3>
-                        <div className="flex items-center gap-1.5 text-sm text-text-muted mb-4">
+                        <p className="text-xs text-[var(--text-muted)] flex items-center gap-1 mb-4">
                             <Globe className="w-3.5 h-3.5" />
-                            {bot.website}
-                        </div>
+                            {bot.website?.name || bot.website?.url || 'No website linked'}
+                        </p>
 
-                        {/* Stats */}
-                        <div className="grid grid-cols-3 gap-4 py-4 border-t border-border">
+                        <div className="grid grid-cols-3 gap-4 py-4 border-t border-[var(--border-subtle)]">
                             <div>
-                                <p className="text-lg font-bold">{bot.conversations.toLocaleString()}</p>
-                                <p className="text-xs text-text-muted">Chats</p>
+                                <p className="text-lg font-bold">{(bot.total_conversations || 0).toLocaleString()}</p>
+                                <p className="text-[10px] text-[var(--text-muted)]">Chats</p>
                             </div>
                             <div>
-                                <p className="text-lg font-bold">{bot.pages}</p>
-                                <p className="text-xs text-text-muted">Pages</p>
+                                <p className="text-lg font-bold">{bot.website?.pages_count || 0}</p>
+                                <p className="text-[10px] text-[var(--text-muted)]">Pages</p>
                             </div>
                             <div>
-                                <p className="text-lg font-bold">
-                                    {bot.accuracy > 0 ? `${bot.accuracy}%` : "—"}
-                                </p>
-                                <p className="text-xs text-text-muted">Accuracy</p>
+                                <p className="text-lg font-bold">{bot.model?.split('-').pop() || 'N/A'}</p>
+                                <p className="text-[10px] text-[var(--text-muted)]">Model</p>
                             </div>
                         </div>
 
-                        {/* Meta */}
-                        <div className="flex items-center justify-between pt-4 border-t border-border">
-                            <div className="text-xs text-text-muted">
-                                <span className="badge text-[10px]">{bot.model}</span>
-                            </div>
-                            <span className="text-xs text-text-muted">{bot.lastActive}</span>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border">
-                            <button
-                                className="flex-1 btn-secondary !py-2 text-xs"
-                                title="Preview"
-                            >
-                                <Eye className="w-3.5 h-3.5" />
-                                Preview
-                            </button>
-                            <button
-                                className="flex-1 btn-secondary !py-2 text-xs"
-                                title="Get Embed Code"
-                            >
-                                <Copy className="w-3.5 h-3.5" />
-                                Embed
-                            </button>
-                            <Link
-                                href={`/dashboard/bots/${bot.id}`}
-                                className="flex-1 btn-primary !py-2 text-xs"
-                            >
-                                <Settings className="w-3.5 h-3.5" />
-                                Manage
+                        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[var(--border-subtle)]">
+                            <button className="flex-1 btn-secondary !py-2 text-xs"><Eye className="w-3.5 h-3.5" />Preview</button>
+                            <button className="flex-1 btn-secondary !py-2 text-xs"><Copy className="w-3.5 h-3.5" />Embed</button>
+                            <Link href={`/dashboard/settings`} className="flex-1 btn-primary !py-2 text-xs">
+                                <Settings className="w-3.5 h-3.5" />Manage
                             </Link>
                         </div>
                     </div>
                 ))}
 
-                {/* Add New Bot Card */}
+                {/* Add card */}
                 <Link
                     href="/dashboard/bots/new"
-                    className="card card-interactive !border-dashed flex flex-col items-center justify-center min-h-[320px] text-center group"
+                    className="card card-interactive !border-dashed flex flex-col items-center justify-center min-h-[320px] text-center"
                 >
-                    <div className="w-14 h-14 rounded-2xl bg-surface-elevated border border-border flex items-center justify-center mb-4 group-hover:border-primary-500/30 transition-colors">
-                        <Plus className="w-7 h-7 text-text-muted group-hover:text-primary-400 transition-colors" />
+                    <div className="w-14 h-14 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-default)] flex items-center justify-center mb-4 group-hover:border-[var(--border-accent)] transition-colors">
+                        <Plus className="w-7 h-7 text-[var(--text-muted)]" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-1 group-hover:text-white transition-colors">
-                        Create New Bot
-                    </h3>
-                    <p className="text-sm text-text-muted">
-                        Set up a new AI assistant for your website
-                    </p>
+                    <h3 className="text-lg font-semibold mb-1">Create New Bot</h3>
+                    <p className="text-sm text-[var(--text-muted)]">Set up a new AI assistant</p>
                 </Link>
             </div>
         </div>
