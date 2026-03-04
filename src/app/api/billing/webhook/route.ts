@@ -36,9 +36,8 @@ export async function POST(request: NextRequest) {
         const admin = getAdminClient();
 
         switch (eventType) {
-            // Subscription activated / payment succeeded
-            case 'subscription.active':
-            case 'subscription.created': {
+            // Subscription activated (initial or reactivation)
+            case 'subscription.active': {
                 const metadata = data.metadata || {};
                 const userId = metadata.userId;
                 const planId = metadata.planId;
@@ -46,7 +45,6 @@ export async function POST(request: NextRequest) {
 
                 if (!userId) break;
 
-                // Determine the plan from product ID or metadata
                 const resolvedPlanId = planId || getPlanByProductId(productId) || 'basic';
                 const questionLimit = getQuestionLimit(resolvedPlanId);
 
@@ -64,58 +62,68 @@ export async function POST(request: NextRequest) {
                 break;
             }
 
-            // Subscription updated (plan change)
-            case 'subscription.updated': {
+            // Subscription plan changed (up/downgrade)
+            case 'subscription.plan_changed': {
                 const metadata = data.metadata || {};
-                const userId = metadata.userId;
+                let userId = metadata.userId;
                 const productId = data.product_id;
 
-                if (!userId) {
-                    // Try to find user by dodo_subscription_id
-                    const subId = data.subscription_id;
-                    if (subId) {
-                        const { data: profile } = await admin
-                            .from('profiles')
-                            .select('id')
-                            .eq('dodo_subscription_id', subId)
-                            .single();
-                        if (profile) {
-                            const resolvedPlanId = getPlanByProductId(productId) || 'basic';
-                            const questionLimit = getQuestionLimit(resolvedPlanId);
-                            await admin
-                                .from('profiles')
-                                .update({
-                                    plan: resolvedPlanId,
-                                    monthly_question_limit: questionLimit,
-                                })
-                                .eq('id', profile.id);
-                            console.log(`✅ User ${profile.id} plan updated to ${resolvedPlanId}`);
-                        }
-                    }
-                    break;
+                if (!userId && data.subscription_id) {
+                    const { data: profile } = await admin
+                        .from('profiles')
+                        .select('id')
+                        .eq('dodo_subscription_id', data.subscription_id)
+                        .single();
+                    if (profile) userId = profile.id;
                 }
 
-                const resolvedPlanId = getPlanByProductId(productId) || 'basic';
-                const questionLimit = getQuestionLimit(resolvedPlanId);
-                await admin
-                    .from('profiles')
-                    .update({
-                        plan: resolvedPlanId,
-                        monthly_question_limit: questionLimit,
-                    })
-                    .eq('id', userId);
-
-                console.log(`✅ User ${userId} plan updated to ${resolvedPlanId}`);
+                if (userId) {
+                    const resolvedPlanId = getPlanByProductId(productId) || 'basic';
+                    const questionLimit = getQuestionLimit(resolvedPlanId);
+                    await admin
+                        .from('profiles')
+                        .update({
+                            plan: resolvedPlanId,
+                            monthly_question_limit: questionLimit,
+                        })
+                        .eq('id', userId);
+                    console.log(`✅ User ${userId} plan changed to ${resolvedPlanId}`);
+                }
                 break;
             }
 
-            // Subscription cancelled
-            case 'subscription.cancelled':
-            case 'subscription.canceled': {
+            // Subscription renewed (recurring payment succeeded)
+            case 'subscription.renewed': {
                 const metadata = data.metadata || {};
                 let userId = metadata.userId;
 
-                // If no userId in metadata, find by subscription ID
+                if (!userId && data.subscription_id) {
+                    const { data: profile } = await admin
+                        .from('profiles')
+                        .select('id')
+                        .eq('dodo_subscription_id', data.subscription_id)
+                        .single();
+                    if (profile) userId = profile.id;
+                }
+
+                if (userId) {
+                    // Reset monthly question count on renewal
+                    await admin
+                        .from('profiles')
+                        .update({ monthly_question_count: 0 })
+                        .eq('id', userId);
+                    console.log(`🔄 User ${userId} subscription renewed, usage reset`);
+                }
+                break;
+            }
+
+            // Subscription cancelled or expired — downgrade to free
+            case 'subscription.cancelled':
+            case 'subscription.canceled':
+            case 'subscription.expired': {
+                const metadata = data.metadata || {};
+                let userId = metadata.userId;
+
                 if (!userId && data.subscription_id) {
                     const { data: profile } = await admin
                         .from('profiles')
@@ -131,17 +139,16 @@ export async function POST(request: NextRequest) {
                         .update({
                             plan: 'free',
                             dodo_subscription_id: null,
-                            monthly_question_limit: 1000,
+                            monthly_question_limit: 100,
                         })
                         .eq('id', userId);
-                    console.log(`⚠️ User ${userId} downgraded to free`);
+                    console.log(`⚠️ User ${userId} downgraded to free (${eventType})`);
                 }
                 break;
             }
 
             // Payment events
-            case 'payment.succeeded':
-            case 'payment.completed': {
+            case 'payment.succeeded': {
                 console.log(`💰 Payment received: ${data.payment_id || data.id}`);
                 break;
             }

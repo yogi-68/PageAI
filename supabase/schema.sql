@@ -18,7 +18,7 @@ CREATE TABLE public.profiles (
   dodo_customer_id TEXT UNIQUE,
   dodo_subscription_id TEXT,
   monthly_question_count INTEGER NOT NULL DEFAULT 0,
-  monthly_question_limit INTEGER NOT NULL DEFAULT 1000,
+  monthly_question_limit INTEGER NOT NULL DEFAULT 100,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

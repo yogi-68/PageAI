@@ -7,10 +7,10 @@ import toast from 'react-hot-toast';
 
 // Plans matching canonical PLANS in lib/dodo.ts
 const plans = [
-  { id: 'free', name: 'Starter', price: 0, features: ['1 Website', '1,000 Q&A/month', '10 Pages indexed', 'GPT-3.5 Turbo', 'Basic analytics', 'PageAI branding'] },
-  { id: 'basic', name: 'Growth', price: 9, features: ['3 Websites', '10,000 Q&A/month', '50 Pages indexed', 'GPT-4 Turbo', 'Advanced analytics', 'Remove branding', 'Email support', 'Custom bot persona'] },
-  { id: 'pro', name: 'Professional', price: 29, popular: true, features: ['10 Websites', '50,000 Q&A/month', '200 Pages indexed', 'GPT-4 + Claude 3.5', 'Priority support', 'API access', 'Webhook integrations', 'Multi-language support', 'Team seats (3)'] },
-  { id: 'premium', name: 'Enterprise', price: 79, features: ['Unlimited Websites', '200,000+ Q&A/month', '1,000+ Pages indexed', 'All AI Models', 'Dedicated support', 'SLA guarantee', 'SSO / SAML', 'Custom integrations', 'White-label option'] },
+  { id: 'free', name: 'Starter', price: 0, features: ['1 Website', '100 AI responses/month', '10 Pages indexed', 'GPT-3.5 Turbo', 'Basic analytics', 'PageAI branding'] },
+  { id: 'basic', name: 'Growth', price: 19, features: ['1 Website', '2,000 AI responses/month', '100 Pages indexed', 'GPT-4 Turbo', 'Advanced analytics', 'Remove branding', 'Email support', 'Custom bot persona'] },
+  { id: 'pro', name: 'Professional', price: 49, popular: true, features: ['5 Websites', '10,000 AI responses/month', '500 Pages indexed', 'GPT-4 + Claude 3.5', 'Priority support', 'API access', 'Webhook integrations', 'Multi-language support', 'Team seats (3)'] },
+  { id: 'premium', name: 'Enterprise', price: 129, features: ['Unlimited Websites', '50,000 AI responses/month', '2,000 Pages indexed', 'All AI Models', 'Dedicated support', 'SLA guarantee', 'SSO / SAML', 'White-label option', 'Custom integrations'] },
 ];
 
 export default function BillingPage() {

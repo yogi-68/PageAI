@@ -16,10 +16,10 @@ const logos = ['Stripe', 'Vercel', 'Notion', 'Linear', 'Figma'];
 
 // Demo conversation pairs
 const demoResponses: Record<string, string> = {
-  'what plans do you offer': 'We offer 4 plans: **Starter** (free), **Growth** ($39/mo), **Professional** ($129/mo), and **Enterprise** ($399/mo). Growth is our most popular!',
+  'what plans do you offer': 'We offer 4 plans: **Starter** (free), **Growth** ($19/mo), **Professional** ($49/mo), and **Enterprise** ($129/mo). Professional is our most popular!',
   'how does it work': 'It\'s simple! 1) Add your website URL 2) We crawl & index your content automatically 3) Deploy your AI chatbot with one line of code. Takes under 2 minutes!',
   'what is pageai': 'PageAI is an AI-powered chatbot platform that trains on your website content using RAG technology. It answers customer questions accurately with source citations — 24/7.',
-  'pricing': 'Our plans start from free! Starter: $0 (1K Q&A/mo), Growth: $39 (10K Q&A/mo), Professional: $129 (50K Q&A/mo), Enterprise: $399 (unlimited). All with a 14-day free trial.',
+  'pricing': 'Our plans start from free! Starter: $0 (100 responses/mo), Growth: $19 (2K responses/mo), Professional: $49 (10K responses/mo), Enterprise: $129 (50K responses/mo).',
   'features': 'Key features include: automatic website crawling, RAG-powered AI answers, source citations, real-time analytics, custom branding, multi-language support, and easy embed widget.',
 };
 

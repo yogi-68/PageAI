@@ -57,9 +57,9 @@ const jsonLd = {
       description: 'AI-powered website chatbot platform using RAG technology for accurate, citation-backed answers.',
       offers: [
         { '@type': 'Offer', name: 'Starter', price: '0', priceCurrency: 'USD' },
-        { '@type': 'Offer', name: 'Growth', price: '9', priceCurrency: 'USD' },
-        { '@type': 'Offer', name: 'Professional', price: '29', priceCurrency: 'USD' },
-        { '@type': 'Offer', name: 'Enterprise', price: '79', priceCurrency: 'USD' },
+        { '@type': 'Offer', name: 'Growth', price: '19', priceCurrency: 'USD' },
+        { '@type': 'Offer', name: 'Professional', price: '49', priceCurrency: 'USD' },
+        { '@type': 'Offer', name: 'Enterprise', price: '129', priceCurrency: 'USD' },
       ],
       aggregateRating: { '@type': 'AggregateRating', ratingValue: '4.9', reviewCount: '2847', bestRating: '5' },
     },
@@ -85,7 +85,7 @@ const jsonLd = {
         {
           '@type': 'Question',
           name: 'Is PageAI free?',
-          acceptedAnswer: { '@type': 'Answer', text: 'Yes! Our Starter plan is free forever with 1,000 Q&A per month, 10 pages, and GPT-3.5 Turbo. Upgrade anytime for more features.' },
+          acceptedAnswer: { '@type': 'Answer', text: 'Yes! Our Starter plan is free forever with 100 AI responses per month, 10 pages, and GPT-3.5 Turbo. Upgrade anytime for more features.' },
         },
       ],
     },
