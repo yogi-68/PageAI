@@ -1,235 +1,155 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import {
-    MessageSquare, Bot, TrendingUp, Users, Plus,
-    Globe, ArrowUpRight, ArrowDownRight, MoreHorizontal,
-    ExternalLink, Clock, Loader2, Sparkles,
-} from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 
-interface DashboardData {
-    stats: {
-        totalConversations: number;
-        activeBots: number;
-        resolutionRate: string;
-        uniqueVisitors: number;
-    };
-    bots: any[];
-    recentConversations: any[];
-    usage: {
-        plan: string;
-        monthly_question_count: number;
-        monthly_question_limit: number;
-    };
+interface Stats {
+  activeBots: number;
+  totalConversations: number;
+  plan: string;
+  monthly_question_count: number;
+  monthly_question_limit: number;
+}
+
+interface BotRow {
+  id: string;
+  name: string;
+  is_active: boolean;
+  total_conversations: number;
+  created_at: string;
 }
 
 export default function DashboardPage() {
-    const { user } = useAuth();
-    const [data, setData] = useState<DashboardData | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+  const { user } = useAuth();
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [bots, setBots] = useState<BotRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (!user) return;
-
-        async function fetchData() {
-            try {
-                const res = await fetch(`/api/dashboard/stats?userId=${user!.id}`);
-                if (!res.ok) throw new Error('Failed to fetch');
-                const json = await res.json();
-                setData(json);
-            } catch (err: any) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/dashboard/stats?userId=${user.id}`);
+        if (res.ok) {
+          const d = await res.json();
+          setStats({
+            activeBots: d.stats?.activeBots || 0,
+            totalConversations: d.stats?.totalConversations || 0,
+            plan: d.usage?.plan || 'free',
+            monthly_question_count: d.usage?.monthly_question_count || 0,
+            monthly_question_limit: d.usage?.monthly_question_limit || 1000,
+          });
+          if (d.bots) setBots(d.bots.slice(0, 4));
         }
+      } catch (e) { console.error(e); }
+      setLoading(false);
+    })();
+  }, [user]);
 
-        fetchData();
-    }, [user]);
+  const greeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center py-24">
-                <div className="text-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-[var(--primary-500)] mx-auto mb-4" />
-                    <p className="text-sm text-[var(--text-muted)]">Loading dashboard data...</p>
-                </div>
-            </div>
-        );
-    }
+  const kpis = stats ? [
+    { label: 'Active Bots', value: stats.activeBots },
+    { label: 'Conversations', value: stats.totalConversations },
+    { label: 'Plan', value: stats.plan.charAt(0).toUpperCase() + stats.plan.slice(1) },
+  ] : [];
 
-    const stats = data?.stats || { totalConversations: 0, activeBots: 0, resolutionRate: '0', uniqueVisitors: 0 };
-    const bots = data?.bots || [];
-    const conversations = data?.recentConversations || [];
-    const usage = data?.usage || { plan: 'free', monthly_question_count: 0, monthly_question_limit: 1000 };
+  const usagePercent = stats ? Math.min(100, Math.round((stats.monthly_question_count / Math.max(stats.monthly_question_limit, 1)) * 100)) : 0;
 
-    const statCards = [
-        {
-            label: 'Total Conversations',
-            value: stats.totalConversations.toLocaleString(),
-            icon: MessageSquare,
-            gradient: 'from-blue-500 to-cyan-400',
-        },
-        {
-            label: 'Active Bots',
-            value: stats.activeBots,
-            icon: Bot,
-            gradient: 'from-violet-500 to-purple-400',
-        },
-        {
-            label: 'Resolution Rate',
-            value: `${stats.resolutionRate}%`,
-            icon: TrendingUp,
-            gradient: 'from-emerald-500 to-teal-400',
-        },
-        {
-            label: 'Monthly Usage',
-            value: `${usage.monthly_question_count}/${usage.monthly_question_limit}`,
-            icon: Users,
-            gradient: 'from-amber-500 to-orange-400',
-        },
-    ];
+  if (loading) return <div className="flex items-center justify-center py-32"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
-    return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold">Dashboard</h1>
-                    <p className="text-[var(--text-secondary)] text-sm mt-1">
-                        Overview of your AI chatbot performance
-                    </p>
-                </div>
-                <Link href="/dashboard/bots/new" className="btn-primary">
-                    <Plus className="w-4 h-4" />
-                    Create New Bot
-                </Link>
-            </div>
-
-            {/* Getting started — only show if no bots */}
-            {bots.length === 0 && (
-                <div className="card gradient-border !p-8 text-center">
-                    <div className="w-16 h-16 rounded-2xl gradient-bg flex items-center justify-center mx-auto mb-4 shadow-xl shadow-indigo-500/20">
-                        <Sparkles className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-xl font-bold mb-2">Welcome to PageAI! 🎉</h2>
-                    <p className="text-[var(--text-secondary)] max-w-md mx-auto mb-6">
-                        Create your first AI chatbot in under 5 minutes. Just enter your website URL
-                        and we&apos;ll do the rest.
-                    </p>
-                    <Link href="/dashboard/bots/new" className="btn-primary !py-3 !px-8">
-                        <Plus className="w-5 h-5" />
-                        Create Your First Bot
-                    </Link>
-                </div>
-            )}
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {statCards.map((stat) => (
-                    <div key={stat.label} className="card !p-5">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-lg`}>
-                                <stat.icon className="w-5 h-5 text-white" />
-                            </div>
-                        </div>
-                        <p className="text-2xl font-bold">{stat.value}</p>
-                        <p className="text-xs text-[var(--text-muted)] mt-1">{stat.label}</p>
-                    </div>
-                ))}
-            </div>
-
-            {/* Content grid */}
-            <div className="grid lg:grid-cols-5 gap-6">
-                {/* Bots List */}
-                <div className="lg:col-span-3 card !p-0">
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]">
-                        <h2 className="text-base font-semibold">Your Bots</h2>
-                        <Link href="/dashboard/bots" className="text-xs text-[var(--primary-400)] hover:underline flex items-center gap-1">
-                            View All <ExternalLink className="w-3 h-3" />
-                        </Link>
-                    </div>
-
-                    {bots.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-center">
-                            <Bot className="w-10 h-10 text-[var(--text-dim)] mb-3" />
-                            <p className="text-sm text-[var(--text-muted)] mb-4">No bots yet</p>
-                            <Link href="/dashboard/bots/new" className="btn-primary text-sm">
-                                <Plus className="w-4 h-4" />
-                                Create Bot
-                            </Link>
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-[var(--border-subtle)]">
-                            {bots.slice(0, 5).map((bot: any) => (
-                                <div key={bot.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-[var(--bg-hover)] transition-colors">
-                                    <div
-                                        className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0"
-                                        style={{ background: bot.primary_color || '#6366f1' }}
-                                    >
-                                        <Bot className="w-5 h-5 text-white" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate">{bot.name}</p>
-                                        <p className="text-xs text-[var(--text-muted)] flex items-center gap-1">
-                                            <Globe className="w-3 h-3" />
-                                            {bot.website?.name || bot.website?.url || 'No website'}
-                                        </p>
-                                    </div>
-                                    <div className="text-right hidden sm:block">
-                                        <p className="text-sm font-medium">{bot.total_conversations || 0}</p>
-                                        <p className="text-xs text-[var(--text-muted)]">Chats</p>
-                                    </div>
-                                    <div className={`badge text-[10px] ${bot.is_active ? 'badge-emerald' : 'badge-amber'}`}>
-                                        {bot.is_active ? 'Active' : 'Paused'}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Recent Conversations */}
-                <div className="lg:col-span-2 card !p-0">
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-subtle)]">
-                        <h2 className="text-base font-semibold">Recent Conversations</h2>
-                        <Link href="/dashboard/conversations" className="text-xs text-[var(--primary-400)] hover:underline flex items-center gap-1">
-                            View All <ExternalLink className="w-3 h-3" />
-                        </Link>
-                    </div>
-
-                    {conversations.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-center">
-                            <MessageSquare className="w-10 h-10 text-[var(--text-dim)] mb-3" />
-                            <p className="text-sm text-[var(--text-muted)]">No conversations yet</p>
-                            <p className="text-xs text-[var(--text-dim)] mt-1">They&apos;ll appear here once visitors start chatting</p>
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-[var(--border-subtle)]">
-                            {conversations.slice(0, 6).map((conv: any) => (
-                                <div key={conv.id} className="px-5 py-3.5 hover:bg-[var(--bg-hover)] transition-colors">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <p className="text-sm font-medium truncate flex-1">{conv.question}</p>
-                                        <span className={`badge text-[10px] !py-0 ${conv.status === 'resolved' ? 'badge-emerald' :
-                                                conv.status === 'escalated' ? 'badge-rose' : 'badge-amber'
-                                            }`}>
-                                            {conv.status}
-                                        </span>
-                                    </div>
-                                    <p className="text-xs text-[var(--text-muted)] truncate mb-1.5">{conv.answer}</p>
-                                    <div className="flex items-center gap-3 text-[10px] text-[var(--text-dim)]">
-                                        <span className="flex items-center gap-1"><Bot className="w-3 h-3" />{conv.botName}</span>
-                                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(conv.time).toLocaleDateString()}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-[22px] font-bold text-fg tracking-[-0.02em]">{greeting()}, {user?.user_metadata?.full_name?.split(' ')[0] || 'there'}</h1>
+          <p className="text-[14px] text-fg-secondary mt-0.5">Here&apos;s what&apos;s happening with your bots</p>
         </div>
-    );
+        <Link href="/dashboard/bots/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors">+ Create Bot</Link>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {kpis.map(k => (
+          <div key={k.label} className="p-4 rounded-xl border border-edge bg-surface/40">
+            <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">{k.label}</span>
+            <p className="text-[24px] font-bold text-fg mt-1">{k.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Message Usage */}
+      {stats && (
+        <div className="p-5 rounded-xl border border-edge bg-surface/40">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[13px] font-medium text-fg">Question Usage</span>
+            <span className="text-[13px] text-fg-secondary">{stats.monthly_question_count.toLocaleString()} / {stats.monthly_question_limit.toLocaleString()}</span>
+          </div>
+          <div className="h-2 rounded-full bg-edge overflow-hidden">
+            <div className={`h-full rounded-full transition-all duration-500 ${usagePercent > 80 ? 'bg-warning' : 'bg-primary'}`} style={{ width: `${usagePercent}%` }} />
+          </div>
+          {usagePercent > 80 && (
+            <p className="text-[12px] text-warning mt-2">You&apos;ve used {usagePercent}% of your monthly messages. <Link href="/dashboard/billing" className="underline hover:text-fg transition-colors">Upgrade plan</Link></p>
+          )}
+        </div>
+      )}
+
+      {/* Bots List */}
+      <div className="rounded-xl border border-edge bg-surface/40 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-edge">
+          <h2 className="text-[15px] font-semibold text-fg">Your Bots</h2>
+          <Link href="/dashboard/bots" className="text-[12px] text-primary hover:text-primary-hover transition-colors">View all</Link>
+        </div>
+
+        {bots.length === 0 ? (
+          <div className="p-8 text-center">
+            <p className="text-[15px] font-medium text-fg mb-1">No bots yet</p>
+            <p className="text-[13px] text-fg-secondary mb-4">Create your first AI chatbot to get started</p>
+            <Link href="/dashboard/bots/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors">+ Create Bot</Link>
+          </div>
+        ) : (
+          <div className="divide-y divide-edge">
+            {bots.map(bot => (
+              <div key={bot.id} className="px-5 py-3.5 flex items-center justify-between hover:bg-surface-elevated/30 transition-colors">
+                <div>
+                  <p className="text-[14px] font-medium text-fg">{bot.name}</p>
+                  <p className="text-[12px] text-fg-muted mt-0.5">{new Date(bot.created_at).toLocaleDateString()}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${bot.is_active ? 'bg-success/10 text-success' : 'bg-fg-muted/10 text-fg-muted'}`}>{bot.is_active ? 'active' : 'inactive'}</span>
+                  <span className="text-[12px] text-fg-secondary">{bot.total_conversations || 0} chats</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quick Actions */}
+      <div>
+        <h2 className="text-[15px] font-semibold text-fg mb-3">Quick Actions</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { href: '/dashboard/bots/new', label: 'Create new bot', icon: '✦' },
+            { href: '/dashboard/websites', label: 'Add website', icon: '◎' },
+            { href: '/dashboard/analytics', label: 'View analytics', icon: '◈' },
+            { href: '/dashboard/billing', label: 'Manage billing', icon: '◇' },
+          ].map(a => (
+            <Link key={a.href} href={a.href} className="flex items-center gap-2.5 p-3.5 rounded-xl border border-edge bg-surface/30 hover:bg-surface/60 hover:border-edge-light text-[13px] text-fg-secondary hover:text-fg transition-all duration-200">
+              <span className="text-primary">{a.icon}</span>
+              {a.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }

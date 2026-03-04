@@ -1,121 +1,65 @@
-'use client';
+﻿'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import {
-    LayoutDashboard, Users, Bot, DollarSign,
-    Shield, LogOut, ArrowLeft, Loader2,
-} from 'lucide-react';
+import { ThemeToggle } from '@/lib/theme';
 
-const adminNav = [
-    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/admin/users', label: 'Users', icon: Users },
-    { href: '/admin/bots', label: 'Bots', icon: Bot },
-    { href: '/admin/revenue', label: 'Revenue', icon: DollarSign },
+const nav = [
+  { label: 'Dashboard', href: '/admin' },
+  { label: 'Users', href: '/admin/users' },
+  { label: 'Bots', href: '/admin/bots' },
+  { label: 'Revenue', href: '/admin/revenue' },
 ];
 
+const ADMIN_EMAILS = ['yogeshwar2005@gmail.com', 'admin@pageai.com'];
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-    const { user, signOut } = useAuth();
-    const router = useRouter();
-    const pathname = usePathname();
-    const [authorized, setAuthorized] = useState(false);
-    const [checking, setChecking] = useState(true);
+  const { user, signOut } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
 
-    useEffect(() => {
-        if (!user) {
-            router.push('/login');
-            return;
-        }
+  useEffect(() => {
+    if (!user) { router.push('/login'); return; }
+    if (!ADMIN_EMAILS.includes(user.email || '')) router.push('/dashboard');
+  }, [user, router]);
 
-        // Check if user email is in ADMIN_EMAILS
-        const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase());
-        if (adminEmails.includes(user.email?.toLowerCase() || '')) {
-            setAuthorized(true);
-        } else {
-            // Also check via API for server-side admin list
-            fetch(`/api/admin/stats?userId=${user.id}&checkAdmin=true`)
-                .then(r => r.json())
-                .then(d => {
-                    if (d.isAdmin) setAuthorized(true);
-                    else router.push('/dashboard');
-                })
-                .catch(() => router.push('/dashboard'));
-        }
-        setChecking(false);
-    }, [user, router]);
+  if (!user || !ADMIN_EMAILS.includes(user.email || '')) return null;
 
-    if (checking || !authorized) {
-        return (
-            <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center">
-                <div className="text-center">
-                    <Loader2 className="w-10 h-10 animate-spin text-[var(--primary-500)] mx-auto mb-4" />
-                    <p className="text-sm text-[var(--text-muted)]">Verifying admin access...</p>
-                </div>
-            </div>
-        );
-    }
+  const isActive = (href: string) => href === '/admin' ? pathname === href : pathname.startsWith(href);
 
-    return (
-        <div className="min-h-screen bg-[var(--bg-base)] flex">
-            {/* Sidebar */}
-            <aside className="w-64 border-r border-[var(--border-default)] bg-[var(--bg-surface)] flex flex-col">
-                <div className="p-5 border-b border-[var(--border-subtle)]">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center">
-                            <Shield className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold">PageAI Admin</p>
-                            <p className="text-[10px] text-[var(--text-muted)]">Management Console</p>
-                        </div>
-                    </div>
-                </div>
-
-                <nav className="flex-1 p-3 space-y-1">
-                    {adminNav.map((item) => {
-                        const isActive = pathname === item.href;
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive
-                                        ? 'bg-gradient-to-r from-rose-500/10 to-orange-500/10 text-rose-400 border border-rose-500/20'
-                                        : 'text-[var(--text-muted)] hover:text-white hover:bg-[var(--bg-hover)]'
-                                    }`}
-                            >
-                                <item.icon className="w-4 h-4" />
-                                {item.label}
-                            </Link>
-                        );
-                    })}
-                </nav>
-
-                <div className="p-3 border-t border-[var(--border-subtle)] space-y-1">
-                    <Link
-                        href="/dashboard"
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--text-muted)] hover:text-white hover:bg-[var(--bg-hover)] transition-all"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Back to Dashboard
-                    </Link>
-                    <button
-                        onClick={() => signOut()}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[var(--text-muted)] hover:text-rose-400 hover:bg-rose-500/5 w-full transition-all"
-                    >
-                        <LogOut className="w-4 h-4" />
-                        Sign Out
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <main className="flex-1 p-8 overflow-auto">
-                <div className="max-w-7xl mx-auto">
-                    {children}
-                </div>
-            </main>
+  return (
+    <div className="min-h-screen bg-bg flex">
+      <aside className="w-[220px] fixed inset-y-0 left-0 bg-surface/50 border-r border-edge flex flex-col z-30">
+        <div className="px-5 h-14 flex items-center border-b border-edge">
+          <span className="text-[15px] font-bold text-fg">Admin Panel</span>
         </div>
-    );
+        <nav className="flex-1 px-3 py-4 space-y-0.5">
+          {nav.map(item => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`block px-3 py-2 rounded-lg text-[13.5px] transition-all duration-200 ${
+                isActive(item.href)
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'text-fg-secondary hover:text-fg hover:bg-surface-elevated/50'
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="px-3 py-4 border-t border-edge">
+          <button onClick={signOut} className="w-full text-left px-3 py-2 rounded-lg text-[13px] text-fg-muted hover:text-fg hover:bg-surface-elevated/50 transition-all duration-200">Sign out</button>
+        </div>
+      </aside>
+      <main className="flex-1 ml-[220px]">
+        <header className="h-14 flex items-center justify-end px-6 border-b border-edge bg-bg/80 backdrop-blur-xl sticky top-0 z-20">
+          <ThemeToggle />
+        </header>
+        <div className="p-6 max-w-[1100px]">{children}</div>
+      </main>
+    </div>
+  );
 }

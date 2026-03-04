@@ -1,145 +1,88 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
-import {
-    Users, Search, Loader2, Shield, Bot,
-    MessageSquare, Calendar, Mail,
-} from 'lucide-react';
 
 interface UserRow {
-    id: string;
-    email: string;
-    full_name: string | null;
-    plan: string;
-    monthly_question_count: number;
-    monthly_question_limit: number;
-    created_at: string;
-    botCount?: number;
+  id: string;
+  email: string;
+  full_name?: string;
+  plan: string;
+  created_at: string;
+  monthly_question_count: number;
+  monthly_question_limit: number;
 }
 
 export default function AdminUsersPage() {
-    const [users, setUsers] = useState<UserRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState('');
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetch('/api/admin/stats?type=users')
-            .then(r => r.json())
-            .then(d => setUsers(d.users || []))
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    }, []);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/stats?type=users');
+        const data = await res.json();
+        setUsers(data.users || []);
+      } catch (e) { console.error(e); }
+      setLoading(false);
+    })();
+  }, []);
 
-    const filtered = search
-        ? users.filter(u =>
-            u.email.toLowerCase().includes(search.toLowerCase()) ||
-            u.full_name?.toLowerCase().includes(search.toLowerCase())
-        )
-        : users;
+  const filtered = users.filter(u =>
+    u.email?.toLowerCase().includes(search.toLowerCase()) ||
+    u.plan?.toLowerCase().includes(search.toLowerCase())
+  );
 
-    const planColors: Record<string, string> = {
-        free: '',
-        basic: 'badge-amber',
-        pro: 'badge-emerald',
-        premium: 'bg-gradient-to-r from-violet-500/15 to-purple-500/15 text-violet-400 border border-violet-500/20',
-    };
+  if (loading) return <div className="flex items-center justify-center py-32"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center py-24">
-                <Loader2 className="w-8 h-8 animate-spin text-[var(--primary-500)]" />
-            </div>
-        );
-    }
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-[22px] font-bold text-fg tracking-[-0.02em]">Users</h1>
+        <span className="text-[13px] text-fg-secondary">{users.length} total</span>
+      </div>
 
-    return (
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold">Users</h1>
-                    <p className="text-[var(--text-secondary)] text-sm mt-1">
-                        {users.length} registered users
-                    </p>
-                </div>
-            </div>
+      <div>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search users..." className="w-full max-w-[400px] px-4 py-2.5 rounded-lg border border-edge bg-bg/60 text-[13px] text-fg placeholder:text-fg-muted focus:outline-none focus:border-primary/50 transition-all" />
+      </div>
 
-            <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search by email or name..."
-                    className="input !pl-10"
-                />
-            </div>
-
-            <div className="card !p-0">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b border-[var(--border-subtle)]">
-                                <th className="text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider px-5 py-3">User</th>
-                                <th className="text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider px-5 py-3">Plan</th>
-                                <th className="text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider px-5 py-3">Usage</th>
-                                <th className="text-left text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider px-5 py-3">Joined</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[var(--border-subtle)]">
-                            {filtered.map((u) => (
-                                <tr key={u.id} className="hover:bg-[var(--bg-hover)] transition-colors">
-                                    <td className="px-5 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
-                                                {(u.full_name || u.email).charAt(0).toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium">{u.full_name || 'No name'}</p>
-                                                <p className="text-xs text-[var(--text-muted)] flex items-center gap-1">
-                                                    <Mail className="w-3 h-3" />
-                                                    {u.email}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-5 py-4">
-                                        <span className={`badge text-[10px] ${planColors[u.plan] || ''}`}>
-                                            {u.plan}
-                                        </span>
-                                    </td>
-                                    <td className="px-5 py-4">
-                                        <div>
-                                            <p className="text-sm font-medium">
-                                                {u.monthly_question_count} / {u.monthly_question_limit}
-                                            </p>
-                                            <div className="w-24 h-1.5 bg-[var(--bg-elevated)] rounded-full overflow-hidden mt-1">
-                                                <div
-                                                    className="h-full gradient-bg rounded-full"
-                                                    style={{ width: `${Math.min((u.monthly_question_count / u.monthly_question_limit) * 100, 100)}%` }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-5 py-4">
-                                        <p className="text-sm text-[var(--text-muted)] flex items-center gap-1">
-                                            <Calendar className="w-3 h-3" />
-                                            {new Date(u.created_at).toLocaleDateString()}
-                                        </p>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    {filtered.length === 0 && (
-                        <div className="text-center py-12">
-                            <Users className="w-10 h-10 text-[var(--text-dim)] mx-auto mb-3" />
-                            <p className="text-sm text-[var(--text-muted)]">
-                                {search ? 'No users match your search' : 'No users yet'}
-                            </p>
+      <div className="rounded-xl border border-edge bg-surface/40 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-edge">
+                <th className="px-5 py-2.5 text-[12px] font-medium text-fg-muted uppercase tracking-wide">Email</th>
+                <th className="px-5 py-2.5 text-[12px] font-medium text-fg-muted uppercase tracking-wide">Plan</th>
+                <th className="px-5 py-2.5 text-[12px] font-medium text-fg-muted uppercase tracking-wide">Usage</th>
+                <th className="px-5 py-2.5 text-[12px] font-medium text-fg-muted uppercase tracking-wide">Joined</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-edge">
+              {filtered.map(u => {
+                const pct = Math.min(100, Math.round(((u.monthly_question_count || 0) / Math.max(u.monthly_question_limit || 1000, 1)) * 100));
+                return (
+                  <tr key={u.id} className="hover:bg-surface-elevated/20 transition-colors">
+                    <td className="px-5 py-3 text-[13px] text-fg">{u.email}</td>
+                    <td className="px-5 py-3"><span className="inline-flex px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[11px] font-medium capitalize">{u.plan || 'free'}</span></td>
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-1.5 rounded-full bg-edge overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${pct > 80 ? 'bg-warning' : 'bg-primary'}`} style={{ width: `${pct}%` }} />
                         </div>
-                    )}
-                </div>
-            </div>
+                        <span className="text-[12px] text-fg-muted">{pct}%</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-[13px] text-fg-secondary">{new Date(u.created_at).toLocaleDateString()}</td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && (
+                <tr><td colSpan={5} className="px-5 py-8 text-center text-[13px] text-fg-secondary">No users found</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
-    );
+      </div>
+    </div>
+  );
 }

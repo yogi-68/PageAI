@@ -1,126 +1,76 @@
-"use client";
-
-import Link from "next/link";
-import {
-    Sparkles,
-    Twitter,
-    Github,
-    Linkedin,
-    Mail,
-    Globe,
-} from "lucide-react";
+﻿import Link from 'next/link';
 
 const footerLinks = {
-    Product: [
-        { label: "Features", href: "#features" },
-        { label: "Pricing", href: "#pricing" },
-        { label: "How It Works", href: "#how-it-works" },
-        { label: "API Documentation", href: "/docs" },
-        { label: "Integrations", href: "/integrations" },
-        { label: "Changelog", href: "/changelog" },
-    ],
-    Company: [
-        { label: "About", href: "/about" },
-        { label: "Blog", href: "/blog" },
-        { label: "Careers", href: "/careers" },
-        { label: "Press Kit", href: "/press" },
-        { label: "Contact", href: "/contact" },
-    ],
-    Resources: [
-        { label: "Help Center", href: "/help" },
-        { label: "Community", href: "/community" },
-        { label: "Guides & Tutorials", href: "/guides" },
-        { label: "Status Page", href: "/status" },
-        { label: "System Requirements", href: "/requirements" },
-    ],
-    Legal: [
-        { label: "Privacy Policy", href: "/privacy" },
-        { label: "Terms of Service", href: "/terms" },
-        { label: "Cookie Policy", href: "/cookies" },
-        { label: "GDPR", href: "/gdpr" },
-        { label: "Security", href: "/security" },
-    ],
+  Product: [
+    { label: 'Features', href: '#features' },
+    { label: 'Pricing', href: '#pricing' },
+    { label: 'How It Works', href: '#how-it-works' },
+    { label: 'Blog', href: '/blog' },
+  ],
+  Company: [
+    { label: 'About', href: '#' },
+    { label: 'Careers', href: '#' },
+    { label: 'Contact', href: '#' },
+  ],
+  Resources: [
+    { label: 'Documentation', href: '#' },
+    { label: 'API Reference', href: '#' },
+    { label: 'Changelog', href: '#' },
+  ],
+  Legal: [
+    { label: 'Privacy', href: '#' },
+    { label: 'Terms', href: '#' },
+    { label: 'Cookies', href: '#' },
+  ],
 };
 
-const socialLinks = [
-    { icon: Twitter, href: "https://twitter.com/pageai", label: "Twitter" },
-    { icon: Github, href: "https://github.com/pageai", label: "GitHub" },
-    { icon: Linkedin, href: "https://linkedin.com/company/pageai", label: "LinkedIn" },
-    { icon: Mail, href: "mailto:hello@pageai.io", label: "Email" },
-];
-
 export default function Footer() {
-    return (
-        <footer className="border-t border-border bg-surface-elevated/50">
-            <div className="container-wide px-6 py-16">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
-                    {/* Brand Column */}
-                    <div className="col-span-2">
-                        <Link href="/" className="flex items-center gap-2.5 mb-4">
-                            <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                                <Sparkles className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="text-xl font-bold tracking-tight">
-                                Page<span className="gradient-text">AI</span>
-                            </span>
-                        </Link>
-                        <p className="text-sm text-text-secondary max-w-xs mb-6 leading-relaxed">
-                            Transform your website into an intelligent AI assistant. Train on
-                            your content, deploy in minutes, delight your visitors.
-                        </p>
-                        <div className="flex gap-3">
-                            {socialLinks.map((social) => (
-                                <a
-                                    key={social.label}
-                                    href={social.href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label={social.label}
-                                    className="w-9 h-9 rounded-xl bg-surface-card border border-border flex items-center justify-center text-text-muted hover:text-white hover:border-border-light transition-all"
-                                >
-                                    <social.icon className="w-4 h-4" />
-                                </a>
-                            ))}
-                        </div>
-                    </div>
+  return (
+    <footer className="border-t border-edge bg-surface/30">
+      <div className="max-w-[1200px] mx-auto px-6 py-16">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
+          {/* Brand */}
+          <div className="col-span-2">
+            <Link href="/" className="flex items-center gap-2.5 mb-4">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                  <path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H7l-3 3V11H4a2 2 0 01-2-2V4z" fill="#4f6df5" />
+                </svg>
+              </div>
+              <span className="text-[16px] font-semibold text-fg tracking-tight">PageAI</span>
+            </Link>
+            <p className="text-[13.5px] text-fg-secondary leading-relaxed max-w-[260px]">
+              Turn any website into an intelligent AI chatbot. Powered by advanced RAG technology.
+            </p>
+          </div>
 
-                    {/* Link Columns */}
-                    {Object.entries(footerLinks).map(([category, links]) => (
-                        <div key={category}>
-                            <h4 className="text-sm font-semibold mb-4 text-text-primary">
-                                {category}
-                            </h4>
-                            <ul className="space-y-2.5">
-                                {links.map((link) => (
-                                    <li key={link.label}>
-                                        <Link
-                                            href={link.href}
-                                            className="text-sm text-text-muted hover:text-text-secondary transition-colors"
-                                        >
-                                            {link.label}
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Bottom Bar */}
-                <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <p className="text-xs text-text-muted">
-                        © {new Date().getFullYear()} PageAI. All rights reserved.
-                    </p>
-                    <div className="flex items-center gap-4 text-xs text-text-muted">
-                        <div className="flex items-center gap-1.5">
-                            <Globe className="w-3 h-3" />
-                            English (US)
-                        </div>
-                        <span>•</span>
-                        <span>Made with ♥ for website owners</span>
-                    </div>
-                </div>
+          {/* Link columns */}
+          {Object.entries(footerLinks).map(([title, links]) => (
+            <div key={title}>
+              <h4 className="text-[12.5px] font-semibold uppercase tracking-[0.08em] text-fg-muted mb-4">{title}</h4>
+              <ul className="space-y-2.5">
+                {links.map((l) => (
+                  <li key={l.label}>
+                    <Link href={l.href} className="text-[13.5px] text-fg-secondary hover:text-fg transition-colors duration-200">
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
-        </footer>
-    );
+          ))}
+        </div>
+
+        {/* Bottom bar */}
+        <div className="mt-14 pt-6 border-t border-edge flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-[12.5px] text-fg-muted">
+            &copy; {new Date().getFullYear()} PageAI. All rights reserved.
+          </p>
+          <p className="text-[12.5px] text-fg-muted">
+            Built with Next.js, Supabase &amp; OpenAI
+          </p>
+        </div>
+      </div>
+    </footer>
+  );
 }

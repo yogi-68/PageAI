@@ -1,110 +1,83 @@
-"use client";
+﻿'use client';
 
-import { Star } from "lucide-react";
+import { motion } from 'framer-motion';
+import { Star } from 'lucide-react';
 
 const testimonials = [
-    {
-        name: "Sarah Chen",
-        role: "CTO, TechVault",
-        avatar: "SC",
-        rating: 5,
-        text: "PageAI reduced our support tickets by 73% in the first month. The RAG-based answers are incredibly accurate — customers get instant help without waiting for our team.",
-        color: "from-blue-500 to-cyan-400",
-    },
-    {
-        name: "Marcus Johnson",
-        role: "Founder, ShopFlow",
-        avatar: "MJ",
-        rating: 5,
-        text: "We tried Chatbase and Botsonic before switching to PageAI. The difference in answer quality is night and day. Our customers actually trust the bot now because it cites exact pages.",
-        color: "from-purple-500 to-indigo-400",
-    },
-    {
-        name: "Emily Rodriguez",
-        role: "Head of Support, Docuwise",
-        avatar: "ER",
-        rating: 5,
-        text: "Setup took literally 3 minutes. Pasted our docs URL, waited for it to crawl, embedded the widget, and boom — instant AI support for our 500-page documentation site.",
-        color: "from-pink-500 to-rose-400",
-    },
-    {
-        name: "David Kim",
-        role: "VP Marketing, CloudBase",
-        avatar: "DK",
-        rating: 5,
-        text: "The analytics dashboard alone is worth the subscription. We can see exactly what questions customers are asking and optimize our content accordingly. Game-changer for our SEO.",
-        color: "from-emerald-500 to-teal-400",
-    },
-    {
-        name: "Lisa Thompson",
-        role: "CEO, EduLearn",
-        avatar: "LT",
-        rating: 5,
-        text: "Our students use the PageAI chatbot on our learning platform to ask questions about course material. Engagement went up 40% and our instructors can focus on teaching.",
-        color: "from-amber-500 to-orange-400",
-    },
-    {
-        name: "Alex Petrov",
-        role: "DevOps Lead, InfraStack",
-        avatar: "AP",
-        rating: 5,
-        text: "The multi-language support is phenomenal. Our global users ask questions in their native language and get accurate answers. We went from English-only support to 50+ languages overnight.",
-        color: "from-violet-500 to-purple-400",
-    },
+  { name: 'Sarah Chen', role: 'VP of Support, TechFlow', quote: 'PageAI cut our support ticket volume by 65% in the first month. The RAG technology means it actually gives accurate answers.', initials: 'SC' },
+  { name: 'Marcus Johnson', role: 'Founder, ShopNova', quote: 'Setup took literally 3 minutes. I pasted my URL, waited for the crawl, and had a working chatbot on my store. Incredible.', initials: 'MJ' },
+  { name: 'Emily Rodriguez', role: 'Head of Product, DataSync', quote: 'We evaluated 8 platforms. PageAI won on accuracy, speed, and pricing. The analytics are incredibly useful for our team.', initials: 'ER' },
+  { name: 'Alex Kim', role: 'CTO, CloudBase', quote: 'The API is clean, the embed is lightweight, and the bot understands context. This is what AI support should look like.', initials: 'AK' },
+  { name: 'Priya Patel', role: 'Marketing Lead, GrowthHub', quote: 'Our bounce rate dropped 23% after adding PageAI. Visitors find answers instantly instead of leaving to search elsewhere.', initials: 'PP' },
+  { name: 'James Wilson', role: 'CEO, StartUp Labs', quote: 'Replaced our $2,000/month live chat team with PageAI for $39/month. Handles 90% of queries with better accuracy.', initials: 'JW' },
+];
+
+const avatarColors = [
+  'bg-primary/20 text-primary',
+  'bg-violet/20 text-violet',
+  'bg-success/20 text-success',
+  'bg-warning/20 text-warning',
+  'bg-danger/20 text-danger',
+  'bg-primary/20 text-primary',
 ];
 
 export default function TestimonialsSection() {
-    return (
-        <section className="section-padding relative overflow-hidden">
-            <div className="absolute inset-0 bg-dots opacity-20" />
-            <div className="relative container-wide px-6">
-                {/* Header */}
-                <div className="text-center mb-16">
-                    <div className="badge-emerald mb-4 inline-flex">
-                        <Star className="w-3.5 h-3.5" />
-                        Customer Love
-                    </div>
-                    <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-                        Loved by <span className="gradient-text-emerald">2,000+ Teams</span>
-                    </h2>
-                    <p className="text-text-secondary text-lg max-w-2xl mx-auto">
-                        See why businesses worldwide choose PageAI to power their
-                        website&apos;s intelligence.
-                    </p>
+  return (
+    <section className="py-24 relative">
+      <div className="max-w-[1200px] mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-100px' }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <p className="text-[13px] font-medium uppercase tracking-[0.1em] text-primary mb-4">Testimonials</p>
+          <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.15] tracking-[-0.03em] mb-4">
+            Loved by thousands
+            <br className="hidden sm:block" /> of businesses
+          </h2>
+          <p className="text-[16px] text-fg-secondary max-w-[480px] mx-auto leading-relaxed">
+            See what companies are saying about PageAI.
+          </p>
+        </motion.div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {testimonials.map((t, i) => (
+            <motion.div
+              key={t.name}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ delay: i * 0.05, duration: 0.4 }}
+              className="p-6 rounded-2xl border border-edge bg-surface/40 hover:bg-surface/70 transition-all duration-300 hover:border-edge-light flex flex-col"
+            >
+              {/* Stars */}
+              <div className="flex gap-0.5 mb-4">
+                {[...Array(5)].map((_, j) => (
+                  <Star key={j} className="w-3.5 h-3.5 fill-warning text-warning" />
+                ))}
+              </div>
+
+              {/* Quote */}
+              <p className="text-[14px] text-fg-secondary leading-relaxed flex-1 mb-5">
+                &ldquo;{t.quote}&rdquo;
+              </p>
+
+              {/* Author */}
+              <div className="flex items-center gap-3 pt-4 border-t border-edge">
+                <div className={`w-9 h-9 rounded-full ${avatarColors[i]} flex items-center justify-center`}>
+                  <span className="text-[11px] font-semibold">{t.initials}</span>
                 </div>
-
-                {/* Testimonials Grid */}
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
-                    {testimonials.map((t, i) => (
-                        <div key={i} className="card group">
-                            {/* Stars */}
-                            <div className="flex gap-0.5 mb-3">
-                                {Array.from({ length: t.rating }).map((_, si) => (
-                                    <Star key={si} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                ))}
-                            </div>
-
-                            {/* Quote */}
-                            <p className="text-sm text-text-secondary leading-relaxed mb-5">
-                                &ldquo;{t.text}&rdquo;
-                            </p>
-
-                            {/* Author */}
-                            <div className="flex items-center gap-3 mt-auto">
-                                <div
-                                    className={`w-10 h-10 rounded-full bg-gradient-to-br ${t.color} flex items-center justify-center text-white text-xs font-semibold`}
-                                >
-                                    {t.avatar}
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium">{t.name}</p>
-                                    <p className="text-xs text-text-muted">{t.role}</p>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                <div>
+                  <p className="text-[13px] font-medium text-fg">{t.name}</p>
+                  <p className="text-[12px] text-fg-muted">{t.role}</p>
                 </div>
-            </div>
-        </section>
-    );
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }

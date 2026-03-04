@@ -1,130 +1,75 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
-import {
-    Bot, Search, Loader2, Globe, MessageSquare,
-    User, Zap, CheckCircle, XCircle,
-} from 'lucide-react';
 
 interface BotRow {
-    id: string;
-    name: string;
-    model: string;
-    is_active: boolean;
-    total_conversations: number;
-    primary_color: string;
-    created_at: string;
-    ownerEmail?: string;
-    websiteUrl?: string;
+  id: string;
+  name: string;
+  is_active: boolean;
+  user_id: string;
+  total_conversations: number;
+  created_at: string;
+  ownerEmail?: string;
+  websiteUrl?: string;
 }
 
 export default function AdminBotsPage() {
-    const [bots, setBots] = useState<BotRow[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState('');
+  const [bots, setBots] = useState<BotRow[]>([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetch('/api/admin/stats?type=bots')
-            .then(r => r.json())
-            .then(d => setBots(d.bots || []))
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    }, []);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/stats?type=bots');
+        const data = await res.json();
+        setBots(data.bots || []);
+      } catch (e) { console.error(e); }
+      setLoading(false);
+    })();
+  }, []);
 
-    const filtered = search
-        ? bots.filter(b =>
-            b.name.toLowerCase().includes(search.toLowerCase()) ||
-            b.ownerEmail?.toLowerCase().includes(search.toLowerCase())
-        )
-        : bots;
+  const filtered = bots.filter(b =>
+    b.name?.toLowerCase().includes(search.toLowerCase()) ||
+    b.ownerEmail?.toLowerCase().includes(search.toLowerCase())
+  );
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center py-24">
-                <Loader2 className="w-8 h-8 animate-spin text-[var(--primary-500)]" />
-            </div>
-        );
-    }
+  if (loading) return <div className="flex items-center justify-center py-32"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
-    return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold">All Bots</h1>
-                <p className="text-[var(--text-secondary)] text-sm mt-1">
-                    {bots.length} bots across all users
-                </p>
-            </div>
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-[22px] font-bold text-fg tracking-[-0.02em]">All Bots</h1>
+        <span className="text-[13px] text-fg-secondary">{bots.length} total</span>
+      </div>
 
-            <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search bots or owner email..."
-                    className="input !pl-10"
-                />
-            </div>
+      <div>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search bots or owners..." className="w-full max-w-[400px] px-4 py-2.5 rounded-lg border border-edge bg-bg/60 text-[13px] text-fg placeholder:text-fg-muted focus:outline-none focus:border-primary/50 transition-all" />
+      </div>
 
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filtered.map((bot) => (
-                    <div key={bot.id} className="card !p-5">
-                        <div className="flex items-start gap-3 mb-4">
-                            <div
-                                className="w-11 h-11 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0"
-                                style={{ background: bot.primary_color || '#6366f1' }}
-                            >
-                                <Bot className="w-5 h-5 text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-semibold truncate">{bot.name}</h3>
-                                <p className="text-xs text-[var(--text-muted)] flex items-center gap-1 truncate">
-                                    <User className="w-3 h-3 flex-shrink-0" />
-                                    {bot.ownerEmail || 'Unknown'}
-                                </p>
-                            </div>
-                            {bot.is_active ? (
-                                <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                            ) : (
-                                <XCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
-                            )}
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-3 py-3 border-t border-[var(--border-subtle)]">
-                            <div>
-                                <p className="text-base font-bold">{bot.total_conversations}</p>
-                                <p className="text-[10px] text-[var(--text-muted)]">Chats</p>
-                            </div>
-                            <div>
-                                <p className="text-xs font-medium text-[var(--text-secondary)]">{bot.model?.split('-').pop()}</p>
-                                <p className="text-[10px] text-[var(--text-muted)]">Model</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-[var(--text-muted)]">
-                                    {new Date(bot.created_at).toLocaleDateString()}
-                                </p>
-                                <p className="text-[10px] text-[var(--text-muted)]">Created</p>
-                            </div>
-                        </div>
-
-                        {bot.websiteUrl && (
-                            <p className="text-xs text-[var(--text-muted)] flex items-center gap-1 pt-2 border-t border-[var(--border-subtle)] truncate">
-                                <Globe className="w-3 h-3 flex-shrink-0" />
-                                {bot.websiteUrl}
-                            </p>
-                        )}
-                    </div>
-                ))}
-            </div>
-
-            {filtered.length === 0 && (
-                <div className="card text-center py-16">
-                    <Bot className="w-12 h-12 text-[var(--text-dim)] mx-auto mb-4" />
-                    <p className="text-sm text-[var(--text-muted)]">
-                        {search ? 'No bots match your search' : 'No bots created yet'}
-                    </p>
-                </div>
-            )}
+      {filtered.length === 0 ? (
+        <div className="p-8 rounded-xl border border-edge bg-surface/40 text-center">
+          <p className="text-[13px] text-fg-secondary">No bots found</p>
         </div>
-    );
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(bot => (
+            <div key={bot.id} className="flex items-center justify-between p-4 rounded-xl border border-edge bg-surface/40 hover:border-edge-light transition-all">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2.5 mb-0.5">
+                  <h3 className="text-[14px] font-semibold text-fg">{bot.name}</h3>
+                  <span className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${bot.is_active ? 'bg-success/10 text-success' : 'bg-fg-muted/10 text-fg-muted'}`}>{bot.is_active ? 'active' : 'inactive'}</span>
+                </div>
+                <p className="text-[12px] text-fg-muted">{bot.ownerEmail || 'Unknown'}</p>
+              </div>
+              <div className="flex items-center gap-4 text-[12px] text-fg-secondary shrink-0 ml-4">
+                <span>{bot.total_conversations || 0} chats</span>
+                <span>{new Date(bot.created_at).toLocaleDateString()}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }

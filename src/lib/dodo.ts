@@ -38,7 +38,7 @@ export const PLANS = {
     basic: {
         id: 'basic',
         name: 'Growth',
-        price: 39,
+        price: 9,
         productId: process.env.DODO_PRODUCT_GROWTH || null,
         description: 'For growing businesses',
         features: [
@@ -61,7 +61,7 @@ export const PLANS = {
     pro: {
         id: 'pro',
         name: 'Professional',
-        price: 129,
+        price: 29,
         popular: true,
         productId: process.env.DODO_PRODUCT_PRO || null,
         description: 'For scaling companies',
@@ -86,7 +86,7 @@ export const PLANS = {
     premium: {
         id: 'premium',
         name: 'Enterprise',
-        price: 399,
+        price: 79,
         productId: process.env.DODO_PRODUCT_ENTERPRISE || null,
         description: 'For large organizations',
         features: [

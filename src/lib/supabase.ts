@@ -1,18 +1,32 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// Browser / client-side Supabase (uses anon key)
-export const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Lazy-initialized browser Supabase client (safe for Vercel build)
+let _supabase: SupabaseClient | null = null;
+
+export function getSupabase(): SupabaseClient {
+    if (!_supabase) {
+        _supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+        );
+    }
+    return _supabase;
+}
+
+// Backwards-compatible export (getter proxy)
+export const supabase = new Proxy({} as SupabaseClient, {
+    get(_target, prop) {
+        return (getSupabase() as any)[prop];
+    },
+});
 
 // Server-side admin Supabase (uses service role key — bypasses RLS)
 let adminClient: SupabaseClient | null = null;
 export function getAdminClient() {
     if (!adminClient) {
         adminClient = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
+            process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+            process.env.SUPABASE_SERVICE_ROLE_KEY || ''
         );
     }
     return adminClient;
@@ -111,7 +125,7 @@ export interface Message {
 
 // ─── Helper queries ───────────────────────────────────────
 export async function getUserProfile(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -121,7 +135,7 @@ export async function getUserProfile(userId: string) {
 }
 
 export async function getUserBots(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
         .from('bots')
         .select('*, website:websites(*)')
         .eq('user_id', userId)
@@ -131,7 +145,7 @@ export async function getUserBots(userId: string) {
 }
 
 export async function getUserWebsites(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
         .from('websites')
         .select('*')
         .eq('user_id', userId)
@@ -141,7 +155,7 @@ export async function getUserWebsites(userId: string) {
 }
 
 export async function getBotConversations(botId: string, limit = 50) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
         .from('conversations')
         .select('*, messages(*)')
         .eq('bot_id', botId)
@@ -152,8 +166,8 @@ export async function getBotConversations(botId: string, limit = 50) {
 }
 
 export async function getConversationsForUser(userId: string, limit = 50) {
-    // Get all bots for user, then all conversations
-    const { data: bots } = await supabase
+    const sb = getSupabase();
+    const { data: bots } = await sb
         .from('bots')
         .select('id, name')
         .eq('user_id', userId);
@@ -161,7 +175,7 @@ export async function getConversationsForUser(userId: string, limit = 50) {
     if (!bots || bots.length === 0) return [];
 
     const botIds = bots.map(b => b.id);
-    const { data, error } = await supabase
+    const { data, error } = await sb
         .from('conversations')
         .select('*, bot:bots(id, name), messages(*)')
         .in('bot_id', botIds)
@@ -172,7 +186,7 @@ export async function getConversationsForUser(userId: string, limit = 50) {
 }
 
 export async function getWebsitePages(websiteId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
         .from('pages')
         .select('*')
         .eq('website_id', websiteId)
@@ -183,21 +197,21 @@ export async function getWebsitePages(websiteId: string) {
 
 // ─── Dashboard Stats ──────────────────────────────────────
 export async function getDashboardStats(userId: string) {
+    const sb = getSupabase();
     const bots = await getUserBots(userId);
     const botIds = bots.map(b => b.id);
 
     let totalConversations = 0;
     let resolvedCount = 0;
-    let totalMessages = 0;
 
     if (botIds.length > 0) {
-        const { count: convCount } = await supabase
+        const { count: convCount } = await sb
             .from('conversations')
             .select('*', { count: 'exact', head: true })
             .in('bot_id', botIds);
         totalConversations = convCount || 0;
 
-        const { count: resCount } = await supabase
+        const { count: resCount } = await sb
             .from('conversations')
             .select('*', { count: 'exact', head: true })
             .in('bot_id', botIds)

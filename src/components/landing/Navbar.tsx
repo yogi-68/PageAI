@@ -1,112 +1,138 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Sparkles, Menu, X, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ThemeToggle } from '@/lib/theme';
 
-const navLinks = [
-    { label: 'Features', href: '#features' },
-    { label: 'How It Works', href: '#how-it-works' },
-    { label: 'Pricing', href: '#pricing' },
-    { label: 'FAQ', href: '#faq' },
+const links = [
+  { label: 'Features', href: '#features' },
+  { label: 'How It Works', href: '#how-it-works' },
+  { label: 'Pricing', href: '#pricing' },
+  { label: 'FAQ', href: '#faq' },
 ];
 
 export default function Navbar() {
-    const [scrolled, setScrolled] = useState(false);
-    const [mobileOpen, setMobileOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-    useEffect(() => {
-        const handleScroll = () => setScrolled(window.scrollY > 20);
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
-    return (
-        <>
-            <nav
-                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled
-                        ? 'py-2'
-                        : 'py-4'
-                    }`}
+  return (
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      scrolled
+        ? 'bg-bg/80 backdrop-blur-2xl border-b border-edge/50'
+        : 'bg-transparent'
+    }`}>
+      <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center transition-all duration-300 group-hover:bg-primary/15 group-hover:border-primary/30">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H7l-3 3V11H4a2 2 0 01-2-2V4z" className="fill-primary" />
+              <circle cx="6" cy="6.5" r="0.75" className="fill-white dark:fill-[#edf0f7]" />
+              <circle cx="8.5" cy="6.5" r="0.75" className="fill-white dark:fill-[#edf0f7]" />
+              <circle cx="11" cy="6.5" r="0.75" className="fill-white dark:fill-[#edf0f7]" />
+            </svg>
+          </div>
+          <span className="text-[17px] font-semibold text-fg tracking-tight">PageAI</span>
+        </Link>
+
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center gap-8">
+          {links.map((l) => (
+            <Link
+              key={l.label}
+              href={l.href}
+              className="text-[13.5px] text-fg-secondary hover:text-fg transition-colors duration-200"
             >
-                <div className="container-wide mx-auto px-6">
-                    <div
-                        className={`flex items-center justify-between rounded-2xl px-5 py-3 transition-all duration-500 ${scrolled
-                                ? 'bg-[rgba(10,10,22,0.85)] backdrop-blur-xl border border-[rgba(255,255,255,0.05)] shadow-[0_8px_32px_rgba(0,0,0,0.4)]'
-                                : 'bg-transparent'
-                            }`}
-                    >
-                        {/* Logo */}
-                        <Link href="/" className="flex items-center gap-2.5 group">
-                            <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/40 transition-shadow">
-                                <Sparkles className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="text-lg font-bold tracking-tight">
-                                Page<span className="gradient-text">AI</span>
-                            </span>
-                        </Link>
+              {l.label}
+            </Link>
+          ))}
+        </div>
 
-                        {/* Desktop links */}
-                        <div className="hidden md:flex items-center gap-1">
-                            {navLinks.map((link) => (
-                                <a
-                                    key={link.href}
-                                    href={link.href}
-                                    className="px-4 py-2 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-hover)] transition-all duration-200"
-                                >
-                                    {link.label}
-                                </a>
-                            ))}
-                        </div>
+        {/* Desktop Actions */}
+        <div className="hidden md:flex items-center gap-3">
+          <ThemeToggle />
+          <Link
+            href="/login"
+            className="text-[13.5px] text-fg-secondary hover:text-fg transition-colors duration-200 px-3 py-1.5"
+          >
+            Log in
+          </Link>
+          <Link
+            href="/signup"
+            className="text-[13.5px] font-medium px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white transition-all duration-300 hover:shadow-[0_0_24px_rgba(79,109,245,0.25)]"
+          >
+            Get Started
+          </Link>
+        </div>
 
-                        {/* Right */}
-                        <div className="hidden md:flex items-center gap-3">
-                            <Link
-                                href="/login"
-                                className="btn-ghost text-sm"
-                            >
-                                Log in
-                            </Link>
-                            <Link href="/signup" className="btn-primary text-sm !py-2.5 !px-5">
-                                Start Free
-                                <ChevronRight className="w-4 h-4" />
-                            </Link>
-                        </div>
+        {/* Mobile Toggle */}
+        <button
+          onClick={() => setOpen(!open)}
+          className="md:hidden p-2 text-fg-secondary hover:text-fg transition-colors"
+          aria-label="Toggle menu"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            {open ? (
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            ) : (
+              <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+            )}
+          </svg>
+        </button>
+      </div>
 
-                        {/* Mobile toggle */}
-                        <button
-                            onClick={() => setMobileOpen(!mobileOpen)}
-                            className="md:hidden p-2 rounded-xl hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
-                        >
-                            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                        </button>
-                    </div>
-
-                    {/* Mobile menu */}
-                    {mobileOpen && (
-                        <div className="md:hidden mt-2 rounded-2xl bg-[rgba(10,10,22,0.95)] backdrop-blur-xl border border-[var(--border-default)] p-4 space-y-1 animate-fade-in">
-                            {navLinks.map((link) => (
-                                <a
-                                    key={link.href}
-                                    href={link.href}
-                                    onClick={() => setMobileOpen(false)}
-                                    className="block px-4 py-3 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-hover)] transition-colors"
-                                >
-                                    {link.label}
-                                </a>
-                            ))}
-                            <div className="pt-3 border-t border-[var(--border-default)] space-y-2">
-                                <Link href="/login" className="block px-4 py-3 rounded-xl text-sm text-center text-[var(--text-secondary)] hover:text-white">
-                                    Log in
-                                </Link>
-                                <Link href="/signup" className="btn-primary w-full text-sm">
-                                    Start Free <ChevronRight className="w-4 h-4" />
-                                </Link>
-                            </div>
-                        </div>
-                    )}
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className="md:hidden bg-surface/95 backdrop-blur-2xl border-b border-edge overflow-hidden"
+          >
+            <div className="px-6 py-4 space-y-1">
+              {links.map((l) => (
+                <Link
+                  key={l.label}
+                  href={l.href}
+                  onClick={() => setOpen(false)}
+                  className="block text-[14px] text-fg-secondary hover:text-fg py-2.5 transition-colors"
+                >
+                  {l.label}
+                </Link>
+              ))}
+              <div className="pt-3 mt-2 border-t border-edge space-y-2">
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-[14px] text-fg-secondary">Theme</span>
+                  <ThemeToggle />
                 </div>
-            </nav>
-        </>
-    );
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  className="block text-[14px] text-fg-secondary hover:text-fg py-2.5"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/signup"
+                  onClick={() => setOpen(false)}
+                  className="block text-[14px] font-medium text-center px-4 py-2.5 rounded-lg bg-primary hover:bg-primary-hover text-white transition-all"
+                >
+                  Get Started
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
+  );
 }

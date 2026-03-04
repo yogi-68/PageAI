@@ -1,6 +1,14 @@
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth';
+import { ThemeProvider } from '@/lib/theme';
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -49,9 +57,9 @@ const jsonLd = {
       description: 'AI-powered website chatbot platform using RAG technology for accurate, citation-backed answers.',
       offers: [
         { '@type': 'Offer', name: 'Starter', price: '0', priceCurrency: 'USD' },
-        { '@type': 'Offer', name: 'Growth', price: '39', priceCurrency: 'USD' },
-        { '@type': 'Offer', name: 'Professional', price: '129', priceCurrency: 'USD' },
-        { '@type': 'Offer', name: 'Enterprise', price: '399', priceCurrency: 'USD' },
+        { '@type': 'Offer', name: 'Growth', price: '9', priceCurrency: 'USD' },
+        { '@type': 'Offer', name: 'Professional', price: '29', priceCurrency: 'USD' },
+        { '@type': 'Offer', name: 'Enterprise', price: '79', priceCurrency: 'USD' },
       ],
       aggregateRating: { '@type': 'AggregateRating', ratingValue: '4.9', reviewCount: '2847', bestRating: '5' },
     },
@@ -86,19 +94,21 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Prevent flash of wrong theme */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('pageai-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()` }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="noise">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+      <body className="antialiased">
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

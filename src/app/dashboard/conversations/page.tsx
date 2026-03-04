@@ -1,183 +1,131 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
-import {
-    MessageSquare, Bot, Search, ThumbsUp, ThumbsDown,
-    Clock, Globe, ChevronRight, Loader2,
-} from 'lucide-react';
+
+interface Conversation {
+  id: string;
+  bot_id: string;
+  visitor_id: string;
+  created_at: string;
+  messages: { role: string; content: string; timestamp: string }[];
+  bot_name?: string;
+}
 
 export default function ConversationsPage() {
-    const { user } = useAuth();
-    const [conversations, setConversations] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selected, setSelected] = useState<Conversation | null>(null);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (!user) return;
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data: bots } = await supabase.from('bots').select('id, name').eq('user_id', user.id);
+      const botMap: Record<string, string> = {};
+      (bots || []).forEach(b => { botMap[b.id] = b.name; });
 
-        async function fetchConversations() {
-            try {
-                // Get user's bot IDs
-                const { data: bots } = await supabase
-                    .from('bots')
-                    .select('id, name')
-                    .eq('user_id', user!.id);
+      const { data } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-                if (!bots || bots.length === 0) {
-                    setLoading(false);
-                    return;
-                }
+      const convos = (data || []).map(c => ({ ...c, bot_name: botMap[c.bot_id] || 'Unknown Bot' }));
+      setConversations(convos);
+      if (convos.length > 0) setSelected(convos[0]);
+      setLoading(false);
+    })();
+  }, [user]);
 
-                const botIds = bots.map(b => b.id);
-                const { data: convs } = await supabase
-                    .from('conversations')
-                    .select('*, messages(role, content, sources, created_at, response_time_ms)')
-                    .in('bot_id', botIds)
-                    .order('created_at', { ascending: false })
-                    .limit(50);
+  const filtered = conversations.filter(c =>
+    c.bot_name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.visitor_id?.toLowerCase().includes(search.toLowerCase()) ||
+    c.messages?.some(m => m.content.toLowerCase().includes(search.toLowerCase()))
+  );
 
-                // Map bot names
-                const botMap = Object.fromEntries(bots.map(b => [b.id, b.name]));
-                const mapped = (convs || []).map(c => ({
-                    ...c,
-                    botName: botMap[c.bot_id] || 'Unknown',
-                    question: c.messages?.find((m: any) => m.role === 'user')?.content || 'No question',
-                    answer: c.messages?.find((m: any) => m.role === 'assistant')?.content || 'No answer',
-                    sources: c.messages?.find((m: any) => m.role === 'assistant')?.sources || [],
-                }));
+  const timeAgo = (d: string) => {
+    const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+    if (s < 60) return 'just now';
+    if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+    if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+    return `${Math.floor(s / 86400)}d ago`;
+  };
 
-                setConversations(mapped);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        }
+  if (loading) return <div className="flex items-center justify-center py-32"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
-        fetchConversations();
-    }, [user]);
+  return (
+    <div className="space-y-6">
+      <h1 className="text-[22px] font-bold text-fg tracking-[-0.02em]">Conversations</h1>
 
-    const selected = conversations.find(c => c.id === selectedId);
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center py-24">
-                <Loader2 className="w-8 h-8 animate-spin text-[var(--primary-500)]" />
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold">Conversations</h1>
-                <p className="text-[var(--text-secondary)] text-sm mt-1">Review chatbot conversations</p>
-            </div>
-
-            <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                <input type="text" placeholder="Search conversations..." className="input !pl-10" />
-            </div>
-
-            {conversations.length === 0 ? (
-                <div className="card text-center py-16">
-                    <MessageSquare className="w-12 h-12 text-[var(--text-dim)] mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No conversations yet</h3>
-                    <p className="text-sm text-[var(--text-muted)] max-w-sm mx-auto">
-                        Conversations will appear here once visitors start chatting with your bots.
-                        Make sure you&apos;ve embedded the widget on your website.
-                    </p>
-                </div>
-            ) : (
-                <div className="grid lg:grid-cols-5 gap-6">
-                    <div className="lg:col-span-3 card !p-0">
-                        <div className="divide-y divide-[var(--border-subtle)]">
-                            {conversations.map((conv) => (
-                                <div
-                                    key={conv.id}
-                                    onClick={() => setSelectedId(conv.id)}
-                                    className={`px-5 py-4 cursor-pointer transition-colors ${selectedId === conv.id
-                                            ? 'bg-[var(--primary-glow)] border-l-2 border-l-[var(--primary-500)]'
-                                            : 'hover:bg-[var(--bg-hover)]'
-                                        }`}
-                                >
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-8 h-8 rounded-lg bg-[var(--bg-card)] border border-[var(--border-default)] flex items-center justify-center flex-shrink-0">
-                                            <MessageSquare className="w-4 h-4 text-[var(--text-muted)]" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <p className="text-sm font-medium truncate flex-1">{conv.question}</p>
-                                                <span className={`badge text-[10px] !py-0 flex-shrink-0 ${conv.status === 'resolved' ? 'badge-emerald' :
-                                                        conv.status === 'escalated' ? 'badge-rose' : 'badge-amber'
-                                                    }`}>
-                                                    {conv.status}
-                                                </span>
-                                            </div>
-                                            <p className="text-xs text-[var(--text-muted)] truncate mb-1.5">{conv.answer}</p>
-                                            <div className="flex items-center gap-3 text-[10px] text-[var(--text-dim)]">
-                                                <span className="flex items-center gap-1"><Bot className="w-3 h-3" />{conv.botName}</span>
-                                                <span className="flex items-center gap-1">
-                                                    <Clock className="w-3 h-3" />
-                                                    {new Date(conv.created_at).toLocaleString()}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="lg:col-span-2">
-                        {selected ? (
-                            <div className="card space-y-4 sticky top-20">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="font-semibold text-sm">{selected.visitor_id || 'Anonymous'}</h3>
-                                    <span className={`badge text-xs ${selected.status === 'resolved' ? 'badge-emerald' : 'badge-rose'}`}>
-                                        {selected.status}
-                                    </span>
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="bg-[var(--bg-elevated)] rounded-xl p-3 border border-[var(--border-subtle)]">
-                                        <p className="text-[10px] text-[var(--text-muted)]">Messages</p>
-                                        <p className="text-lg font-bold">{selected.message_count || selected.messages?.length || 0}</p>
-                                    </div>
-                                    <div className="bg-[var(--bg-elevated)] rounded-xl p-3 border border-[var(--border-subtle)]">
-                                        <p className="text-[10px] text-[var(--text-muted)]">Rating</p>
-                                        <p className="text-lg font-bold">{selected.satisfaction_rating ? `${selected.satisfaction_rating}/5` : '—'}</p>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] text-[var(--text-muted)] mb-1.5">Question</p>
-                                    <p className="text-sm bg-[var(--bg-elevated)] rounded-xl p-3 border border-[var(--border-subtle)]">{selected.question}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] text-[var(--text-muted)] mb-1.5">Answer</p>
-                                    <p className="text-sm bg-[var(--bg-elevated)] rounded-xl p-3 border border-[var(--border-subtle)]">{selected.answer}</p>
-                                </div>
-                                {selected.sources?.length > 0 && (
-                                    <div>
-                                        <p className="text-[10px] text-[var(--text-muted)] mb-1.5">Sources</p>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {selected.sources.map((s: any, i: number) => (
-                                                <span key={i} className="badge text-[10px]">{s.title || s.url}</span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="card text-center py-12">
-                                <MessageSquare className="w-10 h-10 text-[var(--text-dim)] mx-auto mb-3 opacity-30" />
-                                <p className="text-sm text-[var(--text-muted)]">Select a conversation</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
+      {conversations.length === 0 ? (
+        <div className="p-12 rounded-xl border border-edge bg-surface/40 text-center">
+          <h2 className="text-[17px] font-semibold text-fg mb-1">No conversations yet</h2>
+          <p className="text-[13px] text-fg-secondary max-w-[380px] mx-auto">Conversations will appear here once visitors start chatting with your bots</p>
         </div>
-    );
+      ) : (
+        <div className="flex border border-edge rounded-xl overflow-hidden bg-surface/30 h-[calc(100vh-200px)] min-h-[500px]">
+          {/* Sidebar */}
+          <div className="w-[320px] border-r border-edge flex flex-col shrink-0">
+            <div className="p-3 border-b border-edge">
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search conversations..." className="w-full px-3 py-2 rounded-lg border border-edge bg-bg/60 text-[13px] text-fg placeholder:text-fg-muted focus:outline-none focus:border-primary/50 transition-all" />
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {filtered.map(c => {
+                const lastMsg = c.messages?.[c.messages.length - 1];
+                const isActive = selected?.id === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelected(c)}
+                    className={`w-full text-left p-3.5 border-b border-edge transition-colors ${isActive ? 'bg-primary/[0.06]' : 'hover:bg-surface-elevated/30'}`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[13px] font-medium text-fg truncate">{c.bot_name}</span>
+                      <span className="text-[11px] text-fg-muted shrink-0 ml-2">{timeAgo(c.created_at)}</span>
+                    </div>
+                    <p className="text-[12px] text-fg-secondary truncate mb-1">{lastMsg?.content || 'No messages'}</p>
+                    <span className="text-[11px] text-fg-muted">{c.messages?.length || 0} messages</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Thread */}
+          <div className="flex-1 flex flex-col min-w-0">
+            {selected ? (
+              <>
+                <div className="flex items-center justify-between px-5 py-3 border-b border-edge bg-surface/40">
+                  <div>
+                    <h3 className="text-[14px] font-semibold text-fg">{selected.bot_name}</h3>
+                    <p className="text-[12px] text-fg-muted">Visitor {selected.visitor_id?.slice(0, 8)} · {new Date(selected.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-md bg-surface-elevated text-[11px] text-fg-secondary">{selected.messages?.length || 0} messages</span>
+                </div>
+                <div className="flex-1 overflow-y-auto p-5 space-y-3">
+                  {(selected.messages || []).map((m, i) => (
+                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[70%] px-4 py-2.5 rounded-xl text-[13px] leading-relaxed ${
+                        m.role === 'user'
+                          ? 'bg-primary text-white rounded-br-sm'
+                          : 'bg-surface-elevated border border-edge text-fg rounded-bl-sm'
+                      }`}>
+                        {m.content}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-[13px] text-fg-muted">Select a conversation</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

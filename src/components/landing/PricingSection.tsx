@@ -1,177 +1,151 @@
-"use client";
+﻿'use client';
 
-import { Check, Sparkles, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { useState } from 'react';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { Check } from 'lucide-react';
 
 const plans = [
-    {
-        id: "free",
-        name: "Starter",
-        price: 0,
-        period: "forever",
-        description: "Perfect for trying out PageAI",
-        cta: "Start Free",
-        features: [
-            "1 Website",
-            "1,000 Q&A / month",
-            "10 Pages indexed",
-            "GPT-3.5 Turbo",
-            "Basic analytics",
-            "PageAI branding",
-            "Community support",
-        ],
-    },
-    {
-        id: "basic",
-        name: "Growth",
-        price: 39,
-        period: "/month",
-        description: "For growing businesses",
-        cta: "Start Growth Plan",
-        features: [
-            "3 Websites",
-            "10,000 Q&A / month",
-            "50 Pages indexed",
-            "GPT-4 Turbo",
-            "Advanced analytics",
-            "Remove branding",
-            "Email support",
-            "Custom bot persona",
-            "Lead capture forms",
-        ],
-    },
-    {
-        id: "pro",
-        name: "Professional",
-        price: 129,
-        period: "/month",
-        popular: true,
-        description: "For scaling companies",
-        cta: "Start Pro Plan",
-        features: [
-            "10 Websites",
-            "50,000 Q&A / month",
-            "200 Pages indexed",
-            "GPT-4 + Claude 3.5",
-            "Priority support",
-            "API access",
-            "Webhook integrations",
-            "Multi-language (50+)",
-            "3 Team seats",
-            "AI Actions",
-            "Custom domain",
-        ],
-    },
-    {
-        id: "premium",
-        name: "Enterprise",
-        price: 399,
-        period: "/month",
-        description: "For large organizations",
-        cta: "Contact Sales",
-        features: [
-            "Unlimited Websites",
-            "200,000+ Q&A / month",
-            "1,000+ Pages indexed",
-            "All AI Models",
-            "Dedicated support & SLA",
-            "SSO / SAML",
-            "Custom integrations",
-            "White-label option",
-            "On-premises deployment",
-            "Unlimited team seats",
-            "Advanced AI Actions",
-            "99.99% uptime SLA",
-        ],
-    },
+  {
+    name: 'Starter',
+    desc: 'For trying things out',
+    price: { m: 0, a: 0 },
+    cta: 'Start Free',
+    href: '/signup',
+    features: ['1 chatbot', '50 messages/month', '30 pages indexed', 'GPT-3.5 Turbo', 'Basic analytics'],
+  },
+  {
+    name: 'Growth',
+    desc: 'For growing businesses',
+    price: { m: 9, a: 7 },
+    cta: 'Get Started',
+    href: '/signup',
+    popular: true,
+    features: ['3 chatbots', '2,000 messages/month', '200 pages indexed', 'GPT-4o access', 'Full analytics', 'Custom branding', 'Email support'],
+  },
+  {
+    name: 'Professional',
+    desc: 'For scaling teams',
+    price: { m: 29, a: 23 },
+    cta: 'Get Started',
+    href: '/signup',
+    features: ['10 chatbots', '10,000 messages/month', '1,000 pages indexed', 'GPT-4o access', 'API access', 'Priority support', 'Remove branding'],
+  },
+  {
+    name: 'Enterprise',
+    desc: 'Custom at scale',
+    price: { m: 79, a: 63 },
+    cta: 'Contact Sales',
+    href: '/signup',
+    features: ['Unlimited chatbots', 'Unlimited messages', 'Unlimited pages', 'Custom models', 'Dedicated support', 'SSO & SAML', 'SLA guarantee'],
+  },
 ];
 
 export default function PricingSection() {
-    return (
-        <section id="pricing" className="section-padding relative">
-            <div className="absolute inset-0 bg-dots opacity-20" />
-            <div className="relative container-wide px-6">
-                {/* Header */}
-                <div className="text-center mb-16">
-                    <div className="badge mb-4 inline-flex">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        Simple Pricing
-                    </div>
-                    <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-                        Transparent Pricing,
-                        <br />
-                        <span className="gradient-text">No Hidden Fees</span>
-                    </h2>
-                    <p className="text-text-secondary text-lg max-w-2xl mx-auto">
-                        Start free, scale as you grow. Every plan includes our core RAG
-                        engine, embeddable widget, and real-time analytics.
-                    </p>
+  const [annual, setAnnual] = useState(false);
+
+  return (
+    <section id="pricing" className="py-24 relative">
+      <div className="max-w-[1200px] mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-100px' }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
+        >
+          <p className="text-[13px] font-medium uppercase tracking-[0.1em] text-primary mb-4">Pricing</p>
+          <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.15] tracking-[-0.03em] mb-4">
+            Simple, transparent pricing
+          </h2>
+          <p className="text-[16px] text-fg-secondary max-w-[420px] mx-auto leading-relaxed">
+            Start free. Upgrade when ready. Cancel anytime.
+          </p>
+        </motion.div>
+
+        {/* Toggle */}
+        <div className="flex items-center justify-center gap-3 mb-12">
+          <span className={`text-[13.5px] transition-colors duration-200 ${!annual ? 'text-fg' : 'text-fg-muted'}`}>
+            Monthly
+          </span>
+          <button
+            onClick={() => setAnnual(!annual)}
+            className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${annual ? 'bg-primary' : 'bg-edge-light'}`}
+          >
+            <div
+              className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform duration-300 ${annual ? 'left-6' : 'left-1'}`}
+            />
+          </button>
+          <span className={`text-[13.5px] transition-colors duration-200 ${annual ? 'text-fg' : 'text-fg-muted'}`}>
+            Annual <span className="text-success text-[12px]">Save 20%</span>
+          </span>
+        </div>
+
+        {/* Plans */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {plans.map((plan, i) => (
+            <motion.div
+              key={plan.name}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ delay: i * 0.08, duration: 0.4 }}
+              className={`relative p-6 rounded-2xl border transition-all duration-300 flex flex-col ${
+                plan.popular
+                  ? 'border-primary/40 bg-primary/[0.04] hover:border-primary/60'
+                  : 'border-edge bg-surface/40 hover:bg-surface/70 hover:border-edge-light'
+              }`}
+            >
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="px-3 py-1 rounded-full bg-primary text-white text-[11px] font-medium">
+                    Most Popular
+                  </span>
                 </div>
+              )}
 
-                {/* Pricing Grid */}
-                <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5 max-w-6xl mx-auto">
-                    {plans.map((plan) => (
-                        <div
-                            key={plan.id}
-                            className={`relative flex flex-col rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${plan.popular
-                                    ? "gradient-border bg-surface-card glow-purple"
-                                    : "bg-surface-card border border-border hover:border-border-light"
-                                }`}
-                        >
-                            {plan.popular && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                    <div className="gradient-bg text-white text-xs font-semibold px-4 py-1 rounded-full shadow-lg shadow-purple-500/30">
-                                        Most Popular
-                                    </div>
-                                </div>
-                            )}
+              <div className="mb-5">
+                <h3 className="text-[17px] font-semibold text-fg tracking-[-0.01em]">{plan.name}</h3>
+                <p className="text-[13px] text-fg-muted mt-0.5">{plan.desc}</p>
+              </div>
 
-                            <div className="mb-6">
-                                <h3 className="text-lg font-semibold mb-1">{plan.name}</h3>
-                                <p className="text-sm text-text-muted mb-4">
-                                    {plan.description}
-                                </p>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-4xl font-bold">
-                                        ${plan.price}
-                                    </span>
-                                    <span className="text-text-muted text-sm">
-                                        {plan.period}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <Link
-                                href="/signup"
-                                className={`w-full text-center mb-6 ${plan.popular
-                                        ? "btn-primary"
-                                        : "btn-secondary"
-                                    }`}
-                            >
-                                {plan.cta}
-                                <ArrowRight className="w-4 h-4" />
-                            </Link>
-
-                            <ul className="space-y-3 flex-1">
-                                {plan.features.map((feature) => (
-                                    <li key={feature} className="flex items-start gap-2.5">
-                                        <Check className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                                        <span className="text-sm text-text-secondary">
-                                            {feature}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
+              <div className="mb-6">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-[36px] font-bold text-fg tracking-[-0.03em]">
+                    ${annual ? plan.price.a : plan.price.m}
+                  </span>
+                  {plan.price.m > 0 && (
+                    <span className="text-[14px] text-fg-muted">/mo</span>
+                  )}
                 </div>
+                {plan.price.m === 0 && (
+                  <p className="text-[13px] text-fg-muted">Free forever</p>
+                )}
+              </div>
 
-                {/* Bottom note */}
-                <p className="text-center text-sm text-text-muted mt-10">
-                    All plans include a 14-day free trial of Pro features. No credit card
-                    required. Cancel anytime.
-                </p>
-            </div>
-        </section>
-    );
+              <Link
+                href={plan.href}
+                className={`block text-center text-[13.5px] font-medium py-2.5 rounded-lg transition-all duration-300 mb-6 ${
+                  plan.popular
+                    ? 'bg-primary hover:bg-primary-hover text-white hover:shadow-[0_0_24px_rgba(79,109,245,0.25)]'
+                    : 'bg-edge/50 hover:bg-edge-light text-fg'
+                }`}
+              >
+                {plan.cta}
+              </Link>
+
+              <ul className="space-y-2.5 flex-1">
+                {plan.features.map((f) => (
+                  <li key={f} className="flex items-start gap-2.5">
+                    <Check className="w-3.5 h-3.5 text-success mt-0.5 shrink-0" />
+                    <span className="text-[13px] text-fg-secondary">{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
