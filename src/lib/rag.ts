@@ -5,9 +5,8 @@
  * Target: 95-98% answer accuracy with source citations
  */
 
-import { openai } from './openai';
+import { getOpenAI, generateEmbedding } from './openai';
 import { getAdminClient } from './supabase';
-import { generateEmbedding } from './openai';
 import { getCache, setCache } from './cache';
 import crypto from 'crypto';
 
@@ -56,7 +55,7 @@ async function rewriteQuery(query: string): Promise<string> {
     if (query.split(' ').length <= 3) return query;
 
     try {
-        const response = await openai.chat.completions.create({
+        const response = await getOpenAI().chat.completions.create({
             model: 'gpt-4.1-mini',
             messages: [
                 {
@@ -320,7 +319,7 @@ export async function executeRAG(
 5. If multiple sources provide information, synthesize them into a coherent answer.
 6. Never make up information that isn't in the context.`;
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
         model,
         messages: [
             { role: 'system', content: systemPrompt },
@@ -413,7 +412,7 @@ export async function executeRAGStream(
 6. Never make up information that isn't in the context.`;
 
     // 6. Stream the response
-    const openaiStream = await openai.chat.completions.create({
+    const openaiStream = await getOpenAI().chat.completions.create({
         model,
         messages: [
             { role: 'system', content: systemPrompt },

@@ -1,8 +1,23 @@
 import OpenAI from 'openai';
 import { getCachedEmbedding, setCachedEmbedding } from './cache';
 
-export const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY!,
+// Lazy-initialized OpenAI client (safe for Vercel build)
+let _openai: OpenAI | null = null;
+
+export function getOpenAI(): OpenAI {
+    if (!_openai) {
+        _openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY!,
+        });
+    }
+    return _openai;
+}
+
+// Backwards-compatible export (getter proxy)
+export const openai = new Proxy({} as OpenAI, {
+    get(_target, prop) {
+        return (getOpenAI() as any)[prop];
+    },
 });
 
 // ─── Embedding Generation (with caching) ──────────────────
@@ -11,7 +26,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     const cached = getCachedEmbedding(text);
     if (cached) return cached;
 
-    const response = await openai.embeddings.create({
+    const response = await getOpenAI().embeddings.create({
         model: 'text-embedding-3-small',
         input: text.substring(0, 8000), // Limit input length
     });
@@ -32,7 +47,7 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
 
     for (let i = 0; i < texts.length; i += batchSize) {
         const batch = texts.slice(i, i + batchSize).map(t => t.substring(0, 8000));
-        const response = await openai.embeddings.create({
+        const response = await getOpenAI().embeddings.create({
             model: 'text-embedding-3-small',
             input: batch,
         });
@@ -52,7 +67,7 @@ export async function generateAnswer(
 ) {
     const defaultSystem = `You are a helpful AI assistant. Answer questions ONLY based on the provided context. If the answer is not found in the context, politely say you don't have that information. Be professional, concise, and cite sources when possible.`;
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
         model,
         messages: [
             { role: 'system', content: systemPrompt || defaultSystem },
@@ -84,7 +99,7 @@ export async function generateAnswerStream(
 ) {
     const defaultSystem = `You are a helpful AI assistant. Answer questions ONLY based on the provided context. If the answer is not found in the context, politely say you don't have that information. Be professional, concise, and cite sources when possible.`;
 
-    return openai.chat.completions.create({
+    return getOpenAI().chat.completions.create({
         model,
         messages: [
             { role: 'system', content: systemPrompt || defaultSystem },
