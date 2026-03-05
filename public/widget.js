@@ -3,7 +3,7 @@
 (function () {
     "use strict";
 
-    const WIDGET_VERSION = "1.0.0";
+    const WIDGET_VERSION = "2.0.0";
     const API_BASE = window.PAGEAI_API || "https://api.pageai.io";
 
     // Get config from script tag
@@ -379,17 +379,84 @@
                     query,
                     botId: config.botId,
                     conversationId,
+                    stream: true,
                 }),
             });
 
-            const data = await res.json();
             removeTyping();
 
-            if (data.success) {
-                conversationId = data.conversationId;
-                addMessage("bot", data.answer, data.sources);
+            // Check if streaming response
+            const contentType = res.headers.get("content-type") || "";
+            if (contentType.includes("text/event-stream")) {
+                // SSE streaming
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let botText = "";
+                let sources = [];
+
+                // Create bot message bubble for streaming
+                const msg = document.createElement("div");
+                msg.className = "pageai-msg bot";
+                msg.innerHTML = `
+                  <div style="width:24px;height:24px;border-radius:50%;background:${config.color};flex-shrink:0;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/></svg></div>
+                  <div class="pageai-msg-bubble"></div>
+                `;
+                messages.appendChild(msg);
+                const bubble = msg.querySelector(".pageai-msg-bubble");
+
+                let buffer = "";
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop() || "";
+
+                    for (const line of lines) {
+                        if (line.startsWith("data: ")) {
+                            const data = line.slice(6);
+                            if (data === "[DONE]") continue;
+                            try {
+                                const parsed = JSON.parse(data);
+                                if (parsed.token) {
+                                    botText += parsed.token;
+                                    bubble.textContent = botText;
+                                } else if (parsed.conversationId) {
+                                    conversationId = parsed.conversationId;
+                                } else if (parsed.sources) {
+                                    sources = parsed.sources;
+                                }
+                            } catch (e) {
+                                // Non-JSON data line, skip
+                            }
+                        }
+                    }
+                    messages.scrollTop = messages.scrollHeight;
+                }
+
+                // Add sources if any
+                if (sources.length > 0) {
+                    const sourcesDiv = document.createElement("div");
+                    sourcesDiv.className = "pageai-sources";
+                    sources.forEach((s) => {
+                        const tag = document.createElement("a");
+                        tag.className = "pageai-source-tag";
+                        tag.href = s.url;
+                        tag.textContent = "\ud83d\udcc4 " + s.title;
+                        sourcesDiv.appendChild(tag);
+                    });
+                    messages.appendChild(sourcesDiv);
+                }
             } else {
-                addMessage("bot", "Sorry, I encountered an error. Please try again.");
+                // Fallback: non-streaming JSON response
+                const data = await res.json();
+                if (data.success) {
+                    conversationId = data.conversationId;
+                    addMessage("bot", data.answer, data.sources);
+                } else {
+                    addMessage("bot", "Sorry, I encountered an error. Please try again.");
+                }
             }
         } catch (err) {
             removeTyping();

@@ -2,27 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDodoClient, PLANS, PlanId } from '@/lib/dodo';
 import { getAdminClient } from '@/lib/supabase';
 
-// POST /api/billing/checkout — Create a Dodo Payments checkout session
 export async function POST(request: NextRequest) {
     try {
         const { planId, userId } = await request.json();
 
         if (!planId || !userId) {
-            return NextResponse.json(
-                { error: 'planId and userId are required' },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: 'planId and userId are required' }, { status: 400 });
         }
 
         const plan = PLANS[planId as PlanId];
         if (!plan || !plan.productId) {
-            return NextResponse.json(
-                { error: 'Invalid plan or no product configured' },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: 'Invalid plan or no product configured' }, { status: 400 });
         }
 
-        // Get user profile for email
         const admin = getAdminClient();
         const { data: profile } = await admin
             .from('profiles')
@@ -34,7 +26,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        // Create subscription via Dodo Payments
         const dodo = getDodoClient();
         const subscription = await dodo.subscriptions.create({
             billing: {
@@ -58,7 +49,6 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        // Store the dodo customer ID if we got one
         if (subscription.customer?.customer_id && !profile.dodo_customer_id) {
             await admin
                 .from('profiles')
@@ -73,9 +63,6 @@ export async function POST(request: NextRequest) {
         });
     } catch (error: any) {
         console.error('Dodo checkout error:', error);
-        return NextResponse.json(
-            { error: error.message || 'Failed to create checkout session' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: error.message || 'Failed to create checkout session' }, { status: 500 });
     }
 }

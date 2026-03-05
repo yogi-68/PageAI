@@ -1,14 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateEmbedding, generateAnswer } from '@/lib/openai';
-import { queryEmbeddings } from '@/lib/pinecone';
 import { getAdminClient } from '@/lib/supabase';
+import { executeRAG, executeRAGStream } from '@/lib/rag';
+import { rateLimitChat, verifyDomain, getClientIP, corsHeaders } from '@/lib/rate-limit';
 
+// POST /api/chat — Advanced RAG chat with streaming support
 export async function POST(request: NextRequest) {
+    const origin = request.headers.get('origin');
+
     try {
-        const { query, botId, conversationId, visitorId, pageUrl } = await request.json();
+        const { query, botId, conversationId, visitorId, pageUrl, stream: useStream } = await request.json();
 
         if (!query || !botId) {
-            return NextResponse.json({ error: 'query and botId are required' }, { status: 400 });
+            return NextResponse.json({ error: 'query and botId are required' }, { status: 400, headers: corsHeaders(origin) });
+        }
+
+        // Rate limiting
+        const ip = getClientIP(request);
+        const rateLimit = rateLimitChat(ip);
+        if (!rateLimit.allowed) {
+            return NextResponse.json(
+                { error: 'Rate limit exceeded', retryAfter: rateLimit.retryAfterMs },
+                { status: 429, headers: { ...corsHeaders(origin), 'Retry-After': String(Math.ceil(rateLimit.retryAfterMs / 1000)) } }
+            );
         }
 
         const admin = getAdminClient();
@@ -22,139 +35,207 @@ export async function POST(request: NextRequest) {
             .single();
 
         if (botErr || !bot) {
-            return NextResponse.json({ error: 'Bot not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Bot not found' }, { status: 404, headers: corsHeaders(origin) });
         }
 
         if (!bot.is_active) {
-            return NextResponse.json({ error: 'Bot is currently inactive' }, { status: 403 });
+            return NextResponse.json({ error: 'Bot is currently inactive' }, { status: 403, headers: corsHeaders(origin) });
         }
 
-        // 2. Check usage limits
+        // 2. Domain verification
+        if (bot.allowed_domains && bot.allowed_domains.length > 0) {
+            if (!verifyDomain(origin, bot.allowed_domains)) {
+                return NextResponse.json({ error: 'Domain not authorized' }, { status: 403, headers: corsHeaders(origin) });
+            }
+        }
+
+        // 3. Check usage limits
         const { data: profile } = await admin
             .from('profiles')
-            .select('monthly_question_count, monthly_question_limit')
+            .select('monthly_message_count, monthly_message_limit, overage_enabled')
             .eq('id', bot.user_id)
             .single();
 
-        if (profile && profile.monthly_question_count >= profile.monthly_question_limit) {
+        if (profile && profile.monthly_message_count >= profile.monthly_message_limit && !profile.overage_enabled) {
             return NextResponse.json({
-                error: 'Monthly question limit reached. Please upgrade your plan.',
+                error: 'Monthly message limit reached. Please upgrade your plan.',
                 limitReached: true,
-            }, { status: 429 });
+            }, { status: 429, headers: corsHeaders(origin) });
         }
 
-        // 3. Generate embedding for query
-        const queryVector = await generateEmbedding(query);
+        // 4. Execute RAG pipeline
+        const ragConfig = {
+            userId: bot.user_id,
+            dataSourceIds: bot.data_source_ids?.length > 0 ? bot.data_source_ids : undefined,
+            systemPrompt: bot.system_prompt || undefined,
+            model: bot.model as 'gpt-4.1-mini' | 'gpt-4.1' | 'auto',
+            temperature: bot.temperature || 0.2,
+            maxTokens: bot.max_tokens || 1024,
+            confidenceThreshold: bot.confidence_threshold || 0.65,
+            fallbackMessage: bot.fallback_message || undefined,
+        };
 
-        // 4. Search Pinecone for relevant content
-        const matches = await queryEmbeddings(queryVector, 5, { botId });
+        // Streaming mode
+        if (useStream) {
+            const { stream, metadata } = await executeRAGStream(query, botId, ragConfig);
 
-        // Build context from matched chunks
-        const contextChunks = matches
-            .filter((m: any) => (m.score || 0) > 0.3)
-            .map((m: any) => ({
-                text: m.metadata?.text || '',
-                pageUrl: m.metadata?.pageUrl || '',
-                pageTitle: m.metadata?.pageTitle || '',
-                score: m.score || 0,
-            }));
+            // Save conversation async (don't block stream)
+            metadata.then(async (meta) => {
+                try {
+                    await saveConversation(admin, {
+                        botId,
+                        conversationId,
+                        visitorId,
+                        pageUrl,
+                        query,
+                        answer: '[streamed]',
+                        sources: meta.sources,
+                        model: meta.model,
+                        responseTimeMs: meta.responseTimeMs,
+                        confidence: meta.confidence,
+                        queryRewrite: meta.queryRewrite,
+                        chunksRetrieved: meta.chunksRetrieved,
+                    });
+                    await admin.rpc('increment_message_count', {
+                        p_user_id: bot.user_id,
+                        p_bot_id: botId,
+                    });
+                } catch (e) {
+                    console.error('Failed to save streamed conversation:', e);
+                }
+            });
 
-        const context = contextChunks.map((c: any) => c.text).join('\n\n---\n\n');
-
-        // 5. Generate answer using LLM
-        const systemPrompt = bot.system_prompt ||
-            `You are a helpful AI assistant for the website "${bot.website?.name || bot.name}". 
-Answer questions based ONLY on the provided context. If the context doesn't contain the answer, 
-say you don't have that information and suggest the user contact support. 
-Always be friendly, concise, and professional. Do NOT make up information.`;
-
-        const result = await generateAnswer(query, context, systemPrompt, bot.model);
-        const answerText = result.answer || '';
-        const responseTime = Date.now() - startTime;
-
-        // 6. Build source citations
-        const sources = contextChunks
-            .filter((c: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.pageUrl === c.pageUrl) === i)
-            .slice(0, 3)
-            .map((c: any) => ({
-                url: c.pageUrl,
-                title: c.pageTitle,
-                relevance: Math.round(c.score * 100) / 100,
-            }));
-
-        // 7. Save conversation and message to Supabase
-        let convId = conversationId;
-        if (!convId) {
-            const { data: conv, error: convErr } = await admin
-                .from('conversations')
-                .insert({
-                    bot_id: botId,
-                    visitor_id: visitorId || `anon_${Date.now()}`,
-                    visitor_page_url: pageUrl || null,
-                    status: 'active',
-                    message_count: 0,
-                })
-                .select()
-                .single();
-            if (convErr) throw convErr;
-            convId = conv.id;
+            return new Response(stream, {
+                headers: {
+                    'Content-Type': 'text/event-stream',
+                    'Cache-Control': 'no-cache',
+                    Connection: 'keep-alive',
+                    ...corsHeaders(origin),
+                },
+            });
         }
 
-        // Save user message
-        await admin.from('messages').insert({
-            conversation_id: convId,
-            role: 'user',
-            content: query,
+        // Non-streaming mode
+        const result = await executeRAG(query, botId, ragConfig);
+
+        // 5. Save conversation and message
+        const convId = await saveConversation(admin, {
+            botId,
+            conversationId,
+            visitorId,
+            pageUrl,
+            query,
+            answer: result.answer,
+            sources: result.sources,
+            model: result.model,
+            responseTimeMs: result.responseTimeMs,
+            confidence: result.confidence,
+            queryRewrite: result.queryRewrite,
+            chunksRetrieved: result.chunksRetrieved,
         });
 
-        // Save assistant message
-        await admin.from('messages').insert({
-            conversation_id: convId,
-            role: 'assistant',
-            content: answerText,
-            sources,
-            model_used: bot.model,
-            response_time_ms: responseTime,
-        });
-
-        // Update conversation message count
-        await admin
-            .from('conversations')
-            .update({
-                message_count: (await admin.from('messages').select('id', { count: 'exact', head: true }).eq('conversation_id', convId)).count || 0,
-                updated_at: new Date().toISOString(),
-            })
-            .eq('id', convId);
-
-        // 8. Increment usage
-        await admin.rpc('increment_question_count', {
+        // 6. Increment usage
+        await admin.rpc('increment_message_count', {
             p_user_id: bot.user_id,
             p_bot_id: botId,
         });
 
         return NextResponse.json({
             success: true,
-            answer: answerText,
-            sources,
+            answer: result.answer,
+            sources: result.sources,
             conversationId: convId,
-            responseTimeMs: responseTime,
-        });
+            confidence: result.confidence,
+            model: result.model,
+            cached: result.cached,
+            responseTimeMs: result.responseTimeMs,
+        }, { headers: corsHeaders(origin) });
+
     } catch (error: any) {
         console.error('Chat error:', error);
         return NextResponse.json(
             { error: error.message || 'Failed to generate response' },
-            { status: 500 }
+            { status: 500, headers: corsHeaders(request.headers.get('origin')) }
         );
     }
 }
 
+// Save conversation + messages helper
+async function saveConversation(
+    admin: any,
+    params: {
+        botId: string;
+        conversationId?: string;
+        visitorId?: string;
+        pageUrl?: string;
+        query: string;
+        answer: string;
+        sources: any[];
+        model: string;
+        responseTimeMs: number;
+        confidence: number;
+        queryRewrite: string | null;
+        chunksRetrieved: number;
+    }
+): Promise<string> {
+    let convId = params.conversationId;
+
+    if (!convId) {
+        const { data: conv, error: convErr } = await admin
+            .from('conversations')
+            .insert({
+                bot_id: params.botId,
+                visitor_id: params.visitorId || `anon_${Date.now()}`,
+                visitor_page_url: params.pageUrl || null,
+                status: 'active',
+                message_count: 0,
+            })
+            .select()
+            .single();
+        if (convErr) throw convErr;
+        convId = conv.id;
+    }
+
+    // Save user message
+    await admin.from('messages').insert({
+        conversation_id: convId,
+        role: 'user',
+        content: params.query,
+    });
+
+    // Save assistant message
+    await admin.from('messages').insert({
+        conversation_id: convId,
+        role: 'assistant',
+        content: params.answer,
+        sources: params.sources,
+        model_used: params.model,
+        response_time_ms: params.responseTimeMs,
+        confidence_score: params.confidence,
+        query_rewrite: params.queryRewrite,
+        chunks_retrieved: params.chunksRetrieved,
+    });
+
+    // Update conversation message count
+    const { count } = await admin
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('conversation_id', convId);
+
+    await admin
+        .from('conversations')
+        .update({
+            message_count: count || 0,
+            updated_at: new Date().toISOString(),
+        })
+        .eq('id', convId);
+
+    return convId!;
+}
+
 // CORS preflight
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
     return NextResponse.json({}, {
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
-        },
+        headers: corsHeaders(request.headers.get('origin')),
     });
 }

@@ -38,11 +38,33 @@ export interface Profile {
     email: string;
     full_name: string | null;
     avatar_url: string | null;
-    plan: 'free' | 'basic' | 'pro' | 'premium';
+    plan: 'free' | 'starter' | 'growth' | 'scale' | 'enterprise';
     dodo_customer_id: string | null;
     dodo_subscription_id: string | null;
-    monthly_question_count: number;
-    monthly_question_limit: number;
+    monthly_message_count: number;
+    monthly_message_limit: number;
+    total_pages_indexed: number;
+    max_pages_indexed: number;
+    max_chatbots: number;
+    overage_enabled: boolean;
+    company: string | null;
+    api_access: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface DataSource {
+    id: string;
+    user_id: string;
+    type: 'website' | 'google_drive' | 'notion' | 'gitbook' | 'zendesk' | 'confluence' | 'file_upload' | 'api' | 'sitemap';
+    name: string;
+    config: Record<string, any>;
+    status: 'pending' | 'syncing' | 'indexed' | 'error' | 'paused';
+    last_synced_at: string | null;
+    sync_frequency: string;
+    documents_count: number;
+    total_chunks: number;
+    error_message: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -50,6 +72,7 @@ export interface Profile {
 export interface Website {
     id: string;
     user_id: string;
+    data_source_id: string | null;
     url: string;
     name: string | null;
     status: 'pending' | 'crawling' | 'indexed' | 'error';
@@ -57,6 +80,9 @@ export interface Website {
     total_words: number;
     last_crawled_at: string | null;
     crawl_frequency: string;
+    allowed_paths: string[];
+    blocked_paths: string[];
+    max_depth: number;
     created_at: string;
     updated_at: string;
 }
@@ -64,32 +90,45 @@ export interface Website {
 export interface Bot {
     id: string;
     user_id: string;
-    website_id: string;
+    website_id: string | null;
     name: string;
     system_prompt: string | null;
     welcome_message: string;
-    model: string;
+    model: 'gpt-4.1-mini' | 'gpt-4.1' | 'auto';
     primary_color: string;
     position: string;
     is_active: boolean;
     branding_enabled: boolean;
     total_conversations: number;
+    temperature: number;
+    max_tokens: number;
+    confidence_threshold: number;
+    fallback_message: string;
+    allowed_domains: string[];
+    data_source_ids: string[];
     created_at: string;
     updated_at: string;
     // joined data
     website?: Website;
 }
 
-export interface Page {
+export interface Document {
     id: string;
-    website_id: string;
-    url: string;
+    data_source_id: string;
+    user_id: string;
+    website_id: string | null;
+    external_id: string | null;
+    url: string | null;
     title: string | null;
     content: string | null;
+    content_hash: string | null;
     word_count: number;
+    doc_type: string;
+    metadata: Record<string, any>;
     status: string;
     last_indexed_at: string | null;
     created_at: string;
+    updated_at: string;
 }
 
 export interface Conversation {
@@ -112,7 +151,7 @@ export interface Conversation {
 export interface Message {
     id: string;
     conversation_id: string;
-    role: 'user' | 'assistant';
+    role: 'user' | 'assistant' | 'system';
     content: string;
     sources: { url: string; title: string; relevance: number }[];
     model_used: string | null;
@@ -120,8 +159,14 @@ export interface Message {
     completion_tokens: number;
     total_tokens: number;
     response_time_ms: number | null;
+    confidence_score: number | null;
+    query_rewrite: string | null;
+    chunks_retrieved: number;
     created_at: string;
 }
+
+// Legacy type alias for backward compatibility
+export type Page = Document;
 
 // ─── Helper queries ───────────────────────────────────────
 export async function getUserProfile(userId: string) {
@@ -152,6 +197,16 @@ export async function getUserWebsites(userId: string) {
         .order('created_at', { ascending: false });
     if (error) throw error;
     return (data || []) as Website[];
+}
+
+export async function getUserDataSources(userId: string) {
+    const { data, error } = await getSupabase()
+        .from('data_sources')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []) as DataSource[];
 }
 
 export async function getBotConversations(botId: string, limit = 50) {
@@ -187,12 +242,12 @@ export async function getConversationsForUser(userId: string, limit = 50) {
 
 export async function getWebsitePages(websiteId: string) {
     const { data, error } = await getSupabase()
-        .from('pages')
+        .from('documents')
         .select('*')
         .eq('website_id', websiteId)
         .order('created_at', { ascending: false });
     if (error) throw error;
-    return (data || []) as Page[];
+    return (data || []) as Document[];
 }
 
 // ─── Dashboard Stats ──────────────────────────────────────

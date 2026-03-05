@@ -26,10 +26,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { userId, websiteId, name, welcomeMessage, primaryColor, position, model, systemPrompt } = body;
+        const { userId, websiteId, name, welcomeMessage, primaryColor, position, model, systemPrompt, dataSourceIds } = body;
 
-        if (!userId || !websiteId) {
-            return NextResponse.json({ error: 'userId and websiteId required' }, { status: 400 });
+        if (!userId) {
+            return NextResponse.json({ error: 'userId required' }, { status: 400 });
         }
 
         const admin = getAdminClient();
@@ -37,15 +37,16 @@ export async function POST(request: NextRequest) {
             .from('bots')
             .insert({
                 user_id: userId,
-                website_id: websiteId,
+                website_id: websiteId || null,
                 name: name || 'AI Assistant',
-                welcome_message: welcomeMessage || 'Hi! 👋 Ask me anything about this website!',
+                welcome_message: welcomeMessage || 'Hi! How can I help you today?',
                 primary_color: primaryColor || '#6366f1',
                 position: position || 'right',
-                model: model || 'gpt-3.5-turbo',
+                model: model || 'gpt-4.1-mini',
                 system_prompt: systemPrompt || null,
                 is_active: true,
                 branding_enabled: true,
+                data_source_ids: dataSourceIds || [],
             })
             .select()
             .single();

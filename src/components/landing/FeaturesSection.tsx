@@ -1,18 +1,18 @@
 ﻿'use client';
 
 import { motion } from 'framer-motion';
-import { Brain, Globe, MessageSquare, Zap, Code2, Palette, BarChart3, Shield, Clock } from 'lucide-react';
+import { Brain, Globe, MessageSquare, Zap, Code2, Palette, BarChart3, Shield, Database } from 'lucide-react';
 
 const features = [
-  { icon: Brain, title: 'AI-Trained on Your Site', desc: 'Answers grounded in your real website content. Zero hallucinations, zero guesswork.' },
-  { icon: Globe, title: 'Auto Crawling', desc: 'We index every page, extract text, and build a vector knowledge base for your chatbot.' },
-  { icon: MessageSquare, title: 'Conversation History', desc: 'Full logs of every visitor interaction for insights and continuous improvement.' },
-  { icon: Zap, title: 'Instant Answers', desc: 'Sub-2 second responses powered by optimized vector search with real-time streaming.' },
+  { icon: Brain, title: 'Advanced RAG Pipeline', desc: 'Query rewriting, hybrid search, re-ranking, and confidence scoring for 95-98% answer accuracy.' },
+  { icon: Globe, title: 'Multi-Source Connectors', desc: 'Ingest from websites, Notion, Google Drive, Zendesk, Confluence, file uploads, and custom APIs.' },
+  { icon: MessageSquare, title: 'Streaming Responses', desc: 'Real-time token streaming via SSE for instant, natural-feeling conversations.' },
+  { icon: Zap, title: 'Smart Model Routing', desc: 'Automatically routes to GPT-4.1 for complex queries and GPT-4.1 Mini for simple ones — fast & cost-effective.' },
   { icon: Code2, title: 'One-Line Embed', desc: 'Copy one script tag. Works with React, WordPress, Shopify, and any website.' },
   { icon: Palette, title: 'Brand Matching', desc: 'Custom colors, welcome messages, personality, and positioning to match your brand.' },
-  { icon: BarChart3, title: 'Analytics Dashboard', desc: 'Understand visitor behavior with conversation insights and trending questions.' },
-  { icon: Shield, title: 'Enterprise Security', desc: 'Data isolation per namespace. Full encryption at rest and in transit.' },
-  { icon: Clock, title: '24/7 Availability', desc: 'Your AI never sleeps. Handle queries around the clock, no staffing needed.' },
+  { icon: BarChart3, title: 'Analytics Dashboard', desc: 'Understand visitor behavior with conversation insights, confidence metrics, and trending questions.' },
+  { icon: Shield, title: 'Enterprise Security', desc: 'Domain verification, rate limiting, data isolation, and full encryption at rest and in transit.' },
+  { icon: Database, title: 'Hybrid Search', desc: 'Combines vector similarity (pgvector) with BM25 full-text search for superior retrieval quality.' },
 ];
 
 export default function FeaturesSection() {

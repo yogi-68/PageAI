@@ -16,11 +16,11 @@ const logos = ['Stripe', 'Vercel', 'Notion', 'Linear', 'Figma'];
 
 // Demo conversation pairs
 const demoResponses: Record<string, string> = {
-  'what plans do you offer': 'We offer 4 plans: **Starter** (free), **Growth** ($19/mo), **Professional** ($49/mo), and **Enterprise** ($129/mo). Professional is our most popular!',
-  'how does it work': 'It\'s simple! 1) Add your website URL 2) We crawl & index your content automatically 3) Deploy your AI chatbot with one line of code. Takes under 2 minutes!',
-  'what is pageai': 'PageAI is an AI-powered chatbot platform that trains on your website content using RAG technology. It answers customer questions accurately with source citations — 24/7.',
-  'pricing': 'Our plans start from free! Starter: $0 (100 responses/mo), Growth: $19 (2K responses/mo), Professional: $49 (10K responses/mo), Enterprise: $129 (50K responses/mo).',
-  'features': 'Key features include: automatic website crawling, RAG-powered AI answers, source citations, real-time analytics, custom branding, multi-language support, and easy embed widget.',
+  'what plans do you offer': 'We offer 4 plans: **Free** ($0), **Starter** ($29/mo), **Growth** ($69/mo), and **Scale** ($199/mo). Growth is our most popular — perfect for teams!',
+  'how does it work': 'It\'s simple! 1) Add your website URL or connect a data source 2) We crawl & index your content with semantic chunking 3) Deploy your AI chatbot with one line of code. Takes under 2 minutes!',
+  'what is pageai': 'PageAI is an AI-powered chatbot platform that trains on your website content using advanced RAG with hybrid search. It answers customer questions with 95%+ accuracy and source citations — 24/7.',
+  'pricing': 'Our plans start free! Free: $0 (50 messages/mo), Starter: $29 (4K messages/mo), Growth: $69 (10K messages/mo), Scale: $199 (40K messages/mo). All plans use GPT-4.1.',
+  'features': 'Key features include: hybrid vector + BM25 search, GPT-4.1 powered answers, streaming responses, data source connectors (Notion, Google Drive, etc.), real-time analytics, and easy embed widget.',
 };
 
 function findBestResponse(query: string): string {

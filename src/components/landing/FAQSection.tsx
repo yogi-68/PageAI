@@ -5,14 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
 const faqs = [
-  { q: 'How does PageAI work?', a: 'PageAI crawls your website, extracts text content, creates vector embeddings using OpenAI, and stores them in a vector database. When a visitor asks a question, we use RAG to find the most relevant content and generate an accurate answer.' },
+  { q: 'How does PageAI work?', a: 'PageAI crawls your website or connects to data sources (Notion, Google Drive, etc.), semantically chunks your content, and stores embeddings in a vector database. When a visitor asks a question, our hybrid search (vector + BM25) finds the best context, and GPT-4.1 generates an accurate, cited answer.' },
   { q: 'Do I need coding skills?', a: "No. Enter your URL, wait for the crawl, customize appearance, and copy the embed code. It's a single script tag that works on any website." },
-  { q: 'How accurate are the responses?', a: 'Because we use RAG, the chatbot only answers from your actual content. This eliminates hallucinations and ensures factual, grounded responses.' },
-  { q: 'Can I customize the chatbot?', a: 'Yes — colors, position, welcome message, bot name, and avatar. Premium plans also remove PageAI branding.' },
-  { q: 'What websites are supported?', a: 'Any publicly accessible site — WordPress, Shopify, Wix, Next.js, plain HTML, and more.' },
-  { q: 'How long does setup take?', a: 'Most users go from signup to a live chatbot in under 5 minutes. Crawling takes 30 seconds to 2 minutes.' },
-  { q: 'Can I use my own API key?', a: 'Enterprise plans support bring-your-own-key. Other plans include all API costs within your message limits.' },
-  { q: 'What happens at my message limit?', a: "You'll be notified at 80% usage. At the limit, the bot shows a friendly message directing visitors to contact you. Upgrade anytime." },
+  { q: 'How accurate are the responses?', a: 'Our advanced RAG pipeline with query rewriting, hybrid search, and re-ranking achieves 95-98% accuracy. The chatbot only answers from your actual content — eliminating hallucinations.' },
+  { q: 'Can I customize the chatbot?', a: 'Yes — colors, position, welcome message, bot name, and avatar. Starter plans and above also remove PageAI branding.' },
+  { q: 'What data sources are supported?', a: 'Website crawling, sitemap import, and file uploads on all plans. Growth adds Notion and Google Drive. Scale adds Zendesk, Confluence, and GitBook. Enterprise supports custom API connectors.' },
+  { q: 'How long does setup take?', a: 'Most users go from signup to a live chatbot in under 5 minutes. Crawling takes 30 seconds to 2 minutes depending on site size.' },
+  { q: 'What AI models do you use?', a: 'All plans use GPT-4.1 Mini for fast, accurate responses. Growth and above get smart model routing — automatically using GPT-4.1 for complex queries while keeping costs low.' },
+  { q: 'What happens at my message limit?', a: "You'll be notified at 80% usage. At the limit, you can enable automatic overage at $4 per 1,000 extra messages, or the bot shows a friendly message directing visitors to contact you. Upgrade anytime." },
 ];
 
 export default function FAQSection() {

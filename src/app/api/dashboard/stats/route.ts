@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
         // Profile usage
         const { data: profile } = await supabase
             .from('profiles')
-            .select('plan, monthly_question_count, monthly_question_limit')
+            .select('plan, monthly_message_count, monthly_message_limit')
             .eq('id', userId)
             .single();
 
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
                 resolutionRate: totalConversations > 0
                     ? ((resolvedConversations / totalConversations) * 100).toFixed(1)
                     : '0.0',
-                uniqueVisitors: totalConversations, // Approximation
+                uniqueVisitors: totalConversations,
             },
             bots: botList,
             recentConversations: recentConversations.map(conv => {
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
                     messageCount: conv.message_count,
                 };
             }),
-            usage: profile || { plan: 'free', monthly_question_count: 0, monthly_question_limit: 1000 },
+            usage: profile || { plan: 'free', monthly_message_count: 0, monthly_message_limit: 50 },
         });
     } catch (error: any) {
         console.error('Dashboard stats error:', error);

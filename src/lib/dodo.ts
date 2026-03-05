@@ -12,105 +12,148 @@ export function getDodoClient(): DodoPayments {
     return _dodoClient;
 }
 
-// ─── Plan Configuration ───────────────────────────────
+// ─── Plan Configuration ───────────────────────────────────
 export const PLANS = {
     free: {
         id: 'free',
-        name: 'Starter',
-        description: 'Perfect for trying out PageAI',
+        name: 'Free',
+        description: 'Try PageAI with basic features',
         price: 0,
         productId: null,
         features: [
-            '1 Website',
-            '100 AI responses/month',
-            '10 Pages indexed',
-            'GPT-3.5 Turbo',
-            'Basic analytics',
+            '1 Chatbot',
+            '50 messages/month',
+            '100 pages indexed',
+            'GPT-4.1 Mini',
+            'Website source only',
             'PageAI branding',
         ],
         limits: {
-            websites: 1,
-            questionsPerMonth: 100,
-            pagesIndexed: 10,
-            model: 'gpt-3.5-turbo',
+            chatbots: 1,
+            messagesPerMonth: 50,
+            pagesIndexed: 100,
+            model: 'gpt-4.1-mini',
+            dataSources: ['website'],
+            apiAccess: false,
+            customBranding: false,
         },
     },
-    basic: {
-        id: 'basic',
-        name: 'Growth',
-        price: 19,
-        productId: process.env.DODO_PRODUCT_GROWTH || null,
-        description: 'For growing businesses',
+    starter: {
+        id: 'starter',
+        name: 'Starter',
+        price: 29,
+        productId: process.env.DODO_PRODUCT_STARTER || null,
+        description: 'For small businesses getting started',
         features: [
-            '1 Website',
-            '2,000 AI responses/month',
-            '100 Pages indexed',
-            'GPT-4 Turbo',
-            'Advanced analytics',
+            '1 Chatbot',
+            '4,000 messages/month',
+            '1,000 pages indexed',
+            'GPT-4.1 Mini + Auto-routing',
+            'Website + File Upload',
+            'Basic analytics',
             'Remove branding',
             'Email support',
-            'Custom bot persona',
         ],
         limits: {
-            websites: 1,
-            questionsPerMonth: 2000,
-            pagesIndexed: 100,
-            model: 'gpt-4-turbo',
+            chatbots: 1,
+            messagesPerMonth: 4000,
+            pagesIndexed: 1000,
+            model: 'auto',
+            dataSources: ['website', 'file_upload', 'sitemap'],
+            apiAccess: false,
+            customBranding: true,
         },
     },
-    pro: {
-        id: 'pro',
-        name: 'Professional',
-        price: 49,
+    growth: {
+        id: 'growth',
+        name: 'Growth',
+        price: 69,
         popular: true,
-        productId: process.env.DODO_PRODUCT_PRO || null,
-        description: 'For scaling companies',
+        productId: process.env.DODO_PRODUCT_GROWTH || null,
+        description: 'For growing companies',
         features: [
-            '5 Websites',
-            '10,000 AI responses/month',
-            '500 Pages indexed',
-            'GPT-4 + Claude 3.5',
-            'Priority support',
+            '3 Chatbots',
+            '10,000 messages/month',
+            '10,000 pages indexed',
+            'GPT-4.1 + Smart Routing',
+            'All data sources',
+            'Advanced analytics',
             'API access',
-            'Webhook integrations',
-            'Multi-language support',
-            'Team seats (3)',
+            'Priority support',
+            'Custom system prompts',
         ],
         limits: {
-            websites: 5,
-            questionsPerMonth: 10000,
-            pagesIndexed: 500,
-            model: 'gpt-4',
+            chatbots: 3,
+            messagesPerMonth: 10000,
+            pagesIndexed: 10000,
+            model: 'auto',
+            dataSources: ['website', 'file_upload', 'sitemap', 'notion', 'google_drive'],
+            apiAccess: true,
+            customBranding: true,
         },
     },
-    premium: {
-        id: 'premium',
-        name: 'Enterprise',
-        price: 129,
-        productId: process.env.DODO_PRODUCT_ENTERPRISE || null,
-        description: 'For large organizations',
+    scale: {
+        id: 'scale',
+        name: 'Scale',
+        price: 199,
+        productId: process.env.DODO_PRODUCT_SCALE || null,
+        description: 'For high-volume operations',
         features: [
-            'Unlimited Websites',
-            '50,000 AI responses/month',
-            '2,000 Pages indexed',
-            'All AI Models',
+            '10 Chatbots',
+            '40,000 messages/month',
+            '50,000 pages indexed',
+            'GPT-4.1 priority access',
+            'All data sources + API',
+            'Advanced analytics + exports',
             'Dedicated support',
+            'Webhook integrations',
+            'White-label option',
+            'Team seats (5)',
+        ],
+        limits: {
+            chatbots: 10,
+            messagesPerMonth: 40000,
+            pagesIndexed: 50000,
+            model: 'auto',
+            dataSources: ['website', 'file_upload', 'sitemap', 'notion', 'google_drive', 'gitbook', 'zendesk', 'confluence'],
+            apiAccess: true,
+            customBranding: true,
+        },
+    },
+    enterprise: {
+        id: 'enterprise',
+        name: 'Enterprise',
+        price: -1, // Custom pricing
+        productId: process.env.DODO_PRODUCT_ENTERPRISE || null,
+        description: 'Custom for large organizations',
+        features: [
+            'Unlimited Chatbots',
+            'Unlimited messages',
+            'Unlimited pages',
+            'All AI models',
+            'All data sources',
+            'Dedicated account manager',
             'SLA guarantee',
             'SSO / SAML',
-            'White-label option',
-            'Custom integrations',
-            'Unlimited team seats',
+            'Custom model fine-tuning',
+            'On-premise option',
         ],
         limits: {
-            websites: -1,
-            questionsPerMonth: 50000,
-            pagesIndexed: 2000,
-            model: 'gpt-4',
+            chatbots: -1,
+            messagesPerMonth: -1,
+            pagesIndexed: -1,
+            model: 'gpt-4.1',
+            dataSources: ['website', 'file_upload', 'sitemap', 'notion', 'google_drive', 'gitbook', 'zendesk', 'confluence', 'api'],
+            apiAccess: true,
+            customBranding: true,
         },
     },
 } as const;
 
 export type PlanId = keyof typeof PLANS;
+
+// Overage pricing: $4 per 1,000 messages
+export const OVERAGE_RATE = 4; // USD per 1000 messages
 
 // Map Dodo Product ID to our plan ID
 export function getPlanByProductId(productId: string): PlanId | null {
@@ -127,7 +170,31 @@ export function getPlanLimits(planId: PlanId) {
     return PLANS[planId]?.limits || PLANS.free.limits;
 }
 
-// Get question limit for a plan
-export function getQuestionLimit(planId: PlanId): number {
-    return PLANS[planId]?.limits.questionsPerMonth || 1000;
+// Get message limit for plan
+export function getMessageLimit(planId: string): number {
+    const plan = PLANS[planId as PlanId];
+    if (!plan) return 50;
+    const limit = plan.limits.messagesPerMonth;
+    return limit === -1 ? 999999 : limit;
+}
+
+// Get page limit for plan
+export function getPageLimit(planId: string): number {
+    const plan = PLANS[planId as PlanId];
+    if (!plan) return 100;
+    const limit = plan.limits.pagesIndexed;
+    return limit === -1 ? 999999 : limit;
+}
+
+// Get chatbot limit for plan
+export function getChatbotLimit(planId: string): number {
+    const plan = PLANS[planId as PlanId];
+    if (!plan) return 1;
+    const limit = plan.limits.chatbots;
+    return limit === -1 ? 999999 : limit;
+}
+
+// Legacy alias for backward compatibility
+export function getQuestionLimit(planId: string): number {
+    return getMessageLimit(planId);
 }
