@@ -16,11 +16,11 @@ const logos = ['Stripe', 'Vercel', 'Notion', 'Linear', 'Figma'];
 
 // Demo conversation pairs
 const demoResponses: Record<string, string> = {
-  'what plans do you offer': 'We offer 4 plans: **Free** ($0), **Starter** ($29/mo), **Growth** ($69/mo), and **Scale** ($199/mo). Growth is our most popular — perfect for teams!',
+  'what plans do you offer': 'We offer 4 plans: **Free** ($0), **Starter** ($10.99/mo), **Growth** ($29/mo), and **Scale** ($79/mo). All paid plans include a 7-day free trial!',
   'how does it work': 'It\'s simple! 1) Add your website URL or connect a data source 2) We crawl & index your content with semantic chunking 3) Deploy your AI chatbot with one line of code. Takes under 2 minutes!',
-  'what is pageai': 'PageAI is an AI-powered chatbot platform that trains on your website content using advanced RAG with hybrid search. It answers customer questions with 95%+ accuracy and source citations — 24/7.',
-  'pricing': 'Our plans start free! Free: $0 (50 messages/mo), Starter: $29 (4K messages/mo), Growth: $69 (10K messages/mo), Scale: $199 (40K messages/mo). All plans use GPT-4.1.',
-  'features': 'Key features include: hybrid vector + BM25 search, GPT-4.1 powered answers, streaming responses, data source connectors (Notion, Google Drive, etc.), real-time analytics, and easy embed widget.',
+  'what is pageai': 'PageAI is an AI-powered chatbot platform that trains on your website content using advanced RAG with hybrid search. It answers customer questions with 95%+ accuracy and source citations — 24/7. Supports 95+ languages!',
+  'pricing': 'Start free forever! Starter: $10.99/mo (4K msgs), Growth: $29/mo (10K msgs), Scale: $79/mo (40K msgs). All paid plans have a 7-day free trial. Cancel anytime.',
+  'features': 'Key features include: hybrid vector + BM25 search, GPT-4.1 powered answers, streaming responses, data source connectors (Notion, Google Drive, etc.), 95+ languages, real-time analytics, and easy embed widget.',
 };
 
 function findBestResponse(query: string): string {

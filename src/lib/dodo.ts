@@ -13,6 +13,8 @@ export function getDodoClient(): DodoPayments {
 }
 
 // ─── Plan Configuration ───────────────────────────────────
+export const TRIAL_DAYS = 7; // 7-day free trial on all paid plans
+
 export const PLANS = {
     free: {
         id: 'free',
@@ -20,6 +22,7 @@ export const PLANS = {
         description: 'Try PageAI with basic features',
         price: 0,
         productId: null,
+        trialDays: 0,
         features: [
             '1 Chatbot',
             '50 messages/month',
@@ -41,8 +44,9 @@ export const PLANS = {
     starter: {
         id: 'starter',
         name: 'Starter',
-        price: 29,
+        price: 10.99,
         productId: process.env.DODO_PRODUCT_STARTER || null,
+        trialDays: TRIAL_DAYS,
         description: 'For small businesses getting started',
         features: [
             '1 Chatbot',
@@ -67,9 +71,10 @@ export const PLANS = {
     growth: {
         id: 'growth',
         name: 'Growth',
-        price: 69,
+        price: 29,
         popular: true,
         productId: process.env.DODO_PRODUCT_GROWTH || null,
+        trialDays: TRIAL_DAYS,
         description: 'For growing companies',
         features: [
             '3 Chatbots',
@@ -95,8 +100,9 @@ export const PLANS = {
     scale: {
         id: 'scale',
         name: 'Scale',
-        price: 199,
+        price: 79,
         productId: process.env.DODO_PRODUCT_SCALE || null,
+        trialDays: TRIAL_DAYS,
         description: 'For high-volume operations',
         features: [
             '10 Chatbots',
@@ -125,6 +131,7 @@ export const PLANS = {
         name: 'Enterprise',
         price: -1, // Custom pricing
         productId: process.env.DODO_PRODUCT_ENTERPRISE || null,
+        trialDays: TRIAL_DAYS,
         description: 'Custom for large organizations',
         features: [
             'Unlimited Chatbots',

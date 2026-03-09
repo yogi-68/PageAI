@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
         }
 
         const dodo = getDodoClient();
+        const trialDays = plan.trialDays || 0;
         const subscription = await dodo.subscriptions.create({
             billing: {
                 city: '',
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
             product_id: plan.productId,
             quantity: 1,
             payment_link: true,
+            ...(trialDays > 0 && { trial_period_days: trialDays }),
             return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?upgraded=true`,
             metadata: {
                 userId,

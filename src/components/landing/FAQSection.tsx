@@ -13,6 +13,8 @@ const faqs = [
   { q: 'How long does setup take?', a: 'Most users go from signup to a live chatbot in under 5 minutes. Crawling takes 30 seconds to 2 minutes depending on site size.' },
   { q: 'What AI models do you use?', a: 'All plans use GPT-4.1 Mini for fast, accurate responses. Growth and above get smart model routing — automatically using GPT-4.1 for complex queries while keeping costs low.' },
   { q: 'What happens at my message limit?', a: "You'll be notified at 80% usage. At the limit, you can enable automatic overage at $4 per 1,000 extra messages, or the bot shows a friendly message directing visitors to contact you. Upgrade anytime." },
+  { q: 'Is there a free trial?', a: 'Yes! All paid plans include a 7-day free trial. No charge until the trial ends, and you can cancel anytime. Your free plan stays active even after canceling.' },
+  { q: 'What languages are supported?', a: 'PageAI supports 95+ languages out of the box. GPT-4.1 handles multilingual queries natively — your chatbot can answer in the same language the visitor uses, even if your content is in English.' },
 ];
 
 export default function FAQSection() {

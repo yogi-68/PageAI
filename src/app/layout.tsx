@@ -57,9 +57,9 @@ const jsonLd = {
       description: 'AI-powered website chatbot platform using RAG technology for accurate, citation-backed answers.',
       offers: [
         { '@type': 'Offer', name: 'Free', price: '0', priceCurrency: 'USD' },
-        { '@type': 'Offer', name: 'Starter', price: '29', priceCurrency: 'USD' },
-        { '@type': 'Offer', name: 'Growth', price: '69', priceCurrency: 'USD' },
-        { '@type': 'Offer', name: 'Scale', price: '199', priceCurrency: 'USD' },
+        { '@type': 'Offer', name: 'Starter', price: '10.99', priceCurrency: 'USD' },
+        { '@type': 'Offer', name: 'Growth', price: '29', priceCurrency: 'USD' },
+        { '@type': 'Offer', name: 'Scale', price: '79', priceCurrency: 'USD' },
       ],
       aggregateRating: { '@type': 'AggregateRating', ratingValue: '4.9', reviewCount: '2847', bestRating: '5' },
     },

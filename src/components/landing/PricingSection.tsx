@@ -17,26 +17,29 @@ const plans = [
   {
     name: 'Starter',
     desc: 'For small businesses',
-    price: { m: 29, a: 23 },
-    cta: 'Get Started',
+    price: { m: 10.99, a: 8.99 },
+    cta: 'Start 7-Day Free Trial',
     href: '/signup',
+    trial: true,
     features: ['1 chatbot', '4,000 messages/month', '1,000 pages indexed', 'GPT-4.1 Mini', 'Full analytics', 'Custom branding', 'File uploads', 'Email support'],
   },
   {
     name: 'Growth',
     desc: 'For growing teams',
-    price: { m: 69, a: 55 },
-    cta: 'Get Started',
+    price: { m: 29, a: 23 },
+    cta: 'Start 7-Day Free Trial',
     href: '/signup',
     popular: true,
+    trial: true,
     features: ['3 chatbots', '10,000 messages/month', '10,000 pages indexed', 'GPT-4.1 + Auto routing', 'Notion & Google Drive', 'API access', 'Priority support', 'Streaming responses'],
   },
   {
     name: 'Scale',
     desc: 'For scaling businesses',
-    price: { m: 199, a: 159 },
-    cta: 'Get Started',
+    price: { m: 79, a: 63 },
+    cta: 'Start 7-Day Free Trial',
     href: '/signup',
+    trial: true,
     features: ['10 chatbots', '40,000 messages/month', '50,000 pages indexed', 'GPT-4.1 + Smart routing', 'All data connectors', 'Zendesk & Confluence', 'Dedicated support', 'Custom branding'],
   },
 ];
@@ -104,6 +107,15 @@ export default function PricingSection() {
                 </div>
               )}
 
+              {(plan as any).trial && (
+                <div className="mb-3">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-success/10 text-success text-[11px] font-medium">
+                    <span className="w-1 h-1 rounded-full bg-success" />
+                    7-day free trial
+                  </span>
+                </div>
+              )}
+
               <div className="mb-5">
                 <h3 className="text-[17px] font-semibold text-fg tracking-[-0.01em]">{plan.name}</h3>
                 <p className="text-[13px] text-fg-muted mt-0.5">{plan.desc}</p>
@@ -145,6 +157,22 @@ export default function PricingSection() {
             </motion.div>
           ))}
         </div>
+
+        {/* Perks */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+          className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-10"
+        >
+          {['7-day free trial', 'Cancel anytime', '95+ languages supported', 'Friendly pricing as you scale', 'Personalized onboarding help'].map((perk) => (
+            <span key={perk} className="flex items-center gap-1.5 text-[13px] text-fg-secondary">
+              <Check className="w-3.5 h-3.5 text-success shrink-0" />
+              {perk}
+            </span>
+          ))}
+        </motion.div>
       </div>
     </section>
   );

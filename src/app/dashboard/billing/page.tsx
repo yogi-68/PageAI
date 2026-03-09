@@ -8,9 +8,9 @@ import toast from 'react-hot-toast';
 // Plans matching canonical PLANS in lib/dodo.ts
 const plans = [
   { id: 'free', name: 'Free', price: 0, features: ['1 Chatbot', '50 messages/month', '100 Pages indexed', 'GPT-4.1 Mini', 'Basic analytics', 'Website connector', 'PageAI branding'] },
-  { id: 'starter', name: 'Starter', price: 29, features: ['1 Chatbot', '4,000 messages/month', '1,000 Pages indexed', 'GPT-4.1 Mini', 'Full analytics', 'Custom branding', 'File uploads', 'Email support'] },
-  { id: 'growth', name: 'Growth', price: 69, popular: true, features: ['3 Chatbots', '10,000 messages/month', '10,000 Pages indexed', 'GPT-4.1 + Auto routing', 'Notion & Google Drive', 'API access', 'Priority support', 'Streaming responses'] },
-  { id: 'scale', name: 'Scale', price: 199, features: ['10 Chatbots', '40,000 messages/month', '50,000 Pages indexed', 'GPT-4.1 + Smart routing', 'All data connectors', 'Dedicated support', 'Custom branding', 'White-label option'] },
+  { id: 'starter', name: 'Starter', price: 10.99, trial: true, features: ['1 Chatbot', '4,000 messages/month', '1,000 Pages indexed', 'GPT-4.1 Mini', 'Full analytics', 'Custom branding', 'File uploads', 'Email support'] },
+  { id: 'growth', name: 'Growth', price: 29, popular: true, trial: true, features: ['3 Chatbots', '10,000 messages/month', '10,000 Pages indexed', 'GPT-4.1 + Auto routing', 'Notion & Google Drive', 'API access', 'Priority support', 'Streaming responses'] },
+  { id: 'scale', name: 'Scale', price: 79, trial: true, features: ['10 Chatbots', '40,000 messages/month', '50,000 Pages indexed', 'GPT-4.1 + Smart routing', 'All data connectors', 'Dedicated support', 'Custom branding', 'White-label option'] },
 ];
 
 export default function BillingPage() {
@@ -61,6 +61,7 @@ export default function BillingPage() {
           return (
             <div key={plan.id} className={`relative flex flex-col p-5 rounded-xl border transition-all duration-200 ${plan.popular ? 'border-primary bg-primary/[0.04]' : 'border-edge bg-surface/40'} ${isCurrent ? 'ring-1 ring-primary/40' : ''}`}>
               {plan.popular && <span className="absolute -top-2.5 left-4 px-2.5 py-0.5 rounded-md bg-primary text-white text-[11px] font-semibold">Popular</span>}
+              {(plan as any).trial && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-success/10 text-success text-[11px] font-medium mb-2"><span className="w-1 h-1 rounded-full bg-success" />7-day free trial</span>}
               <h3 className="text-[16px] font-bold text-fg">{plan.name}</h3>
               <div className="mt-2 mb-4">
                 <span className="text-[28px] font-bold text-fg">${plan.price}</span>
