@@ -17,7 +17,7 @@ const plans = [
   {
     name: 'Starter',
     desc: 'For small businesses',
-    price: { m: 10.99, a: 8.99 },
+    price: { m: 29, a: 23 },
     cta: 'Start 7-Day Free Trial',
     href: '/signup',
     trial: true,
@@ -26,7 +26,7 @@ const plans = [
   {
     name: 'Growth',
     desc: 'For growing teams',
-    price: { m: 29, a: 23 },
+    price: { m: 69, a: 55 },
     cta: 'Start 7-Day Free Trial',
     href: '/signup',
     popular: true,
@@ -36,7 +36,7 @@ const plans = [
   {
     name: 'Scale',
     desc: 'For scaling businesses',
-    price: { m: 79, a: 63 },
+    price: { m: 199, a: 159 },
     cta: 'Start 7-Day Free Trial',
     href: '/signup',
     trial: true,

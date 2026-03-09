@@ -8,9 +8,9 @@ import toast from 'react-hot-toast';
 // Plans matching canonical PLANS in lib/dodo.ts
 const plans = [
   { id: 'free', name: 'Free', price: 0, features: ['1 Chatbot', '50 messages/month', '100 Pages indexed', 'GPT-4.1 Mini', 'Basic analytics', 'Website connector', 'PageAI branding'] },
-  { id: 'starter', name: 'Starter', price: 10.99, trial: true, features: ['1 Chatbot', '4,000 messages/month', '1,000 Pages indexed', 'GPT-4.1 Mini', 'Full analytics', 'Custom branding', 'File uploads', 'Email support'] },
-  { id: 'growth', name: 'Growth', price: 29, popular: true, trial: true, features: ['3 Chatbots', '10,000 messages/month', '10,000 Pages indexed', 'GPT-4.1 + Auto routing', 'Notion & Google Drive', 'API access', 'Priority support', 'Streaming responses'] },
-  { id: 'scale', name: 'Scale', price: 79, trial: true, features: ['10 Chatbots', '40,000 messages/month', '50,000 Pages indexed', 'GPT-4.1 + Smart routing', 'All data connectors', 'Dedicated support', 'Custom branding', 'White-label option'] },
+  { id: 'starter', name: 'Starter', price: 29, trial: true, features: ['1 Chatbot', '4,000 messages/month', '1,000 Pages indexed', 'GPT-4.1 Mini', 'Full analytics', 'Custom branding', 'File uploads', 'Email support'] },
+  { id: 'growth', name: 'Growth', price: 69, popular: true, trial: true, features: ['3 Chatbots', '10,000 messages/month', '10,000 Pages indexed', 'GPT-4.1 + Auto routing', 'Notion & Google Drive', 'API access', 'Priority support', 'Streaming responses'] },
+  { id: 'scale', name: 'Scale', price: 199, trial: true, features: ['10 Chatbots', '40,000 messages/month', '50,000 Pages indexed', 'GPT-4.1 + Smart routing', 'All data connectors', 'Dedicated support', 'Custom branding', 'White-label option'] },
 ];
 
 export default function BillingPage() {

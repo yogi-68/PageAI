@@ -44,7 +44,7 @@ export const PLANS = {
     starter: {
         id: 'starter',
         name: 'Starter',
-        price: 10.99,
+        price: 29,
         productId: process.env.DODO_PRODUCT_STARTER || null,
         trialDays: TRIAL_DAYS,
         description: 'For small businesses getting started',
@@ -71,7 +71,7 @@ export const PLANS = {
     growth: {
         id: 'growth',
         name: 'Growth',
-        price: 29,
+        price: 69,
         popular: true,
         productId: process.env.DODO_PRODUCT_GROWTH || null,
         trialDays: TRIAL_DAYS,
@@ -100,7 +100,7 @@ export const PLANS = {
     scale: {
         id: 'scale',
         name: 'Scale',
-        price: 79,
+        price: 199,
         productId: process.env.DODO_PRODUCT_SCALE || null,
         trialDays: TRIAL_DAYS,
         description: 'For high-volume operations',
