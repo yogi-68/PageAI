@@ -51,13 +51,14 @@ export default function AnalyticsPage() {
 
         setTotals({ conversations: total, messages: msgCount || 0, avgPerDay: Math.round(total / 7) });
 
-        // Show top crawled pages (visit tracking not yet implemented)
+        // Show top indexed documents
         const { data: pages } = await supabase
-          .from('crawled_pages')
+          .from('documents')
           .select('url, title')
           .eq('user_id', user.id)
+          .not('url', 'is', null)
           .limit(5);
-        setTopPages((pages || []).map(p => ({ url: p.url, visits: 0 })));
+        setTopPages((pages || []).map(p => ({ url: p.url || '', visits: 0 })));
       } catch (e) { console.error(e); }
       setLoading(false);
     })();

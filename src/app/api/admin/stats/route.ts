@@ -43,15 +43,24 @@ export async function GET(request: NextRequest) {
                 .select('id, name, model, is_active, total_conversations, primary_color, created_at, user_id, website_id')
                 .order('created_at', { ascending: false });
 
-            // Enrich with owner emails and website URLs
-            const enriched = await Promise.all((bots || []).map(async (bot) => {
-                const { data: profile } = await admin.from('profiles').select('email').eq('id', bot.user_id).single();
-                const { data: website } = await admin.from('websites').select('url').eq('id', bot.website_id).single();
-                return {
-                    ...bot,
-                    ownerEmail: profile?.email,
-                    websiteUrl: website?.url,
-                };
+            // Batch-fetch all profiles and websites to avoid N+1
+            const userIds = [...new Set((bots || []).map(b => b.user_id).filter(Boolean))];
+            const websiteIds = [...new Set((bots || []).map(b => b.website_id).filter(Boolean))];
+
+            const { data: profiles } = userIds.length > 0
+                ? await admin.from('profiles').select('id, email').in('id', userIds)
+                : { data: [] };
+            const { data: websites } = websiteIds.length > 0
+                ? await admin.from('websites').select('id, url').in('id', websiteIds)
+                : { data: [] };
+
+            const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p.email]));
+            const websiteMap = Object.fromEntries((websites || []).map(w => [w.id, w.url]));
+
+            const enriched = (bots || []).map(bot => ({
+                ...bot,
+                ownerEmail: profileMap[bot.user_id] || null,
+                websiteUrl: websiteMap[bot.website_id] || null,
             }));
 
             return NextResponse.json({ bots: enriched });

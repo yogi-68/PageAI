@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
 interface Stats {
   activeBots: number;
   totalConversations: number;
+  resolutionRate: string;
+}
+
+interface Usage {
   plan: string;
-  monthly_question_count: number;
-  monthly_question_limit: number;
+  monthly_message_count: number;
+  monthly_message_limit: number;
 }
 
 interface BotRow {
@@ -21,9 +24,18 @@ interface BotRow {
   created_at: string;
 }
 
+const PLAN_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  free: { label: 'Free', color: 'text-fg-muted', bg: 'bg-fg-muted/10' },
+  starter: { label: 'Starter · $29/mo', color: 'text-success', bg: 'bg-success/10' },
+  growth: { label: 'Growth · $69/mo', color: 'text-primary', bg: 'bg-primary/10' },
+  scale: { label: 'Scale · $199/mo', color: 'text-warning', bg: 'bg-warning/10' },
+  enterprise: { label: 'Enterprise', color: 'text-[#a78bfa]', bg: 'bg-[#a78bfa]/10' },
+};
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [usage, setUsage] = useState<Usage | null>(null);
   const [bots, setBots] = useState<BotRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,9 +49,12 @@ export default function DashboardPage() {
           setStats({
             activeBots: d.stats?.activeBots || 0,
             totalConversations: d.stats?.totalConversations || 0,
+            resolutionRate: d.stats?.resolutionRate || '0.0',
+          });
+          setUsage({
             plan: d.usage?.plan || 'free',
-            monthly_question_count: d.usage?.monthly_question_count || 0,
-            monthly_question_limit: d.usage?.monthly_question_limit || 1000,
+            monthly_message_count: d.usage?.monthly_message_count || 0,
+            monthly_message_limit: d.usage?.monthly_message_limit || 50,
           });
           if (d.bots) setBots(d.bots.slice(0, 4));
         }
@@ -55,13 +70,8 @@ export default function DashboardPage() {
     return 'Good evening';
   };
 
-  const kpis = stats ? [
-    { label: 'Active Bots', value: stats.activeBots },
-    { label: 'Conversations', value: stats.totalConversations },
-    { label: 'Plan', value: stats.plan.charAt(0).toUpperCase() + stats.plan.slice(1) },
-  ] : [];
-
-  const usagePercent = stats ? Math.min(100, Math.round((stats.monthly_question_count / Math.max(stats.monthly_question_limit, 1)) * 100)) : 0;
+  const usagePercent = usage ? Math.min(100, Math.round((usage.monthly_message_count / Math.max(usage.monthly_message_limit, 1)) * 100)) : 0;
+  const planInfo = PLAN_LABELS[usage?.plan || 'free'] || PLAN_LABELS.free;
 
   if (loading) return <div className="flex items-center justify-center py-32"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -76,31 +86,41 @@ export default function DashboardPage() {
         <Link href="/dashboard/bots/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors">+ Create Bot</Link>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {kpis.map(k => (
-          <div key={k.label} className="p-4 rounded-xl border border-edge bg-surface/40">
-            <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">{k.label}</span>
-            <p className="text-[24px] font-bold text-fg mt-1">{k.value}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Message Usage */}
-      {stats && (
+      {/* Subscription Status Card */}
+      {usage && (
         <div className="p-5 rounded-xl border border-edge bg-surface/40">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[13px] font-medium text-fg">Question Usage</span>
-            <span className="text-[13px] text-fg-secondary">{stats.monthly_question_count.toLocaleString()} / {stats.monthly_question_limit.toLocaleString()}</span>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <span className={`inline-flex px-2.5 py-1 rounded-lg text-[12px] font-semibold ${planInfo.bg} ${planInfo.color}`}>{planInfo.label}</span>
+              {usage.plan === 'free' && (
+                <Link href="/dashboard/billing" className="text-[12px] text-primary hover:text-primary-hover transition-colors font-medium">Upgrade →</Link>
+              )}
+            </div>
+            <span className="text-[13px] text-fg-secondary">{usage.monthly_message_count.toLocaleString()} / {usage.monthly_message_limit.toLocaleString()} messages this month</span>
           </div>
           <div className="h-2 rounded-full bg-edge overflow-hidden">
-            <div className={`h-full rounded-full transition-all duration-500 ${usagePercent > 80 ? 'bg-warning' : 'bg-primary'}`} style={{ width: `${usagePercent}%` }} />
+            <div className={`h-full rounded-full transition-all duration-500 ${usagePercent > 90 ? 'bg-danger' : usagePercent > 70 ? 'bg-warning' : 'bg-primary'}`} style={{ width: `${usagePercent}%` }} />
           </div>
           {usagePercent > 80 && (
             <p className="text-[12px] text-warning mt-2">You&apos;ve used {usagePercent}% of your monthly messages. <Link href="/dashboard/billing" className="underline hover:text-fg transition-colors">Upgrade plan</Link></p>
           )}
         </div>
       )}
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { label: 'Active Bots', value: stats?.activeBots || 0 },
+          { label: 'Conversations', value: stats?.totalConversations || 0 },
+          { label: 'Resolution Rate', value: `${stats?.resolutionRate || '0'}%` },
+          { label: 'Plan', value: (usage?.plan || 'free').charAt(0).toUpperCase() + (usage?.plan || 'free').slice(1) },
+        ].map(k => (
+          <div key={k.label} className="p-4 rounded-xl border border-edge bg-surface/40 hover:border-edge-light transition-all duration-200">
+            <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">{k.label}</span>
+            <p className="text-[24px] font-bold text-fg mt-1">{k.value}</p>
+          </div>
+        ))}
+      </div>
 
       {/* Bots List */}
       <div className="rounded-xl border border-edge bg-surface/40 overflow-hidden">
@@ -140,8 +160,8 @@ export default function DashboardPage() {
           {[
             { href: '/dashboard/bots/new', label: 'Create new bot', icon: '✦' },
             { href: '/dashboard/websites', label: 'Add website', icon: '◎' },
-            { href: '/dashboard/analytics', label: 'View analytics', icon: '◈' },
-            { href: '/dashboard/billing', label: 'Manage billing', icon: '◇' },
+            { href: '/dashboard/analytics', label: 'View analytics', icon: '▣' },
+            { href: '/dashboard/billing', label: 'Manage billing', icon: '◆' },
           ].map(a => (
             <Link key={a.href} href={a.href} className="flex items-center gap-2.5 p-3.5 rounded-xl border border-edge bg-surface/30 hover:bg-surface/60 hover:border-edge-light text-[13px] text-fg-secondary hover:text-fg transition-all duration-200">
               <span className="text-primary">{a.icon}</span>

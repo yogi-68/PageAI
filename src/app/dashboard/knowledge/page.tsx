@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
-interface CrawledPage { id: string; url: string; title: string; website_id: string; created_at: string; }
-interface Website { id: string; url: string; pages: CrawledPage[]; }
+interface DocPage { id: string; url: string; title: string; website_id: string; created_at: string; }
+interface Website { id: string; url: string; pages: DocPage[]; }
 
 export default function KnowledgePage() {
   const { user } = useAuth();
@@ -19,7 +19,7 @@ export default function KnowledgePage() {
     if (!user) return;
     (async () => {
       const { data: ws } = await supabase.from('websites').select('id, url').eq('user_id', user.id);
-      const { data: pages } = await supabase.from('crawled_pages').select('*').eq('user_id', user.id);
+      const { data: pages } = await supabase.from('documents').select('id, url, title, website_id, created_at').eq('user_id', user.id);
 
       const siteMap: Record<string, Website> = {};
       (ws || []).forEach(w => { siteMap[w.id] = { ...w, pages: [] }; });

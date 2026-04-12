@@ -49,7 +49,7 @@ export default function WebsitesPage() {
   const deleteWebsite = async (websiteId: string) => {
     setDeleting(websiteId);
     try {
-      await supabase.from('crawled_pages').delete().eq('website_id', websiteId);
+      await supabase.from('documents').delete().eq('website_id', websiteId);
       await supabase.from('websites').delete().eq('id', websiteId);
       setWebsites(prev => prev.filter(w => w.id !== websiteId));
       toast.success('Website deleted');
