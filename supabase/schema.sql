@@ -108,6 +108,8 @@ CREATE TABLE public.documents (
   website_id UUID REFERENCES public.websites(id) ON DELETE CASCADE,
   external_id TEXT,
   url TEXT,
+  -- Generated column so the UNIQUE constraint works without expression syntax
+  source_key TEXT GENERATED ALWAYS AS (COALESCE(external_id, url)) STORED,
   title TEXT,
   content TEXT,
   content_hash TEXT,
@@ -118,7 +120,7 @@ CREATE TABLE public.documents (
   last_indexed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE(data_source_id, COALESCE(external_id, url))
+  UNIQUE(data_source_id, source_key)
 );
 
 -- ================================

@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
                         status: 'indexed',
                         last_indexed_at: new Date().toISOString(),
                     },
-                    { onConflict: 'data_source_id,COALESCE(external_id, url)' }
+                    { onConflict: 'data_source_id,source_key' }
                 )
                 .select('id')
                 .single();

@@ -154,43 +154,113 @@ npm install
 
 ### 2. Environment Variables
 
-Create `.env.local` with the following:
+Create `.env.local` (local dev) and add every variable to **Vercel → Project → Settings → Environment Variables** (production).
 
-| Variable | Required | Description |
+> `NEXT_PUBLIC_*` vars are baked into the JS bundle **at build time** — after adding or changing them in Vercel you must **redeploy** the project.
+
+#### Core (required for every environment)
+
+| Variable | Where to get it | Notes |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase anon/public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Supabase service role key (server-side only) |
-| `OPENAI_API_KEY` | ✅ | OpenAI API key ([platform.openai.com](https://platform.openai.com/api-keys)) |
-| `DODO_PAYMENTS_API_KEY` | ✅ | Dodo Payments API key |
-| `DODO_PAYMENTS_WEBHOOK_KEY` | ✅ | Dodo webhook signing secret |
-| `DODO_PRODUCT_STARTER` | ✅ | Dodo Product ID for Starter ($29/mo) |
-| `DODO_PRODUCT_GROWTH` | ✅ | Dodo Product ID for Growth ($69/mo) |
-| `DODO_PRODUCT_SCALE` | ✅ | Dodo Product ID for Scale ($199/mo) |
-| `DODO_PRODUCT_ENTERPRISE` | — | Dodo Product ID for Enterprise (optional) |
-| `ADMIN_EMAILS` | ✅ | Comma-separated admin emails (e.g. `you@example.com`) |
-| `NEXT_PUBLIC_APP_URL` | ✅ | Your app URL (e.g. `https://pageai-tau.vercel.app`) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API → Project URL | Client + server |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API → anon/public key | Client + server |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → service_role key | **Server only** — never expose to client |
+| `OPENAI_API_KEY` | platform.openai.com → API Keys | Server only |
+| `NEXT_PUBLIC_APP_URL` | Your Vercel deployment URL, e.g. `https://pageai-tau.vercel.app` | No trailing slash |
+| `ADMIN_EMAILS` | Your own email(s), comma-separated | `you@example.com,other@example.com` |
 
-> **Vercel note:** `NEXT_PUBLIC_*` variables are embedded into the client bundle **at build time**. You must set them in Vercel → Settings → Environment Variables and **redeploy** for them to take effect in the browser. Missing these variables will cause a `supabaseUrl is required` error.
+#### Dodo Payments
 
-### 3. Database Setup
+| Variable | Where to get it | Notes |
+|---|---|---|
+| `DODO_PAYMENTS_API_KEY` | Dodo dashboard → API Keys | Server only |
+| `DODO_PAYMENTS_WEBHOOK_KEY` | Dodo dashboard → Webhooks → signing secret | Server only |
+| `DODO_PRODUCT_STARTER` | Dodo → Products → Starter product ID | e.g. `prod_xxx` |
+| `DODO_PRODUCT_GROWTH` | Dodo → Products → Growth product ID | |
+| `DODO_PRODUCT_SCALE` | Dodo → Products → Scale product ID | |
+| `DODO_PRODUCT_ENTERPRISE` | Dodo → Products → Enterprise product ID | Optional |
+| `DODO_ADDON_1000` | Dodo → Products → 1K Messages add-on ID | Optional: enables add-on packs |
+| `DODO_ADDON_5000` | Dodo → Products → 5K Messages add-on ID | Optional |
+| `DODO_ADDON_10000` | Dodo → Products → 10K Messages add-on ID | Optional |
 
-1. Enable the **pgvector** extension in your Supabase project
-2. Run `supabase/schema.sql` in the Supabase SQL Editor — creates 13 tables, indexes, RPC functions, RLS policies, and:
-   - `check_and_increment_message()` — atomic usage enforcement (prevents race conditions)
-   - `webhook_events` table — idempotent webhook processing (prevents duplicate plan updates)
+#### Admin separation (optional)
 
-### 4. Dodo Payments Setup
+| Variable | Value | Notes |
+|---|---|---|
+| `ADMIN_HOSTNAME` | e.g. `admin.pageai.io` | Restricts `/admin/*` to that hostname only — makes admin invisible on the main URL |
 
-1. Create 3 subscription products in Dodo:
-   - **Starter** — $29/month
-   - **Growth** — $69/month
-   - **Scale** — $199/month
-2. Copy Product IDs to `.env.local`
-3. Register webhook URL: `https://yourdomain.com/api/billing/webhook`
-4. Copy webhook secret to `DODO_PAYMENTS_WEBHOOK_KEY`
+---
 
-### 5. Run
+### 3. Database Setup (Supabase)
+
+1. **Create a Supabase project** at [supabase.com](https://supabase.com)
+2. Go to **Database → Extensions**, search for and enable:
+   - `vector` (pgvector — for embeddings)
+   - `pg_trgm` (trigram search — for full-text)
+   - `uuid-ossp` (UUIDs)
+   
+   *(The schema SQL also enables them automatically with `CREATE EXTENSION IF NOT EXISTS`.)*
+
+3. Go to **SQL Editor → New Query**, paste the entire contents of `supabase/schema.sql` and click **Run**
+4. Copy from **Project Settings → API**:
+   - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
+   - **anon / public key** → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - **service_role key** → `SUPABASE_SERVICE_ROLE_KEY`
+
+> The schema creates 15 tables, all indexes, RLS policies, hybrid search RPC, and the atomic `check_and_increment_message()` function with advisory locking.
+
+---
+
+### 4. OpenAI Setup
+
+1. Create an account at [platform.openai.com](https://platform.openai.com)
+2. Add billing — GPT-4.1 requires at least **Usage Tier 1** (a $5 payment unlocks this)
+3. Go to **API Keys → Create new secret key** — copy the value immediately (shown once)
+4. Paste it as `OPENAI_API_KEY`
+
+> PageAI uses two models:
+> - `gpt-4.1-mini` — default (fast, cheap, ~$0.40/M input tokens)
+> - `gpt-4.1` — complex queries via smart routing (~$2.00/M input tokens)
+> - `text-embedding-3-small` — embeddings (~$0.02/M tokens)
+
+---
+
+### 5. Dodo Payments Setup
+
+#### Subscription products (plans)
+
+In Dodo dashboard → **Products → Create Product** × 3:
+
+| Product | Type | Price |
+|---|---|---|
+| PageAI Starter | Subscription | $29 / month |
+| PageAI Growth | Subscription | $69 / month |
+| PageAI Scale | Subscription | $199 / month |
+
+Copy each **Product ID** to `DODO_PRODUCT_STARTER`, `DODO_PRODUCT_GROWTH`, `DODO_PRODUCT_SCALE`.
+
+#### Add-on products (message packs) — optional but recommended
+
+Create 3 more one-time payment products:
+
+| Product | Type | Price |
+|---|---|---|
+| +1,000 Messages | One-time | $4 |
+| +5,000 Messages | One-time | $18 |
+| +10,000 Messages | One-time | $30 |
+
+Copy Product IDs to `DODO_ADDON_1000`, `DODO_ADDON_5000`, `DODO_ADDON_10000`.
+
+#### Webhook
+
+1. In Dodo → **Webhooks → Add Endpoint**:
+   - URL: `https://yourdomain.com/api/billing/webhook`
+   - Subscribe to **all** subscription and payment events
+2. Copy the **signing secret** → `DODO_PAYMENTS_WEBHOOK_KEY`
+
+---
+
+### 6. Run
 
 ```bash
 npm run dev
