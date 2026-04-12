@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
-import { getPlanByProductId, getMessageLimit, getPageLimit, getChatbotLimit } from '@/lib/dodo';
+import { getPlanByProductId, getMessageLimit, getPageLimit, getChatbotLimit, getAddonByProductId } from '@/lib/dodo';
+import { logger } from '@/lib/logger';
 import crypto from 'crypto';
 
 function verifyWebhookSignature(body: string, signature: string | null, secret: string): boolean {
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
 
             if (insertErr?.code === '23505') {
                 // Duplicate key — event already processed
-                console.log(`⏭️ Duplicate webhook event skipped: ${eventId}`);
+                logger.debug('webhook', `Duplicate event skipped`, { eventId });
                 return NextResponse.json({ received: true, duplicate: true });
             }
         }
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
                     max_chatbots: getChatbotLimit(resolvedPlanId),
                     api_access: ['growth', 'scale', 'enterprise'].includes(resolvedPlanId),
                 }).eq('id', userId);
-                console.log(`✅ User ${userId} upgraded to ${resolvedPlanId}`);
+                logger.info('webhook', `User upgraded to ${resolvedPlanId}`, { userId, plan: resolvedPlanId });
                 break;
             }
 
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
                         max_chatbots: getChatbotLimit(resolvedPlanId),
                         api_access: ['growth', 'scale', 'enterprise'].includes(resolvedPlanId),
                     }).eq('id', userId);
-                    console.log(`✅ User ${userId} plan changed to ${resolvedPlanId}`);
+                    logger.info('webhook', `User plan changed to ${resolvedPlanId}`, { userId, plan: resolvedPlanId });
                 }
                 break;
             }
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
                 }
                 if (userId) {
                     await admin.from('profiles').update({ monthly_message_count: 0 }).eq('id', userId);
-                    console.log(`🔄 User ${userId} subscription renewed, usage reset`);
+                    logger.info('webhook', `Subscription renewed, usage reset`, { userId });
                 }
                 break;
             }
@@ -122,13 +123,47 @@ export async function POST(request: NextRequest) {
                         max_chatbots: 1,
                         api_access: false,
                     }).eq('id', userId);
-                    console.log(`⚠️ User ${userId} downgraded to free (${eventType})`);
+                    logger.warn('webhook', `User downgraded to free (${eventType})`, { userId });
                 }
                 break;
             }
 
             case 'payment.succeeded': {
-                console.log(`💰 Payment received: ${data.payment_id || data.id}`);
+                const metadata = data.metadata || {};
+                const addonType = metadata.addon_type || metadata.addonId;
+                const payUserId = metadata.userId;
+
+                if (addonType && payUserId) {
+                    // This is a prepaid message add-on payment
+                    const addonId = getAddonByProductId(data.product_id) || addonType;
+                    const messagesToAdd = parseInt(metadata.messages_to_add || '0', 10) ||
+                        { '1000_messages': 1000, '5000_messages': 5000, '10000_messages': 10000 }[addonType as string] || 0;
+
+                    if (messagesToAdd > 0) {
+                        // Credit addon_message_balance
+                        await admin.rpc('add_addon_balance', {
+                            p_user_id: payUserId,
+                            p_messages: messagesToAdd,
+                        });
+
+                        // Record the purchase in message_addons
+                        await admin.from('message_addons').insert({
+                            user_id: payUserId,
+                            addon_type: addonType,
+                            messages_purchased: messagesToAdd,
+                            amount_paid_usd: data.total_amount ? (data.total_amount / 100).toFixed(2) : '0',
+                            dodo_payment_id: data.payment_id || data.id || null,
+                        });
+
+                        logger.info('webhook', `Add-on credited: +${messagesToAdd} messages`, {
+                            userId: payUserId,
+                            addonId,
+                            messages: messagesToAdd,
+                        });
+                    }
+                } else {
+                    logger.info('webhook', `Payment received: ${data.payment_id || data.id}`);
+                }
                 break;
             }
 
@@ -136,7 +171,7 @@ export async function POST(request: NextRequest) {
                 const metadata = data.metadata || {};
                 const userId = metadata.userId;
                 if (userId) {
-                    console.warn(`❌ Payment failed for user ${userId}`);
+                    logger.warn('webhook', `Payment failed for user`, { userId, paymentId: data.payment_id });
                 }
                 break;
             }
@@ -147,7 +182,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ received: true });
     } catch (error: any) {
-        console.error('Webhook error:', error);
+        logger.error('webhook', 'Webhook handler failed', { error: error.message });
         return NextResponse.json({ error: 'Webhook handler failed' }, { status: 400 });
     }
 }

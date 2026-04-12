@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { executeRAG, executeRAGStream } from '@/lib/rag';
 import { rateLimitChat, verifyDomain, getClientIP, corsHeaders } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 // POST /api/chat — Advanced RAG chat with streaming support
 export async function POST(request: NextRequest) {
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
 
         if (!allowed) {
             return NextResponse.json({
-                error: 'Monthly message limit reached. Please upgrade your plan.',
+                error: 'Monthly message limit reached. Please upgrade your plan or buy an add-on pack.',
                 limitReached: true,
             }, { status: 429, headers: corsHeaders(origin) });
         }
@@ -147,7 +148,7 @@ export async function POST(request: NextRequest) {
         }, { headers: corsHeaders(origin) });
 
     } catch (error: any) {
-        console.error('Chat error:', error);
+        logger.error('chat', 'Chat request failed', { error: error.message });
         return NextResponse.json(
             { error: error.message || 'Failed to generate response' },
             { status: 500, headers: corsHeaders(request.headers.get('origin')) }

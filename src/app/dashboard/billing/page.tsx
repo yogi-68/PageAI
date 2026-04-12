@@ -14,6 +14,12 @@ const plans = [
   { id: 'enterprise', name: 'Enterprise', price: -1, features: ['Unlimited Chatbots', 'Unlimited messages', 'Unlimited pages', 'All AI models', 'All data sources', 'Dedicated manager', 'SLA guarantee', 'SSO / SAML', 'Custom fine-tuning'] },
 ];
 
+const MESSAGE_ADDONS = [
+  { id: '1000_messages', label: '+1,000 Messages', price: 4, perK: '$4.00/K', badge: null },
+  { id: '5000_messages', label: '+5,000 Messages', price: 18, perK: '$3.60/K', badge: 'Save 10%' },
+  { id: '10000_messages', label: '+10,000 Messages', price: 30, perK: '$3.00/K', badge: 'Best value' },
+];
+
 interface ProfileData {
   plan: string;
   monthly_message_count: number;
@@ -21,6 +27,7 @@ interface ProfileData {
   total_pages_indexed: number;
   max_pages_indexed: number;
   dodo_subscription_id: string | null;
+  addon_message_balance: number;
 }
 
 export default function BillingPage() {
@@ -30,7 +37,7 @@ export default function BillingPage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from('profiles').select('plan, monthly_message_count, monthly_message_limit, total_pages_indexed, max_pages_indexed, dodo_subscription_id').eq('id', user.id).single().then(({ data }) => {
+    supabase.from('profiles').select('plan, monthly_message_count, monthly_message_limit, total_pages_indexed, max_pages_indexed, dodo_subscription_id, addon_message_balance').eq('id', user.id).single().then(({ data }) => {
       if (data) setProfile(data as ProfileData);
     });
   }, [user]);
@@ -53,13 +60,32 @@ export default function BillingPage() {
     setLoading(null);
   };
 
+  const handleBuyAddon = async (addonId: string) => {
+    setLoading(addonId);
+    try {
+      const res = await fetch('/api/billing/addons/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ addonId, userId: user?.id }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else throw new Error(data.error || 'Failed');
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+    setLoading(null);
+  };
+
   const currentPlan = profile?.plan || 'free';
   const msgUsed = profile?.monthly_message_count || 0;
   const msgLimit = profile?.monthly_message_limit || 50;
+  const addonBalance = profile?.addon_message_balance || 0;
   const pagesUsed = profile?.total_pages_indexed || 0;
   const pagesLimit = profile?.max_pages_indexed || 100;
   const msgPct = Math.min(100, Math.round((msgUsed / Math.max(msgLimit, 1)) * 100));
   const pagesPct = Math.min(100, Math.round((pagesUsed / Math.max(pagesLimit, 1)) * 100));
+  const atLimit = msgUsed >= msgLimit;
 
   return (
     <div className="space-y-6">
@@ -88,6 +114,9 @@ export default function BillingPage() {
             <div className={`h-full rounded-full transition-all ${msgPct > 90 ? 'bg-danger' : msgPct > 70 ? 'bg-warning' : 'bg-primary'}`} style={{ width: `${msgPct}%` }} />
           </div>
           <span className="text-[11px] text-fg-muted">{msgPct}% used this month</span>
+          {addonBalance > 0 && (
+            <p className="text-[11px] text-success mt-1">+{addonBalance.toLocaleString()} add-on messages available</p>
+          )}
         </div>
         <div className="p-5 rounded-xl border border-edge bg-surface/40">
           <div className="flex items-center justify-between mb-2">
@@ -101,14 +130,65 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Overage info */}
-      {msgPct > 90 && currentPlan !== 'free' && (
+      {/* Limit warning with add-on prompt */}
+      {atLimit && (
+        <div className="p-4 rounded-xl border border-danger/20 bg-danger/[0.04] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="text-danger text-[16px]">⛔</span>
+            <div>
+              <p className="text-[13px] font-medium text-fg">Message limit reached — chatbot blocked</p>
+              <p className="text-[12px] text-fg-secondary">Buy an add-on pack below to instantly restore service, or upgrade your plan.</p>
+            </div>
+          </div>
+        </div>
+      )}
+      {!atLimit && msgPct > 90 && currentPlan !== 'free' && (
         <div className="p-4 rounded-xl border border-warning/20 bg-warning/[0.04] flex items-center gap-3">
           <span className="text-warning text-[16px]">⚠</span>
           <div>
             <p className="text-[13px] font-medium text-fg">Approaching message limit</p>
-            <p className="text-[12px] text-fg-secondary">Messages beyond your limit are billed at $4 per 1,000 messages.</p>
+            <p className="text-[12px] text-fg-secondary">Messages beyond your limit are billed at $4 per 1,000 messages. Buy an add-on pack below to pre-load credits.</p>
           </div>
+        </div>
+      )}
+
+      {/* Message Add-on Packs */}
+      {currentPlan !== 'enterprise' && (
+        <div>
+          <div className="mb-3">
+            <h2 className="text-[16px] font-bold text-fg">Message Add-on Packs</h2>
+            <p className="text-[13px] text-fg-secondary mt-0.5">Instantly add messages to your account — no plan change needed. Credits never expire and are used before overage billing kicks in.</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            {MESSAGE_ADDONS.map(addon => (
+              <div key={addon.id} className={`relative flex flex-col p-5 rounded-xl border transition-all duration-200 ${addon.badge === 'Best value' ? 'border-success bg-success/[0.03]' : 'border-edge bg-surface/40 hover:border-edge-light'}`}>
+                {addon.badge && (
+                  <span className={`absolute -top-2.5 left-4 px-2.5 py-0.5 rounded-md text-[11px] font-semibold ${addon.badge === 'Best value' ? 'bg-success text-white' : 'bg-warning/20 text-warning'}`}>
+                    {addon.badge}
+                  </span>
+                )}
+                <p className="text-[15px] font-bold text-fg mt-1">{addon.label}</p>
+                <div className="flex items-baseline gap-1 my-2">
+                  <span className="text-[26px] font-bold text-fg">${addon.price}</span>
+                  <span className="text-[12px] text-fg-muted">one-time</span>
+                </div>
+                <p className="text-[11px] text-fg-muted mb-4">{addon.perK} per 1K messages</p>
+                <button
+                  onClick={() => handleBuyAddon(addon.id)}
+                  disabled={loading === addon.id}
+                  className={`w-full py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 disabled:opacity-50 ${addon.badge === 'Best value' ? 'bg-success text-white hover:bg-success/90' : 'border border-edge text-fg hover:bg-surface-elevated/50 hover:border-edge-light'}`}
+                >
+                  {loading === addon.id ? 'Redirecting...' : 'Buy Now'}
+                </button>
+              </div>
+            ))}
+          </div>
+          {addonBalance > 0 && (
+            <p className="text-[12px] text-success mt-2 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />
+              You have <strong>{addonBalance.toLocaleString()}</strong> add-on messages remaining this billing cycle.
+            </p>
+          )}
         </div>
       )}
 
@@ -163,7 +243,10 @@ export default function BillingPage() {
 
       {/* Overage pricing note */}
       <div className="p-4 rounded-xl border border-edge bg-surface/40">
-        <p className="text-[13px] text-fg-secondary"><span className="font-medium text-fg">Overage pricing:</span> $4 per 1,000 messages beyond your plan limit. All paid plans include a 7-day free trial.</p>
+        <p className="text-[13px] text-fg-secondary">
+          <span className="font-medium text-fg">Usage priority:</span> Plan quota is used first → then add-on credits → then auto-overage (if enabled) at $4 / 1,000 messages.
+          All paid plans include a 7-day free trial.
+        </p>
       </div>
     </div>
   );

@@ -25,6 +25,7 @@ CREATE TABLE public.profiles (
   max_pages_indexed INTEGER NOT NULL DEFAULT 100,
   max_chatbots INTEGER NOT NULL DEFAULT 1,
   overage_enabled BOOLEAN NOT NULL DEFAULT false,
+  addon_message_balance INTEGER NOT NULL DEFAULT 0,
   company TEXT,
   api_access BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -243,6 +244,23 @@ CREATE TABLE public.leads (
 );
 
 -- ================================
+-- Message Add-ons (prepaid message packs)
+-- ================================
+CREATE TABLE public.message_addons (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  addon_type TEXT NOT NULL CHECK (addon_type IN ('1000_messages', '5000_messages', '10000_messages')),
+  messages_purchased INTEGER NOT NULL,
+  messages_used INTEGER NOT NULL DEFAULT 0,
+  amount_paid_usd DECIMAL(10, 2) NOT NULL,
+  dodo_payment_id TEXT,
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_message_addons_user_id ON public.message_addons(user_id);
+
+-- ================================
 -- Response Cache
 -- ================================
 CREATE TABLE public.response_cache (
@@ -275,6 +293,7 @@ ALTER TABLE public.usage_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.usage_monthly ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.api_keys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.message_addons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.response_cache ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
@@ -294,6 +313,7 @@ CREATE POLICY "Users can view messages" ON public.messages FOR SELECT
   ));
 CREATE POLICY "Bot owners can access cache" ON public.response_cache FOR ALL
   USING (bot_id IN (SELECT id FROM public.bots WHERE user_id = auth.uid()));
+CREATE POLICY "Users can view own addons" ON public.message_addons FOR SELECT USING (auth.uid() = user_id);
 
 -- ================================
 -- Functions & Triggers
@@ -436,6 +456,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Credit add-on message balance atomically (called from webhook)
+CREATE OR REPLACE FUNCTION add_addon_balance(p_user_id UUID, p_messages INTEGER)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE public.profiles
+  SET addon_message_balance = addon_message_balance + p_messages
+  WHERE id = p_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- ================================
 -- Webhook Events (idempotency)
 -- ================================
@@ -459,24 +489,42 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- ================================
 -- Atomic Usage Check + Increment
 -- ================================
--- Returns TRUE if message was counted (user is within limit or overage enabled).
--- Returns FALSE if limit reached and overage is disabled.
--- Atomically increments monthly_message_count so concurrent requests cannot bypass the limit.
+-- Returns TRUE if message was counted (within plan quota, add-on balance, or overage).
+-- Returns FALSE if all limits exhausted.
+-- Uses pg_advisory_xact_lock(user_id) to prevent race-condition bypasses under concurrent load.
 CREATE OR REPLACE FUNCTION check_and_increment_message(p_user_id UUID, p_bot_id UUID)
 RETURNS BOOLEAN AS $$
 DECLARE
   v_rows_updated INTEGER;
 BEGIN
-  -- Single atomic UPDATE: only succeeds if within limit or overage enabled
+  -- Acquire a per-user transaction-scoped advisory lock.
+  -- This serialises concurrent requests for the same user so no two requests can
+  -- both read the same count and both pass the limit check before either commits.
+  PERFORM pg_advisory_xact_lock(hashtext(p_user_id::text)::bigint);
+
+  -- Atomic UPDATE with priority order:
+  --   1. Plan quota (monthly_message_count < monthly_message_limit)
+  --   2. Add-on balance (addon_message_balance > 0)
+  --   3. Overage (overage_enabled = true)
   UPDATE public.profiles
-  SET monthly_message_count = monthly_message_count + 1
+  SET
+    monthly_message_count = monthly_message_count + 1,
+    addon_message_balance = GREATEST(0, CASE
+      WHEN monthly_message_count >= monthly_message_limit AND addon_message_balance > 0
+        THEN addon_message_balance - 1
+      ELSE addon_message_balance
+    END)
   WHERE id = p_user_id
-    AND (monthly_message_count < monthly_message_limit OR overage_enabled = true);
+    AND (
+      monthly_message_count < monthly_message_limit   -- within plan quota
+      OR addon_message_balance > 0                    -- has prepaid add-on credits
+      OR overage_enabled = true                       -- auto-overage billing enabled
+    );
 
   GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
 
   IF v_rows_updated = 0 THEN
-    RETURN FALSE; -- limit reached
+    RETURN FALSE; -- all limits exhausted
   END IF;
 
   -- Increment bot conversation counter

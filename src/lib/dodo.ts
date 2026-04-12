@@ -162,6 +162,44 @@ export type PlanId = keyof typeof PLANS;
 // Overage pricing: $4 per 1,000 messages
 export const OVERAGE_RATE = 4; // USD per 1000 messages
 
+// ─── Message Add-ons (prepaid packs) ─────────────────────
+export const MESSAGE_ADDONS = {
+    '1000_messages': {
+        id: '1000_messages',
+        label: '+1,000 Messages',
+        messages: 1000,
+        price: 4,
+        perK: 4.0,
+        productId: process.env.DODO_ADDON_1000 || null,
+    },
+    '5000_messages': {
+        id: '5000_messages',
+        label: '+5,000 Messages',
+        messages: 5000,
+        price: 18,
+        perK: 3.6,
+        productId: process.env.DODO_ADDON_5000 || null,
+    },
+    '10000_messages': {
+        id: '10000_messages',
+        label: '+10,000 Messages',
+        messages: 10000,
+        price: 30,
+        perK: 3.0,
+        productId: process.env.DODO_ADDON_10000 || null,
+    },
+} as const;
+
+export type AddonId = keyof typeof MESSAGE_ADDONS;
+
+// Map Dodo Product ID to add-on ID
+export function getAddonByProductId(productId: string): AddonId | null {
+    for (const [key, addon] of Object.entries(MESSAGE_ADDONS)) {
+        if (addon.productId === productId) return key as AddonId;
+    }
+    return null;
+}
+
 // Map Dodo Product ID to our plan ID
 export function getPlanByProductId(productId: string): PlanId | null {
     for (const [key, plan] of Object.entries(PLANS)) {
