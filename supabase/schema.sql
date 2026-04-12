@@ -435,3 +435,62 @@ BEGIN
   DELETE FROM public.response_cache WHERE expires_at < NOW();
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ================================
+-- Webhook Events (idempotency)
+-- ================================
+CREATE TABLE IF NOT EXISTS public.webhook_events (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  event_id TEXT NOT NULL UNIQUE,
+  event_type TEXT NOT NULL,
+  processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_webhook_events_event_id ON public.webhook_events(event_id);
+
+-- Auto-cleanup webhook events older than 30 days
+CREATE OR REPLACE FUNCTION clean_old_webhook_events()
+RETURNS VOID AS $$
+BEGIN
+  DELETE FROM public.webhook_events WHERE processed_at < NOW() - INTERVAL '30 days';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ================================
+-- Atomic Usage Check + Increment
+-- ================================
+-- Returns TRUE if message was counted (user is within limit or overage enabled).
+-- Returns FALSE if limit reached and overage is disabled.
+-- Atomically increments monthly_message_count so concurrent requests cannot bypass the limit.
+CREATE OR REPLACE FUNCTION check_and_increment_message(p_user_id UUID, p_bot_id UUID)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_rows_updated INTEGER;
+BEGIN
+  -- Single atomic UPDATE: only succeeds if within limit or overage enabled
+  UPDATE public.profiles
+  SET monthly_message_count = monthly_message_count + 1
+  WHERE id = p_user_id
+    AND (monthly_message_count < monthly_message_limit OR overage_enabled = true);
+
+  GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
+
+  IF v_rows_updated = 0 THEN
+    RETURN FALSE; -- limit reached
+  END IF;
+
+  -- Increment bot conversation counter
+  UPDATE public.bots
+  SET total_conversations = total_conversations + 1
+  WHERE id = p_bot_id;
+
+  -- Upsert monthly usage aggregate
+  INSERT INTO public.usage_monthly (user_id, month, message_count)
+  VALUES (p_user_id, DATE_TRUNC('month', NOW()), 1)
+  ON CONFLICT (user_id, month)
+  DO UPDATE SET message_count = public.usage_monthly.message_count + 1;
+
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+

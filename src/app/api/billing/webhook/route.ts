@@ -31,6 +31,20 @@ export async function POST(request: NextRequest) {
         const data = event.data || event;
         const admin = getAdminClient();
 
+        // ─── Idempotency: skip already-processed events ───
+        const eventId = event.id || event.event_id || event.webhook_id;
+        if (eventId) {
+            const { error: insertErr } = await admin
+                .from('webhook_events')
+                .insert({ event_id: String(eventId), event_type: eventType });
+
+            if (insertErr?.code === '23505') {
+                // Duplicate key — event already processed
+                console.log(`⏭️ Duplicate webhook event skipped: ${eventId}`);
+                return NextResponse.json({ received: true, duplicate: true });
+            }
+        }
+
         switch (eventType) {
             case 'subscription.active': {
                 const metadata = data.metadata || {};

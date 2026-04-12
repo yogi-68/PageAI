@@ -83,7 +83,7 @@ export async function PATCH(request: NextRequest) {
     }
 }
 
-// DELETE /api/bots — delete a bot
+// DELETE /api/bots — delete a bot + cleanup orphaned data sources
 export async function DELETE(request: NextRequest) {
     try {
         const botId = request.nextUrl.searchParams.get('botId');
@@ -92,8 +92,34 @@ export async function DELETE(request: NextRequest) {
         }
 
         const admin = getAdminClient();
+
+        // Fetch the bot's data source IDs before deleting
+        const { data: bot } = await admin
+            .from('bots')
+            .select('data_source_ids, user_id')
+            .eq('id', botId)
+            .single();
+
+        // Delete the bot (conversations/messages cascade via FK)
         const { error } = await admin.from('bots').delete().eq('id', botId);
         if (error) throw error;
+
+        // Clean up data sources that are no longer referenced by any remaining bot
+        const dataSourceIds = (bot?.data_source_ids ?? []) as string[];
+        if (dataSourceIds.length > 0) {
+            for (const dsId of dataSourceIds) {
+                const { count } = await admin
+                    .from('bots')
+                    .select('id', { count: 'exact', head: true })
+                    .filter('data_source_ids', 'cs', `{${dsId}}`);
+
+                if (count === 0) {
+                    // Orphaned data source — safe to delete; cascades to documents + chunks
+                    await admin.from('data_sources').delete().eq('id', dsId);
+                }
+            }
+        }
+
         return NextResponse.json({ success: true });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });

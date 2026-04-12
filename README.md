@@ -156,25 +156,29 @@ npm install
 
 Create `.env.local` with the following:
 
-| Variable | Description |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-side only) |
-| `OPENAI_API_KEY` | OpenAI API key ([platform.openai.com](https://platform.openai.com/api-keys)) |
-| `DODO_PAYMENTS_API_KEY` | Dodo Payments API key |
-| `DODO_PAYMENTS_WEBHOOK_KEY` | Dodo webhook secret |
-| `DODO_PRODUCT_STARTER` | Dodo Product ID for Starter ($29/mo) |
-| `DODO_PRODUCT_GROWTH` | Dodo Product ID for Growth ($69/mo) |
-| `DODO_PRODUCT_SCALE` | Dodo Product ID for Scale ($199/mo) |
-| `DODO_PRODUCT_ENTERPRISE` | Dodo Product ID for Enterprise (optional) |
-| `ADMIN_EMAILS` | Comma-separated admin emails |
-| `NEXT_PUBLIC_APP_URL` | Your app URL (e.g. `https://pageai-tau.vercel.app`) |
+| Variable | Required | Description |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase anon/public key |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Supabase service role key (server-side only) |
+| `OPENAI_API_KEY` | ✅ | OpenAI API key ([platform.openai.com](https://platform.openai.com/api-keys)) |
+| `DODO_PAYMENTS_API_KEY` | ✅ | Dodo Payments API key |
+| `DODO_PAYMENTS_WEBHOOK_KEY` | ✅ | Dodo webhook signing secret |
+| `DODO_PRODUCT_STARTER` | ✅ | Dodo Product ID for Starter ($29/mo) |
+| `DODO_PRODUCT_GROWTH` | ✅ | Dodo Product ID for Growth ($69/mo) |
+| `DODO_PRODUCT_SCALE` | ✅ | Dodo Product ID for Scale ($199/mo) |
+| `DODO_PRODUCT_ENTERPRISE` | — | Dodo Product ID for Enterprise (optional) |
+| `ADMIN_EMAILS` | ✅ | Comma-separated admin emails (e.g. `you@example.com`) |
+| `NEXT_PUBLIC_APP_URL` | ✅ | Your app URL (e.g. `https://pageai-tau.vercel.app`) |
+
+> **Vercel note:** `NEXT_PUBLIC_*` variables are embedded into the client bundle **at build time**. You must set them in Vercel → Settings → Environment Variables and **redeploy** for them to take effect in the browser. Missing these variables will cause a `supabaseUrl is required` error.
 
 ### 3. Database Setup
 
 1. Enable the **pgvector** extension in your Supabase project
-2. Run `supabase/schema.sql` in the Supabase SQL Editor — creates 13 tables, indexes, RPC functions, and RLS policies
+2. Run `supabase/schema.sql` in the Supabase SQL Editor — creates 13 tables, indexes, RPC functions, RLS policies, and:
+   - `check_and_increment_message()` — atomic usage enforcement (prevents race conditions)
+   - `webhook_events` table — idempotent webhook processing (prevents duplicate plan updates)
 
 ### 4. Dodo Payments Setup
 

@@ -49,14 +49,19 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 3. Check usage limits
-        const { data: profile } = await admin
-            .from('profiles')
-            .select('monthly_message_count, monthly_message_limit, overage_enabled')
-            .eq('id', bot.user_id)
-            .single();
+        // 3. Atomically check usage limit and increment counter
+        // Uses a single DB UPDATE so concurrent requests cannot race past the limit
+        const { data: allowed, error: usageErr } = await admin.rpc('check_and_increment_message', {
+            p_user_id: bot.user_id,
+            p_bot_id: botId,
+        });
 
-        if (profile && profile.monthly_message_count >= profile.monthly_message_limit && !profile.overage_enabled) {
+        if (usageErr) {
+            console.error('Usage RPC error:', usageErr);
+            return NextResponse.json({ error: 'Failed to check usage' }, { status: 500, headers: corsHeaders(origin) });
+        }
+
+        if (!allowed) {
             return NextResponse.json({
                 error: 'Monthly message limit reached. Please upgrade your plan.',
                 limitReached: true,
@@ -96,10 +101,6 @@ export async function POST(request: NextRequest) {
                         queryRewrite: meta.queryRewrite,
                         chunksRetrieved: meta.chunksRetrieved,
                     });
-                    await admin.rpc('increment_message_count', {
-                        p_user_id: bot.user_id,
-                        p_bot_id: botId,
-                    });
                 } catch (e) {
                     console.error('Failed to save streamed conversation:', e);
                 }
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
         // Non-streaming mode
         const result = await executeRAG(query, botId, ragConfig);
 
-        // 5. Save conversation and message
+        // 5. Save conversation and message (usage already counted atomically above)
         const convId = await saveConversation(admin, {
             botId,
             conversationId,
@@ -132,12 +133,6 @@ export async function POST(request: NextRequest) {
             confidence: result.confidence,
             queryRewrite: result.queryRewrite,
             chunksRetrieved: result.chunksRetrieved,
-        });
-
-        // 6. Increment usage
-        await admin.rpc('increment_message_count', {
-            p_user_id: bot.user_id,
-            p_bot_id: botId,
         });
 
         return NextResponse.json({
