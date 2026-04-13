@@ -19,6 +19,22 @@ interface User {
     botCount: number;
 }
 
+const planColors: Record<string, string> = {
+    free: 'bg-[rgba(107,114,128,0.15)] text-[#9ca3af]',
+    starter: 'bg-[rgba(99,102,241,0.12)] text-[var(--primary)]',
+    growth: 'bg-[rgba(99,102,241,0.12)] text-[var(--primary)]',
+    scale: 'bg-[rgba(245,158,11,0.15)] text-[#f59e0b]',
+};
+
+function PlanBadge({ plan }: { plan: string }) {
+    const cls = planColors[plan] || planColors.free;
+    return (
+        <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase ${cls}`}>
+            {plan || 'free'}
+        </span>
+    );
+}
+
 export default function UsersPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [total, setTotal] = useState(0);
@@ -54,30 +70,24 @@ export default function UsersPage() {
 
     return (
         <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <h1 style={{ fontSize: 24, fontWeight: 700 }}>Users ({total})</h1>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold text-[var(--fg)]">Users ({total})</h1>
             </div>
 
             {/* Filters */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', gap: 8 }}>
+            <div className="flex flex-wrap gap-3 mb-5">
+                <div className="flex gap-2">
                     <input
                         type="text"
                         placeholder="Search by email or name..."
                         value={searchInput}
                         onChange={e => setSearchInput(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                        style={{
-                            padding: '8px 12px', borderRadius: 8, border: '1px solid var(--edge)',
-                            background: 'var(--surface)', color: 'var(--fg)', fontSize: 13, width: 260,
-                        }}
+                        className="w-64 px-3 py-2 rounded-lg border border-[var(--edge)] bg-[var(--surface)] text-[var(--fg)] text-sm outline-none focus:border-[var(--primary)]"
                     />
                     <button
                         onClick={handleSearch}
-                        style={{
-                            padding: '8px 16px', borderRadius: 8, border: 'none',
-                            background: 'var(--primary)', color: '#fff', cursor: 'pointer', fontSize: 13,
-                        }}
+                        className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
                     >
                         Search
                     </button>
@@ -85,10 +95,7 @@ export default function UsersPage() {
                 <select
                     value={planFilter}
                     onChange={e => { setPlanFilter(e.target.value); setPage(1); }}
-                    style={{
-                        padding: '8px 12px', borderRadius: 8, border: '1px solid var(--edge)',
-                        background: 'var(--surface)', color: 'var(--fg)', fontSize: 13,
-                    }}
+                    className="px-3 py-2 rounded-lg border border-[var(--edge)] bg-[var(--surface)] text-[var(--fg)] text-sm outline-none"
                 >
                     <option value="all">All Plans</option>
                     <option value="free">Free</option>
@@ -99,65 +106,53 @@ export default function UsersPage() {
             </div>
 
             {/* Table */}
-            <div style={{
-                background: 'var(--surface)', border: '1px solid var(--edge)',
-                borderRadius: 12, overflow: 'hidden',
-            }}>
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <div className="rounded-xl bg-[var(--surface)] border border-[var(--edge)] overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
                         <thead>
-                            <tr style={{ borderBottom: '1px solid var(--edge)', background: 'rgba(255,255,255,0.02)' }}>
+                            <tr className="border-b border-[var(--edge)] bg-[rgba(255,255,255,0.02)]">
                                 {['Email', 'Name', 'Plan', 'Messages', 'Bots', 'Pages', 'Subscription', 'Joined'].map(h => (
-                                    <th key={h} style={{ textAlign: 'left', padding: '12px', color: 'var(--muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>{h}</th>
+                                    <th key={h} className="text-left px-3 py-3 text-[var(--fg-secondary)] font-medium whitespace-nowrap">{h}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr><td colSpan={8} style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>Loading...</td></tr>
+                                <tr><td colSpan={8} className="py-10 text-center text-[var(--fg-secondary)]">Loading...</td></tr>
                             ) : users.length === 0 ? (
-                                <tr><td colSpan={8} style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>No users found</td></tr>
+                                <tr><td colSpan={8} className="py-10 text-center text-[var(--fg-secondary)]">No users found</td></tr>
                             ) : users.map(u => {
-                                const usagePct = u.monthly_message_limit > 0 ? Math.min((u.monthly_message_count / u.monthly_message_limit) * 100, 100) : 0;
+                                const usagePct = u.monthly_message_limit > 0
+                                    ? Math.min((u.monthly_message_count / u.monthly_message_limit) * 100, 100)
+                                    : 0;
+                                const barColor = usagePct >= 90 ? 'var(--danger)' : usagePct >= 70 ? '#f59e0b' : 'var(--primary)';
                                 return (
-                                    <tr key={u.id} style={{ borderBottom: '1px solid var(--edge)' }}>
-                                        <td style={{ padding: '10px 12px', fontWeight: 500 }}>{u.email}</td>
-                                        <td style={{ padding: '10px 12px', color: 'var(--muted)' }}>{u.full_name || 'â€”'}</td>
-                                        <td style={{ padding: '10px 12px' }}>
-                                            <span style={{
-                                                padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600,
-                                                textTransform: 'uppercase',
-                                                background: u.plan === 'free' ? 'rgba(107,114,128,0.15)' : u.plan === 'scale' ? 'rgba(245,158,11,0.15)' : 'rgba(99,102,241,0.15)',
-                                                color: u.plan === 'free' ? '#9ca3af' : u.plan === 'scale' ? '#f59e0b' : 'var(--primary)',
-                                            }}>
-                                                {u.plan || 'free'}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '10px 12px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <div style={{ width: 60, height: 4, background: 'var(--edge)', borderRadius: 2, overflow: 'hidden' }}>
-                                                    <div style={{
-                                                        height: '100%', borderRadius: 2,
-                                                        width: `${usagePct}%`,
-                                                        background: usagePct >= 90 ? 'var(--danger)' : usagePct >= 70 ? '#f59e0b' : 'var(--primary)',
-                                                    }} />
+                                    <tr key={u.id} className="border-b border-[var(--edge)] last:border-0 hover:bg-[rgba(255,255,255,0.02)] transition-colors">
+                                        <td className="px-3 py-2.5 font-medium">{u.email}</td>
+                                        <td className="px-3 py-2.5 text-[var(--fg-secondary)]">{u.full_name || '—'}</td>
+                                        <td className="px-3 py-2.5"><PlanBadge plan={u.plan} /></td>
+                                        <td className="px-3 py-2.5">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-14 h-1 bg-[var(--edge)] rounded overflow-hidden">
+                                                    <div style={{ width: `${usagePct}%`, background: barColor }} className="h-full rounded" />
                                                 </div>
-                                                <span style={{ color: 'var(--muted)', fontSize: 12, whiteSpace: 'nowrap' }}>
+                                                <span className="text-[var(--fg-secondary)] text-xs whitespace-nowrap">
                                                     {u.monthly_message_count}/{u.monthly_message_limit}
-                                                    {u.addon_message_balance > 0 && <span style={{ color: '#10b981' }}> +{u.addon_message_balance}</span>}
+                                                    {u.addon_message_balance > 0 && (
+                                                        <span className="text-emerald-500 ml-1">+{u.addon_message_balance}</span>
+                                                    )}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td style={{ padding: '10px 12px', color: 'var(--muted)' }}>{u.botCount}</td>
-                                        <td style={{ padding: '10px 12px', color: 'var(--muted)' }}>{u.total_pages_indexed}/{u.max_pages_indexed}</td>
-                                        <td style={{ padding: '10px 12px' }}>
-                                            {u.dodo_subscription_id ? (
-                                                <span style={{ color: '#10b981', fontSize: 12 }}>Active</span>
-                                            ) : (
-                                                <span style={{ color: 'var(--muted)', fontSize: 12 }}>None</span>
-                                            )}
+                                        <td className="px-3 py-2.5 text-[var(--fg-secondary)]">{u.botCount}</td>
+                                        <td className="px-3 py-2.5 text-[var(--fg-secondary)]">{u.total_pages_indexed}/{u.max_pages_indexed}</td>
+                                        <td className="px-3 py-2.5">
+                                            {u.dodo_subscription_id
+                                                ? <span className="text-emerald-500 text-xs">Active</span>
+                                                : <span className="text-[var(--fg-secondary)] text-xs">None</span>
+                                            }
                                         </td>
-                                        <td style={{ padding: '10px 12px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                                        <td className="px-3 py-2.5 text-[var(--fg-secondary)] whitespace-nowrap text-xs">
                                             {new Date(u.created_at).toLocaleDateString()}
                                         </td>
                                     </tr>
@@ -167,34 +162,22 @@ export default function UsersPage() {
                     </table>
                 </div>
 
-                {/* Pagination */}
                 {totalPages > 1 && (
-                    <div style={{
-                        display: 'flex', justifyContent: 'center', gap: 8,
-                        padding: 16, borderTop: '1px solid var(--edge)',
-                    }}>
+                    <div className="flex justify-center items-center gap-2 px-4 py-3 border-t border-[var(--edge)]">
                         <button
                             onClick={() => setPage(Math.max(1, page - 1))}
                             disabled={page <= 1}
-                            style={{
-                                padding: '6px 12px', borderRadius: 6, border: '1px solid var(--edge)',
-                                background: 'var(--surface)', color: 'var(--fg)', cursor: page <= 1 ? 'not-allowed' : 'pointer',
-                                opacity: page <= 1 ? 0.5 : 1, fontSize: 13,
-                            }}
+                            className="px-3 py-1.5 rounded-lg border border-[var(--edge)] bg-[var(--surface)] text-sm disabled:opacity-40 hover:bg-[rgba(255,255,255,0.04)] transition-colors"
                         >
                             Previous
                         </button>
-                        <span style={{ padding: '6px 12px', color: 'var(--muted)', fontSize: 13 }}>
+                        <span className="px-3 py-1.5 text-[var(--fg-secondary)] text-sm">
                             Page {page} of {totalPages}
                         </span>
                         <button
                             onClick={() => setPage(Math.min(totalPages, page + 1))}
                             disabled={page >= totalPages}
-                            style={{
-                                padding: '6px 12px', borderRadius: 6, border: '1px solid var(--edge)',
-                                background: 'var(--surface)', color: 'var(--fg)', cursor: page >= totalPages ? 'not-allowed' : 'pointer',
-                                opacity: page >= totalPages ? 0.5 : 1, fontSize: 13,
-                            }}
+                            className="px-3 py-1.5 rounded-lg border border-[var(--edge)] bg-[var(--surface)] text-sm disabled:opacity-40 hover:bg-[rgba(255,255,255,0.04)] transition-colors"
                         >
                             Next
                         </button>

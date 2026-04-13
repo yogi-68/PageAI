@@ -38,36 +38,34 @@ export default function BotsPage() {
         if (statusFilter === 'inactive' && b.is_active) return false;
         if (search) {
             const s = search.toLowerCase();
-            return b.name.toLowerCase().includes(s) || b.owner?.email.toLowerCase().includes(s) || b.website?.url.toLowerCase().includes(s);
+            return b.name.toLowerCase().includes(s) ||
+                b.owner?.email.toLowerCase().includes(s) ||
+                (b.website?.url || '').toLowerCase().includes(s);
         }
         return true;
     });
 
-    if (loading) return <div style={{ color: 'var(--muted)', padding: 40 }}>Loading bots...</div>;
+    if (loading) return (
+        <div className="flex items-center justify-center py-20 text-[var(--fg-secondary)]">Loading bots...</div>
+    );
 
     return (
         <div>
-            <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Bots ({bots.length})</h1>
+            <h1 className="text-2xl font-bold text-[var(--fg)] mb-6">Bots ({bots.length})</h1>
 
             {/* Filters */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+            <div className="flex flex-wrap gap-3 mb-5">
                 <input
                     type="text"
                     placeholder="Search bots, owners, websites..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    style={{
-                        padding: '8px 12px', borderRadius: 8, border: '1px solid var(--edge)',
-                        background: 'var(--surface)', color: 'var(--fg)', fontSize: 13, width: 280,
-                    }}
+                    className="w-72 px-3 py-2 rounded-lg border border-[var(--edge)] bg-[var(--surface)] text-[var(--fg)] text-sm outline-none focus:border-[var(--primary)]"
                 />
                 <select
                     value={statusFilter}
                     onChange={e => setStatusFilter(e.target.value)}
-                    style={{
-                        padding: '8px 12px', borderRadius: 8, border: '1px solid var(--edge)',
-                        background: 'var(--surface)', color: 'var(--fg)', fontSize: 13,
-                    }}
+                    className="px-3 py-2 rounded-lg border border-[var(--edge)] bg-[var(--surface)] text-[var(--fg)] text-sm outline-none"
                 >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
@@ -76,70 +74,62 @@ export default function BotsPage() {
             </div>
 
             {/* Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
-                {filtered.map(bot => (
-                    <div key={bot.id} style={{
-                        background: 'var(--surface)', border: '1px solid var(--edge)',
-                        borderRadius: 12, padding: 20,
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 12 }}>
+            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}>
+                {filtered.length === 0 ? (
+                    <div className="col-span-full text-center py-10 text-[var(--fg-secondary)]">No bots found</div>
+                ) : filtered.map(bot => (
+                    <div key={bot.id} className="rounded-xl bg-[var(--surface)] border border-[var(--edge)] p-5 hover:border-[rgba(79,109,245,0.3)] transition-colors">
+                        <div className="flex justify-between items-start mb-3">
                             <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <div style={{
-                                        width: 10, height: 10, borderRadius: '50%',
-                                        background: bot.is_active ? '#10b981' : '#ef4444',
-                                    }} />
-                                    <span style={{ fontWeight: 600, fontSize: 15 }}>{bot.name}</span>
+                                <div className="flex items-center gap-2">
+                                    <span className={`w-2.5 h-2.5 rounded-full ${bot.is_active ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                                    <span className="font-semibold text-[15px]">{bot.name}</span>
                                 </div>
-                                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
-                                    {bot.model} Â· temp {bot.temperature}
+                                <div className="text-xs text-[var(--fg-secondary)] mt-1">
+                                    {bot.model} · temp {bot.temperature}
                                 </div>
                             </div>
-                            <div style={{
-                                width: 8, height: 32, borderRadius: 4,
-                                background: bot.primary_color || 'var(--primary)',
-                            }} />
+                            <div
+                                className="w-2 h-8 rounded flex-shrink-0"
+                                style={{ background: bot.primary_color || 'var(--primary)' }}
+                            />
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13 }}>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
                             <div>
-                                <span style={{ color: 'var(--muted)' }}>Conversations: </span>
-                                <span style={{ fontWeight: 600 }}>{bot.total_conversations}</span>
+                                <span className="text-[var(--fg-secondary)]">Conversations: </span>
+                                <span className="font-semibold">{bot.total_conversations}</span>
                             </div>
                             <div>
-                                <span style={{ color: 'var(--muted)' }}>Max Tokens: </span>
+                                <span className="text-[var(--fg-secondary)]">Max Tokens: </span>
                                 <span>{bot.max_tokens}</span>
                             </div>
                             <div>
-                                <span style={{ color: 'var(--muted)' }}>Owner: </span>
-                                <span style={{ fontSize: 12 }}>{bot.owner?.email || 'Unknown'}</span>
+                                <span className="text-[var(--fg-secondary)]">Owner: </span>
+                                <span className="text-xs">{bot.owner?.email || 'Unknown'}</span>
                             </div>
                             <div>
-                                <span style={{ color: 'var(--muted)' }}>Plan: </span>
-                                <span style={{ textTransform: 'capitalize' }}>{bot.owner?.plan || 'free'}</span>
+                                <span className="text-[var(--fg-secondary)]">Plan: </span>
+                                <span className="capitalize">{bot.owner?.plan || 'free'}</span>
                             </div>
                         </div>
 
                         {bot.website && (
-                            <div style={{
-                                marginTop: 12, padding: '8px 12px', borderRadius: 8,
-                                background: 'rgba(99,102,241,0.06)', fontSize: 12,
-                            }}>
-                                <span style={{ color: 'var(--muted)' }}>Website: </span>
+                            <div className="mt-3 px-3 py-2 rounded-lg bg-[rgba(99,102,241,0.06)] text-xs">
+                                <span className="text-[var(--fg-secondary)]">Website: </span>
                                 <span>{bot.website.url}</span>
-                                <span style={{ color: 'var(--muted)' }}> Â· {bot.website.pages_count} pages Â· {bot.website.status}</span>
+                                <span className="text-[var(--fg-secondary)]"> · {bot.website.pages_count} pages · {bot.website.status}</span>
                             </div>
                         )}
 
-                        <div style={{ marginTop: 8, fontSize: 11, color: 'var(--muted)' }}>
+                        <div className="mt-2 text-[11px] text-[var(--fg-secondary)]">
                             Created {new Date(bot.created_at).toLocaleDateString()}
-                            {!bot.branding_enabled && <span style={{ color: '#f59e0b', marginLeft: 8 }}>Branding off</span>}
+                            {!bot.branding_enabled && (
+                                <span className="text-amber-500 ml-2">Branding off</span>
+                            )}
                         </div>
                     </div>
                 ))}
-                {filtered.length === 0 && (
-                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 40, color: 'var(--muted)' }}>No bots found</div>
-                )}
             </div>
         </div>
     );

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminClient } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { isAdmin } from '@/lib/plans';
 
 export async function POST(request: NextRequest) {
@@ -9,10 +9,13 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
         }
 
-        const admin = getAdminClient();
+        // Use anon key for user authentication (service_role is not suitable for client auth flows)
+        const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        );
 
-        // Verify credentials via Supabase Auth
-        const { data: authData, error: authError } = await admin.auth.signInWithPassword({ email, password });
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
         if (authError || !authData.user) {
             return NextResponse.json({ error: authError?.message || 'Invalid credentials' }, { status: 401 });
         }
@@ -30,6 +33,8 @@ export async function POST(request: NextRequest) {
             },
         });
     } catch (error: any) {
+        console.error('[admin/login]', error);
         return NextResponse.json({ error: error.message || 'Login failed' }, { status: 500 });
     }
 }
+

@@ -16,16 +16,15 @@ interface RevenueData {
     signupsByDay: { date: string; total: number; paid: number }[];
 }
 
-const KPICard = ({ label, value, sub }: { label: string; value: string | number; sub?: string }) => (
-    <div style={{
-        background: 'var(--surface)', border: '1px solid var(--edge)',
-        borderRadius: 12, padding: '20px 24px',
-    }}>
-        <div style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 4 }}>{label}</div>
-        <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--fg)' }}>{value}</div>
-        {sub && <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 4 }}>{sub}</div>}
-    </div>
-);
+function KPI({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+    return (
+        <div className="rounded-xl bg-[var(--surface)] border border-[var(--edge)] px-6 py-5">
+            <div className="text-[var(--fg-secondary)] text-sm mb-1">{label}</div>
+            <div className="text-3xl font-bold text-[var(--fg)]">{value}</div>
+            {sub && <div className="text-[var(--fg-secondary)] text-xs mt-1">{sub}</div>}
+        </div>
+    );
+}
 
 export default function RevenuePage() {
     const [data, setData] = useState<RevenueData | null>(null);
@@ -39,35 +38,36 @@ export default function RevenuePage() {
             .finally(() => setLoading(false));
     }, []);
 
-    if (loading) return <div style={{ color: 'var(--muted)', padding: 40 }}>Loading revenue data...</div>;
-    if (!data) return <div style={{ color: 'var(--danger)' }}>Failed to load data</div>;
+    if (loading) return (
+        <div className="flex items-center justify-center py-20 text-[var(--fg-secondary)]">Loading revenue data...</div>
+    );
+    if (!data) return (
+        <div className="text-[var(--danger)]">Failed to load data</div>
+    );
 
     return (
         <div>
-            <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Revenue</h1>
+            <h1 className="text-2xl font-bold text-[var(--fg)] mb-6">Revenue</h1>
 
             {/* KPIs */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
-                <KPICard label="MRR" value={`$${data.mrr}`} sub={`ARR: $${data.arr}`} />
-                <KPICard label="Addon Revenue" value={`$${data.addonRevenue}`} />
-                <KPICard label="Paid Subscribers" value={data.paidUsers} sub={`${data.conversionRate}% conversion`} />
-                <KPICard label="ARPU" value={`$${data.arpu}`} sub="per paid user / month" />
-                <KPICard label="Free Users" value={data.freeUsers} />
-                <KPICard label="Total Users" value={data.freeUsers + data.paidUsers} />
+            <div className="grid gap-4 mb-8" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
+                <KPI label="MRR" value={`$${data.mrr}`} sub={`ARR: $${data.arr}`} />
+                <KPI label="Addon Revenue" value={`$${data.addonRevenue}`} />
+                <KPI label="Paid Subscribers" value={data.paidUsers} sub={`${data.conversionRate}% conversion`} />
+                <KPI label="ARPU" value={`$${data.arpu}`} sub="per paid user / month" />
+                <KPI label="Free Users" value={data.freeUsers} />
+                <KPI label="Total Users" value={data.freeUsers + data.paidUsers} />
             </div>
 
             {/* Plan Breakdown */}
-            <div style={{
-                background: 'var(--surface)', border: '1px solid var(--edge)',
-                borderRadius: 12, padding: 24, marginBottom: 32,
-            }}>
-                <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20 }}>Revenue by Plan</h2>
-                <div style={{ height: 280 }}>
+            <div className="rounded-xl bg-[var(--surface)] border border-[var(--edge)] p-6 mb-8">
+                <h2 className="text-base font-semibold mb-5">Revenue by Plan</h2>
+                <div className="h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={data.planBreakdown}>
                             <CartesianGrid strokeDasharray="3 3" stroke="var(--edge)" />
-                            <XAxis dataKey="plan" tick={{ fill: 'var(--muted)', fontSize: 12 }} />
-                            <YAxis tick={{ fill: 'var(--muted)', fontSize: 12 }} />
+                            <XAxis dataKey="plan" tick={{ fill: 'var(--fg-secondary)', fontSize: 12 }} />
+                            <YAxis tick={{ fill: 'var(--fg-secondary)', fontSize: 12 }} />
                             <Tooltip
                                 contentStyle={{ background: 'var(--surface)', border: '1px solid var(--edge)', borderRadius: 8 }}
                                 labelStyle={{ color: 'var(--fg)' }}
@@ -77,38 +77,31 @@ export default function RevenuePage() {
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
-
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 16 }}>
+                <div className="flex flex-wrap gap-3 mt-4">
                     {data.planBreakdown.map(p => (
-                        <div key={p.plan} style={{
-                            padding: '8px 16px', borderRadius: 8, background: 'rgba(255,255,255,0.03)',
-                            border: '1px solid var(--edge)', fontSize: 13,
-                        }}>
-                            <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{p.plan}</span>
-                            <span style={{ color: 'var(--muted)', marginLeft: 8 }}>{p.count} users</span>
-                            <span style={{ color: 'var(--primary)', marginLeft: 8 }}>${p.revenue}/mo</span>
-                            <span style={{ color: 'var(--muted)', marginLeft: 8 }}>({p.percentage}%)</span>
+                        <div key={p.plan} className="px-4 py-2 rounded-lg bg-[rgba(255,255,255,0.03)] border border-[var(--edge)] text-sm">
+                            <span className="capitalize font-semibold">{p.plan}</span>
+                            <span className="text-[var(--fg-secondary)] ml-2">{p.count} users</span>
+                            <span className="text-[var(--primary)] ml-2">${p.revenue}/mo</span>
+                            <span className="text-[var(--fg-secondary)] ml-2">({p.percentage}%)</span>
                         </div>
                     ))}
                 </div>
             </div>
 
             {/* Signups Chart (30 days) */}
-            <div style={{
-                background: 'var(--surface)', border: '1px solid var(--edge)',
-                borderRadius: 12, padding: 24,
-            }}>
-                <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20 }}>Signups (Last 30 Days)</h2>
-                <div style={{ height: 280 }}>
+            <div className="rounded-xl bg-[var(--surface)] border border-[var(--edge)] p-6">
+                <h2 className="text-base font-semibold mb-5">Signups (Last 30 Days)</h2>
+                <div className="h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={data.signupsByDay}>
                             <CartesianGrid strokeDasharray="3 3" stroke="var(--edge)" />
                             <XAxis
                                 dataKey="date"
-                                tick={{ fill: 'var(--muted)', fontSize: 11 }}
-                                tickFormatter={(d) => d.split('-').slice(1).join('/')}
+                                tick={{ fill: 'var(--fg-secondary)', fontSize: 11 }}
+                                tickFormatter={(d: string) => d.split('-').slice(1).join('/')}
                             />
-                            <YAxis tick={{ fill: 'var(--muted)', fontSize: 12 }} />
+                            <YAxis tick={{ fill: 'var(--fg-secondary)', fontSize: 12 }} />
                             <Tooltip
                                 contentStyle={{ background: 'var(--surface)', border: '1px solid var(--edge)', borderRadius: 8 }}
                                 labelStyle={{ color: 'var(--fg)' }}
