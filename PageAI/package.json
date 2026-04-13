@@ -1,14 +1,4 @@
 {
-  "name": "pageai-monorepo",
-  "private": true,
-  "scripts": {
-    "dev:primary": "cd primary && npm run dev",
-    "dev:admin": "cd admin && npm run dev",
-    "build:primary": "cd primary && npm run build",
-    "build:admin": "cd admin && npm run build"
-  }
-}
-{
   "name": "pageai",
   "version": "0.1.0",
   "private": true,
