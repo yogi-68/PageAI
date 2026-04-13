@@ -98,7 +98,9 @@ export async function POST(request: NextRequest) {
                     max_pages_indexed: getPageLimit(resolvedPlanId),
                     max_chatbots: getChatbotLimit(resolvedPlanId),
                     api_access: ['growth', 'scale', 'enterprise'].includes(resolvedPlanId),
-                    // Mark trial as used — prevents trial abuse on re-subscribe / plan switch
+                    // Belt-and-suspenders: mark trial used on activation too.
+                    // Checkout already sets this, but this catches edge cases
+                    // (e.g. direct Dodo API subscriptions, admin-created subs).
                     has_used_trial: true,
                 }).eq('id', userId);
                 logger.info('webhook', `User upgraded to ${resolvedPlanId}`, { userId, plan: resolvedPlanId });

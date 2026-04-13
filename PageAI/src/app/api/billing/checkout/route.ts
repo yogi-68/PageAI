@@ -50,10 +50,20 @@ export async function POST(request: NextRequest) {
         // Trial rules:
         // 1. Annual plans never get a trial (they already save ~20%)
         // 2. Scale/Enterprise plans have trialDays=0 (serious users; abuse risk)
-        // 3. Starter/Growth get 7 days — but ONLY if user has never activated a paid sub before
-        const trialDays = (!isAnnual && plan.trialDays > 0 && !profile.has_used_trial)
-            ? plan.trialDays
-            : 0;
+        // 3. Starter/Growth get 7 days — ONLY if user has never been given a trial before
+        //    We set has_used_trial=true HERE (at checkout) so even if payment fails later
+        //    the user cannot re-subscribe to get a second trial.
+        const willGetTrial = !isAnnual && plan.trialDays > 0 && !profile.has_used_trial;
+        const trialDays = willGetTrial ? plan.trialDays : 0;
+
+        // Mark trial as used immediately — prevents abuse via abandoned checkout or failed payment
+        if (willGetTrial) {
+            await admin
+                .from('profiles')
+                .update({ has_used_trial: true })
+                .eq('id', userId)
+                .eq('has_used_trial', false); // idempotent: only update if still false
+        }
 
         const subscription = await dodo.subscriptions.create({
             billing: {
