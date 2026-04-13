@@ -1,111 +1,106 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 
 interface WebhookEvent {
     id: string;
     event_type: string;
-    payload: any;
+    payload: unknown;
     status: string;
     error_message: string | null;
     created_at: string;
 }
 
+function statusColor(s: string) {
+    if (s === 'processed' || s === 'success') return 'text-emerald-500 bg-emerald-500/10';
+    if (s === 'failed' || s === 'error') return 'text-[var(--danger)] bg-[var(--danger)]/10';
+    return 'text-amber-500 bg-amber-500/10';
+}
+function dotColor(s: string) {
+    if (s === 'processed' || s === 'success') return 'bg-emerald-500';
+    if (s === 'failed' || s === 'error') return 'bg-[var(--danger)]';
+    return 'bg-amber-500';
+}
+
 export default function WebhooksPage() {
     const [events, setEvents] = useState<WebhookEvent[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [expanded, setExpanded] = useState<string | null>(null);
 
     useEffect(() => {
         fetch('/api/stats?type=webhooks')
             .then(r => r.json())
             .then(d => setEvents(d.events || []))
-            .catch(console.error)
+            .catch(() => setError('Failed to load webhook events'))
             .finally(() => setLoading(false));
     }, []);
 
-    if (loading) return <div style={{ color: 'var(--muted)', padding: 40 }}>Loading webhooks...</div>;
+    if (loading) return (
+        <div className="flex items-center justify-center py-20 text-[var(--fg-secondary)]">
+            <div className="w-5 h-5 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin mr-3" />
+            Loading webhook events...
+        </div>
+    );
+    if (error) return <div className="py-10 text-center text-[var(--danger)]">{error}</div>;
 
-    const statusColor = (s: string) => {
-        if (s === 'processed' || s === 'success') return '#10b981';
-        if (s === 'failed' || s === 'error') return '#ef4444';
-        return '#f59e0b';
+    const counts = {
+        processed: events.filter(e => e.status === 'processed' || e.status === 'success').length,
+        failed: events.filter(e => e.status === 'failed' || e.status === 'error').length,
+        pending: events.filter(e => e.status === 'pending').length,
     };
 
     return (
         <div>
-            <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Webhook Events ({events.length})</h1>
-
-            {/* Summary */}
-            <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-                {['processed', 'failed', 'pending'].map(status => {
-                    const count = events.filter(e => e.status === status || (status === 'processed' && e.status === 'success')).length;
-                    return (
-                        <div key={status} style={{
-                            background: 'var(--surface)', border: '1px solid var(--edge)',
-                            borderRadius: 12, padding: '16px 24px', minWidth: 120,
-                        }}>
-                            <div style={{ color: 'var(--muted)', fontSize: 12, textTransform: 'capitalize', marginBottom: 4 }}>{status}</div>
-                            <div style={{ fontSize: 24, fontWeight: 700, color: statusColor(status) }}>{count}</div>
-                        </div>
-                    );
-                })}
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold text-[var(--fg)]">Webhook Events ({events.length})</h1>
+                <p className="text-sm text-[var(--fg-secondary)] mt-0.5">Dodo Payments webhook events and processing status</p>
             </div>
 
-            {/* Event List */}
-            <div style={{
-                background: 'var(--surface)', border: '1px solid var(--edge)',
-                borderRadius: 12, overflow: 'hidden',
-            }}>
+            {/* Summary */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+                {[
+                    { label: 'Processed', count: counts.processed, cls: 'text-emerald-500' },
+                    { label: 'Failed', count: counts.failed, cls: 'text-[var(--danger)]' },
+                    { label: 'Pending', count: counts.pending, cls: 'text-amber-500' },
+                ].map(({ label, count, cls }) => (
+                    <div key={label} className="rounded-xl bg-[var(--surface)] border border-[var(--edge)] px-5 py-4">
+                        <div className="text-xs text-[var(--fg-secondary)] mb-1.5">{label}</div>
+                        <div className={`text-2xl font-bold tabular-nums ${cls}`}>{count}</div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Event list */}
+            <div className="rounded-xl bg-[var(--surface)] border border-[var(--edge)] overflow-hidden">
                 {events.length === 0 ? (
-                    <div style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>No webhook events recorded yet</div>
+                    <div className="py-16 text-center text-[var(--fg-secondary)] text-sm">No webhook events recorded yet</div>
                 ) : events.map(e => (
-                    <div key={e.id} style={{ borderBottom: '1px solid var(--edge)' }}>
+                    <div key={e.id} className="border-b border-[var(--edge)] last:border-0">
                         <button
                             onClick={() => setExpanded(expanded === e.id ? null : e.id)}
-                            style={{
-                                display: 'flex', width: '100%', alignItems: 'center', gap: 16,
-                                padding: '14px 16px', background: 'none', border: 'none',
-                                color: 'var(--fg)', cursor: 'pointer', textAlign: 'left',
-                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[var(--surface-elevated)] transition-colors text-left"
                         >
-                            <span style={{
-                                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                                background: statusColor(e.status),
-                            }} />
-                            <span style={{ fontWeight: 500, fontSize: 13, minWidth: 200 }}>{e.event_type}</span>
-                            <span style={{
-                                padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                                background: `${statusColor(e.status)}20`, color: statusColor(e.status),
-                                textTransform: 'uppercase',
-                            }}>
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${dotColor(e.status)}`} />
+                            <span className="font-medium text-sm text-[var(--fg)] min-w-[180px]">{e.event_type}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${statusColor(e.status)}`}>
                                 {e.status}
                             </span>
-                            <span style={{ flex: 1 }} />
-                            <span style={{ fontSize: 12, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+                            <span className="flex-1" />
+                            <span className="text-xs text-[var(--fg-secondary)] whitespace-nowrap mr-2">
                                 {new Date(e.created_at).toLocaleString()}
                             </span>
-                            <span style={{ fontSize: 14, color: 'var(--muted)' }}>{expanded === e.id ? '▼' : '▶'}</span>
+                            <span className="text-[var(--fg-secondary)] text-xs">{expanded === e.id ? 'v' : '>'}</span>
                         </button>
 
                         {expanded === e.id && (
-                            <div style={{ padding: '0 16px 16px', fontSize: 12 }}>
+                            <div className="px-4 pb-4">
                                 {e.error_message && (
-                                    <div style={{
-                                        padding: '8px 12px', borderRadius: 6, marginBottom: 8,
-                                        background: 'rgba(239,68,68,0.1)', color: 'var(--danger)',
-                                    }}>
+                                    <div className="mb-3 px-3 py-2 rounded-lg bg-[var(--danger)]/10 text-[var(--danger)] text-sm border border-[var(--danger)]/20">
                                         Error: {e.error_message}
                                     </div>
                                 )}
-                                <pre style={{
-                                    padding: 12, borderRadius: 8,
-                                    background: 'rgba(0,0,0,0.3)',
-                                    overflow: 'auto', maxHeight: 300,
-                                    color: 'var(--muted)',
-                                    fontFamily: 'monospace', fontSize: 11,
-                                    whiteSpace: 'pre-wrap', wordBreak: 'break-all',
-                                }}>
+                                <pre className="p-4 rounded-xl bg-[rgba(0,0,0,0.2)] border border-[var(--edge)] text-[var(--fg-secondary)] text-xs font-mono overflow-auto max-h-[280px] leading-relaxed whitespace-pre-wrap break-all">
                                     {JSON.stringify(e.payload, null, 2)}
                                 </pre>
                             </div>

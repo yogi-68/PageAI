@@ -18,6 +18,25 @@
   --danger: #ef4444;
 }
 
+/* Light theme overrides */
+[data-theme="light"] {
+  --bg: #f4f6fb;
+  --bg-secondary: #eaeff8;
+  --surface: #ffffff;
+  --surface-elevated: #f4f6fb;
+  --edge: #dde3f0;
+  --edge-light: #c5cfe6;
+  --fg: #0d1023;
+  --fg-secondary: #4a5278;
+  --fg-muted: #6b75a0;
+  --muted: #6b75a0;
+  --primary: #4f6df5;
+  --primary-hover: #3a58e8;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {

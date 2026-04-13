@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 
@@ -6,88 +6,90 @@ export default function SettingsPage() {
     const [mainAppUrl] = useState(process.env.NEXT_PUBLIC_MAIN_APP_URL || 'https://pageai-tau.vercel.app');
 
     const envVars = [
-        { key: 'NEXT_PUBLIC_SUPABASE_URL', desc: 'Supabase project URL', required: true },
-        { key: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', desc: 'Supabase anonymous key', required: true },
-        { key: 'SUPABASE_SERVICE_ROLE_KEY', desc: 'Supabase service role key (server only)', required: true },
-        { key: 'ADMIN_EMAILS', desc: 'Comma-separated admin emails', required: true },
-        { key: 'NEXT_PUBLIC_MAIN_APP_URL', desc: 'Main PageAI app URL', required: false },
+        { key: 'NEXT_PUBLIC_SUPABASE_URL',      desc: 'Supabase project URL',                    required: true },
+        { key: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', desc: 'Supabase anonymous key',                  required: true },
+        { key: 'SUPABASE_SERVICE_ROLE_KEY',      desc: 'Supabase service role key (server only)', required: true },
+        { key: 'ADMIN_EMAILS',                   desc: 'Comma-separated admin email addresses',   required: true },
+        { key: 'NEXT_PUBLIC_MAIN_APP_URL',       desc: 'Main PageAI app URL',                     required: false },
+    ];
+
+    const quickLinks = [
+        { label: 'Main App',            url: mainAppUrl },
+        { label: 'Supabase Dashboard',  url: 'https://supabase.com/dashboard' },
+        { label: 'Dodo Payments',       url: 'https://dashboard.dodopayments.com' },
+        { label: 'Vercel Dashboard',    url: 'https://vercel.com/dashboard' },
+    ];
+
+    const notes = [
+        'This admin app should be deployed separately from the main PageAI app.',
+        'Use a custom domain or Vercel subdomain (e.g., admin-pageai.vercel.app).',
+        'Keep SUPABASE_SERVICE_ROLE_KEY secure - never expose it to the client.',
+        'Update ADMIN_EMAILS env var to add or remove admin access.',
+        'All API routes use the service role key for full database access.',
+        'The admin app shares the same Supabase database as the main app.',
     ];
 
     return (
         <div>
-            <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Settings</h1>
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold text-[var(--fg)]">Settings</h1>
+                <p className="text-sm text-[var(--fg-secondary)] mt-0.5">Configuration, environment variables, and deployment info</p>
+            </div>
 
             {/* Quick Links */}
-            <div style={{
-                background: 'var(--surface)', border: '1px solid var(--edge)',
-                borderRadius: 12, padding: 24, marginBottom: 24,
-            }}>
-                <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Quick Links</h2>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                    {[
-                        { label: 'Main App', url: mainAppUrl },
-                        { label: 'Supabase Dashboard', url: 'https://supabase.com/dashboard' },
-                        { label: 'Dodo Payments', url: 'https://dashboard.dodopayments.com' },
-                        { label: 'Vercel Dashboard', url: 'https://vercel.com/dashboard' },
-                    ].map(link => (
+            <div className="rounded-xl bg-[var(--surface)] border border-[var(--edge)] p-5 mb-5">
+                <h2 className="text-sm font-semibold text-[var(--fg)] mb-4">Quick Links</h2>
+                <div className="flex flex-wrap gap-2">
+                    {quickLinks.map(link => (
                         <a
                             key={link.label}
                             href={link.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{
-                                padding: '10px 18px', borderRadius: 8,
-                                border: '1px solid var(--edge)', background: 'rgba(255,255,255,0.02)',
-                                color: 'var(--primary)', textDecoration: 'none', fontSize: 13,
-                            }}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[var(--edge)] bg-[var(--surface-elevated)] text-[var(--primary)] text-sm font-medium hover:bg-[var(--edge)] transition-colors"
                         >
-                            {link.label} ↗
+                            {link.label}
+                            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                                <path d="M2 10L10 2M5 2h5v5" />
+                            </svg>
                         </a>
                     ))}
                 </div>
             </div>
 
-            {/* Environment Variables */}
-            <div style={{
-                background: 'var(--surface)', border: '1px solid var(--edge)',
-                borderRadius: 12, padding: 24, marginBottom: 24,
-            }}>
-                <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Required Environment Variables</h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* Env vars */}
+            <div className="rounded-xl bg-[var(--surface)] border border-[var(--edge)] p-5 mb-5">
+                <h2 className="text-sm font-semibold text-[var(--fg)] mb-4">Required Environment Variables</h2>
+                <div className="flex flex-col gap-2">
                     {envVars.map(v => (
-                        <div key={v.key} style={{
-                            display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                            borderRadius: 8, background: 'rgba(255,255,255,0.02)',
-                        }}>
-                            <code style={{
-                                padding: '2px 8px', borderRadius: 4, fontSize: 12,
-                                background: 'rgba(99,102,241,0.1)', color: 'var(--primary)',
-                                fontFamily: 'monospace',
-                            }}>
+                        <div key={v.key} className="flex items-center gap-3 px-3.5 py-3 rounded-lg bg-[rgba(255,255,255,0.02)] border border-[var(--edge)]">
+                            <code className="px-2 py-0.5 rounded-md text-xs font-mono bg-[rgba(79,109,245,0.1)] text-[var(--primary)] shrink-0">
                                 {v.key}
                             </code>
-                            <span style={{ fontSize: 13, color: 'var(--muted)', flex: 1 }}>{v.desc}</span>
-                            {v.required && (
-                                <span style={{ fontSize: 10, color: '#f59e0b', fontWeight: 600 }}>REQUIRED</span>
-                            )}
+                            <span className="text-sm text-[var(--fg-secondary)] flex-1">{v.desc}</span>
+                            {v.required
+                                ? <span className="text-[10px] font-semibold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full shrink-0">REQUIRED</span>
+                                : <span className="text-[10px] font-semibold text-[var(--fg-muted)] bg-[var(--edge)] px-2 py-0.5 rounded-full shrink-0">OPTIONAL</span>
+                            }
                         </div>
                     ))}
                 </div>
             </div>
 
             {/* Deployment Notes */}
-            <div style={{
-                background: 'var(--surface)', border: '1px solid var(--edge)',
-                borderRadius: 12, padding: 24,
-            }}>
-                <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Deployment Notes</h2>
-                <ul style={{ color: 'var(--muted)', fontSize: 13, lineHeight: 2, paddingLeft: 20 }}>
-                    <li>This admin app should be deployed separately from the main PageAI app</li>
-                    <li>Use a custom domain or Vercel subdomain (e.g., admin-pageai.vercel.app)</li>
-                    <li>Keep the <code style={{ color: 'var(--primary)' }}>SUPABASE_SERVICE_ROLE_KEY</code> secure — never expose to client</li>
-                    <li>Update <code style={{ color: 'var(--primary)' }}>ADMIN_EMAILS</code> env var to add/remove admin access</li>
-                    <li>All API routes use the service role key for full database access</li>
-                    <li>The admin app shares the same Supabase database as the main app</li>
+            <div className="rounded-xl bg-[var(--surface)] border border-[var(--edge)] p-5">
+                <h2 className="text-sm font-semibold text-[var(--fg)] mb-4">Deployment Notes</h2>
+                <ul className="space-y-2.5">
+                    {notes.map((note, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-sm text-[var(--fg-secondary)]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] shrink-0 mt-1.5" />
+                            {note.split(/(`[^`]+`)/).map((part, j) =>
+                                part.startsWith('`') && part.endsWith('`')
+                                    ? <code key={j} className="text-[var(--primary)] font-mono text-xs">{part.slice(1, -1)}</code>
+                                    : part
+                            )}
+                        </li>
+                    ))}
                 </ul>
             </div>
         </div>

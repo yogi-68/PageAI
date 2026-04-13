@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 
@@ -29,6 +29,7 @@ interface Message {
 export default function ConversationsPage() {
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [loadingMessages, setLoadingMessages] = useState(false);
@@ -37,13 +38,14 @@ export default function ConversationsPage() {
         fetch('/api/stats?type=conversations&limit=100')
             .then(r => r.json())
             .then(d => setConversations(d.conversations || []))
-            .catch(console.error)
+            .catch(() => setError('Failed to load conversations'))
             .finally(() => setLoading(false));
     }, []);
 
     const loadMessages = (convId: string) => {
         setSelectedId(convId);
         setLoadingMessages(true);
+        setMessages([]);
         fetch(`/api/stats?type=conversation-detail&id=${encodeURIComponent(convId)}`)
             .then(r => r.json())
             .then(d => setMessages(d.messages || []))
@@ -51,94 +53,100 @@ export default function ConversationsPage() {
             .finally(() => setLoadingMessages(false));
     };
 
-    if (loading) return <div style={{ color: 'var(--muted)', padding: 40 }}>Loading conversations...</div>;
+    if (loading) return (
+        <div className="flex items-center justify-center py-20 text-[var(--fg-secondary)]">
+            <div className="w-5 h-5 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin mr-3" />
+            Loading conversations...
+        </div>
+    );
+    if (error) return <div className="py-10 text-center text-[var(--danger)]">{error}</div>;
 
     return (
-        <div>
-            <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Conversations ({conversations.length})</h1>
+        <div className="flex flex-col h-full" style={{ minHeight: 'calc(100vh - 8rem)' }}>
+            <div className="mb-5">
+                <h1 className="text-2xl font-bold text-[var(--fg)]">Conversations ({conversations.length})</h1>
+                <p className="text-sm text-[var(--fg-secondary)] mt-0.5">View all user chat sessions and message threads</p>
+            </div>
 
-            <div style={{ display: 'flex', gap: 24, height: 'calc(100vh - 160px)' }}>
-                {/* Conversation List */}
-                <div style={{
-                    width: 380, flexShrink: 0,
-                    background: 'var(--surface)', border: '1px solid var(--edge)',
-                    borderRadius: 12, overflow: 'auto',
-                }}>
-                    {conversations.map(c => (
+            <div className="flex gap-4 flex-1 min-h-0" style={{ height: 'calc(100vh - 12rem)' }}>
+                {/* Conversation list */}
+                <div className="w-[340px] shrink-0 rounded-xl bg-[var(--surface)] border border-[var(--edge)] overflow-y-auto">
+                    {conversations.length === 0 ? (
+                        <div className="py-16 text-center text-[var(--fg-secondary)] text-sm">No conversations yet</div>
+                    ) : conversations.map(c => (
                         <button
                             key={c.id}
                             onClick={() => loadMessages(c.id)}
-                            style={{
-                                display: 'block', width: '100%', textAlign: 'left',
-                                padding: '14px 16px',
-                                background: selectedId === c.id ? 'rgba(99,102,241,0.08)' : 'transparent',
-                                border: 'none', borderBottom: '1px solid var(--edge)',
-                                color: 'var(--fg)', cursor: 'pointer',
-                            }}
+                            className={`w-full text-left px-4 py-3.5 border-b border-[var(--edge)] last:border-0 transition-colors ${
+                                selectedId === c.id
+                                    ? 'bg-[rgba(79,109,245,0.08)]'
+                                    : 'hover:bg-[var(--surface-elevated)]'
+                            }`}
                         >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                <span style={{ fontWeight: 600, fontSize: 13 }}>{c.bot?.name || 'Unknown Bot'}</span>
-                                <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                            <div className="flex justify-between items-start mb-1">
+                                <span className="font-semibold text-[13px] text-[var(--fg)]">
+                                    {c.bot?.name || 'Unknown Bot'}
+                                </span>
+                                <span className="text-[11px] text-[var(--fg-secondary)] ml-2 shrink-0">
                                     {new Date(c.created_at).toLocaleDateString()}
                                 </span>
                             </div>
-                            <div style={{ fontSize: 12, color: 'var(--muted)', display: 'flex', gap: 12 }}>
+                            <div className="flex items-center gap-3 text-xs text-[var(--fg-secondary)]">
                                 <span>{c.message_count} msgs</span>
-                                <span>{c.status}</span>
-                                {c.satisfaction_rating && <span>⭐ {c.satisfaction_rating}</span>}
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                    c.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--edge)] text-[var(--fg-secondary)]'
+                                }`}>{c.status}</span>
+                                {c.satisfaction_rating && (
+                                    <span className="text-amber-500">{c.satisfaction_rating}/5</span>
+                                )}
                             </div>
                             {c.visitor_page_url && (
-                                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {c.visitor_page_url}
-                                </div>
+                                <div className="text-[11px] text-[var(--fg-muted)] mt-1 truncate">{c.visitor_page_url}</div>
                             )}
                         </button>
                     ))}
-                    {conversations.length === 0 && (
-                        <div style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>No conversations yet</div>
-                    )}
                 </div>
 
-                {/* Message Thread */}
-                <div style={{
-                    flex: 1,
-                    background: 'var(--surface)', border: '1px solid var(--edge)',
-                    borderRadius: 12, overflow: 'auto', padding: 24,
-                }}>
+                {/* Message thread */}
+                <div className="flex-1 rounded-xl bg-[var(--surface)] border border-[var(--edge)] overflow-y-auto p-5">
                     {!selectedId ? (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--muted)' }}>
-                            Select a conversation to view messages
+                        <div className="h-full flex items-center justify-center text-[var(--fg-secondary)] text-sm">
+                            <div className="text-center">
+                                <div className="text-4xl mb-3 opacity-20">💬</div>
+                                <p>Select a conversation to view messages</p>
+                            </div>
                         </div>
                     ) : loadingMessages ? (
-                        <div style={{ color: 'var(--muted)' }}>Loading messages...</div>
+                        <div className="flex items-center gap-2 text-[var(--fg-secondary)] text-sm">
+                            <div className="w-4 h-4 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
+                            Loading messages...
+                        </div>
+                    ) : messages.length === 0 ? (
+                        <div className="text-center py-10 text-[var(--fg-secondary)] text-sm">No messages in this conversation</div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <div className="flex flex-col gap-4">
                             {messages.map(m => (
-                                <div key={m.id} style={{
-                                    maxWidth: '80%',
-                                    alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                                }}>
-                                    <div style={{
-                                        padding: '10px 14px',
-                                        borderRadius: 12,
-                                        background: m.role === 'user' ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-                                        color: m.role === 'user' ? '#fff' : 'var(--fg)',
-                                        fontSize: 13,
-                                        lineHeight: 1.5,
-                                    }}>
+                                <div
+                                    key={m.id}
+                                    className={`max-w-[80%] ${m.role === 'user' ? 'self-end items-end' : 'self-start items-start'} flex flex-col`}
+                                >
+                                    <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                                        m.role === 'user'
+                                            ? 'bg-[var(--primary)] text-white rounded-br-sm'
+                                            : 'bg-[var(--surface-elevated)] text-[var(--fg)] rounded-bl-sm border border-[var(--edge)]'
+                                    }`}>
                                         {m.content}
                                     </div>
-                                    <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 4, display: 'flex', gap: 8, justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                                    <div className={`flex gap-2 mt-1 text-[10px] text-[var(--fg-muted)] ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                         <span>{new Date(m.created_at).toLocaleTimeString()}</span>
                                         {m.model_used && <span>{m.model_used}</span>}
                                         {m.response_time_ms && <span>{m.response_time_ms}ms</span>}
-                                        {m.prompt_tokens && <span>{m.prompt_tokens + (m.completion_tokens || 0)} tokens</span>}
+                                        {(m.prompt_tokens || m.completion_tokens) && (
+                                            <span>{(m.prompt_tokens || 0) + (m.completion_tokens || 0)} tokens</span>
+                                        )}
                                     </div>
                                 </div>
                             ))}
-                            {messages.length === 0 && (
-                                <div style={{ textAlign: 'center', color: 'var(--muted)', padding: 40 }}>No messages</div>
-                            )}
                         </div>
                     )}
                 </div>
