@@ -1,4 +1,4 @@
-'use client';
+ï»¿'use client';
 
 import { useEffect, useState } from 'react';
 
@@ -74,7 +74,6 @@ export default function UsersPage() {
                 <h1 className="text-2xl font-bold text-[var(--fg)]">Users ({total})</h1>
             </div>
 
-            {/* Filters */}
             <div className="flex flex-wrap gap-3 mb-5">
                 <div className="flex gap-2">
                     <input
@@ -105,7 +104,6 @@ export default function UsersPage() {
                 </select>
             </div>
 
-            {/* Table */}
             <div className="rounded-xl bg-[var(--surface)] border border-[var(--edge)] overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm border-collapse">
@@ -129,7 +127,7 @@ export default function UsersPage() {
                                 return (
                                     <tr key={u.id} className="border-b border-[var(--edge)] last:border-0 hover:bg-[rgba(255,255,255,0.02)] transition-colors">
                                         <td className="px-3 py-2.5 font-medium">{u.email}</td>
-                                        <td className="px-3 py-2.5 text-[var(--fg-secondary)]">{u.full_name || '—'}</td>
+                                        <td className="px-3 py-2.5 text-[var(--fg-secondary)]">{u.full_name || '-'}</td>
                                         <td className="px-3 py-2.5"><PlanBadge plan={u.plan} /></td>
                                         <td className="px-3 py-2.5">
                                             <div className="flex items-center gap-2">
