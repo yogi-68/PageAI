@@ -98,6 +98,8 @@ export async function POST(request: NextRequest) {
                     max_pages_indexed: getPageLimit(resolvedPlanId),
                     max_chatbots: getChatbotLimit(resolvedPlanId),
                     api_access: ['growth', 'scale', 'enterprise'].includes(resolvedPlanId),
+                    // Mark trial as used — prevents trial abuse on re-subscribe / plan switch
+                    has_used_trial: true,
                 }).eq('id', userId);
                 logger.info('webhook', `User upgraded to ${resolvedPlanId}`, { userId, plan: resolvedPlanId });
                 break;

@@ -13,7 +13,17 @@ export function getDodoClient(): DodoPayments {
 }
 
 // ─── Plan Configuration ───────────────────────────────────
-export const TRIAL_DAYS = 7; // 7-day free trial on all paid plans
+// Trial days per plan — 0 means no trial (controlled in backend, not in Dodo product)
+// Free: permanent free tier (no trial needed)
+// Starter/Growth: 7-day trial for FIRST-TIME subscribers only
+// Scale/Enterprise: no trial (serious users; trial abuse risk)
+export const PLAN_TRIAL_DAYS: Record<string, number> = {
+    free: 0,
+    starter: 7,
+    growth: 7,
+    scale: 0,
+    enterprise: 0,
+};
 
 // Yearly plans: charged as a single upfront payment for the full year
 export const YEARLY_PRICES: Record<string, number> = {
@@ -67,7 +77,7 @@ export const PLANS = {
         name: 'Starter',
         price: 29,
         productId: process.env.DODO_PRODUCT_STARTER || null,
-        trialDays: TRIAL_DAYS,
+        trialDays: 7,
         description: 'For small businesses getting started',
         features: [
             '1 Chatbot',
@@ -95,7 +105,7 @@ export const PLANS = {
         price: 69,
         popular: true,
         productId: process.env.DODO_PRODUCT_GROWTH || null,
-        trialDays: TRIAL_DAYS,
+        trialDays: 7,
         description: 'For growing companies',
         features: [
             '3 Chatbots',
@@ -123,7 +133,7 @@ export const PLANS = {
         name: 'Scale',
         price: 199,
         productId: process.env.DODO_PRODUCT_SCALE || null,
-        trialDays: TRIAL_DAYS,
+        trialDays: 0,
         description: 'For high-volume operations',
         features: [
             '10 Chatbots',
@@ -152,7 +162,7 @@ export const PLANS = {
         name: 'Enterprise',
         price: -1, // Custom pricing
         productId: process.env.DODO_PRODUCT_ENTERPRISE || null,
-        trialDays: TRIAL_DAYS,
+        trialDays: 0,
         description: 'Custom for large organizations',
         features: [
             'Unlimited Chatbots',

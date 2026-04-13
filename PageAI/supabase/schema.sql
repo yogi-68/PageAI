@@ -29,6 +29,9 @@ CREATE TABLE public.profiles (
   usage_reset_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   company TEXT,
   api_access BOOLEAN NOT NULL DEFAULT false,
+  -- Trial abuse prevention: once a user activates any paid subscription, this flips to true
+  -- Backend checks this before granting a trial period; Dodo products have trial=0
+  has_used_trial BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

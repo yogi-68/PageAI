@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         const admin = getAdminClient();
         const { data: profile } = await admin
             .from('profiles')
-            .select('email, full_name, dodo_customer_id')
+            .select('email, full_name, dodo_customer_id, has_used_trial')
             .eq('id', userId)
             .single();
 
@@ -47,8 +47,13 @@ export async function POST(request: NextRequest) {
         }
 
         const dodo = getDodoClient();
-        // Only offer trial on monthly plans (annual is already a great deal)
-        const trialDays = isAnnual ? 0 : (plan.trialDays || 0);
+        // Trial rules:
+        // 1. Annual plans never get a trial (they already save ~20%)
+        // 2. Scale/Enterprise plans have trialDays=0 (serious users; abuse risk)
+        // 3. Starter/Growth get 7 days — but ONLY if user has never activated a paid sub before
+        const trialDays = (!isAnnual && plan.trialDays > 0 && !profile.has_used_trial)
+            ? plan.trialDays
+            : 0;
 
         const subscription = await dodo.subscriptions.create({
             billing: {
