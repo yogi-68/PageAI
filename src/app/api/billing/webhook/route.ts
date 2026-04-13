@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { getPlanByProductId, getMessageLimit, getPageLimit, getChatbotLimit, getAddonByProductId } from '@/lib/dodo';
 import { logger } from '@/lib/logger';
+import { trackEvent } from '@/lib/analytics';
+import { recordWebhookFailure } from '@/lib/alerts';
 import crypto from 'crypto';
 
 function verifyWebhookSignature(body: string, signature: string | null, secret: string): boolean {
@@ -146,14 +148,21 @@ export async function POST(request: NextRequest) {
                             p_messages: messagesToAdd,
                         });
 
-                        // Record the purchase in message_addons
+                        // Record the purchase in message_addons (expires in 30 days)
                         await admin.from('message_addons').insert({
                             user_id: payUserId,
                             addon_type: addonType,
                             messages_purchased: messagesToAdd,
                             amount_paid_usd: data.total_amount ? (data.total_amount / 100).toFixed(2) : '0',
                             dodo_payment_id: data.payment_id || data.id || null,
+                            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                         });
+
+                        trackEvent('addon.purchased', {
+                            addonType,
+                            messages: messagesToAdd,
+                            amountUsd: data.total_amount ? data.total_amount / 100 : 0,
+                        }, payUserId);
 
                         logger.info('webhook', `Add-on credited: +${messagesToAdd} messages`, {
                             userId: payUserId,
@@ -182,7 +191,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ received: true });
     } catch (error: any) {
-        logger.error('webhook', 'Webhook handler failed', { error: error.message });
+        recordWebhookFailure('unknown', error);
         return NextResponse.json({ error: 'Webhook handler failed' }, { status: 400 });
     }
 }

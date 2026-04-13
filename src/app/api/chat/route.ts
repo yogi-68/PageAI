@@ -3,6 +3,8 @@ import { getAdminClient } from '@/lib/supabase';
 import { executeRAG, executeRAGStream } from '@/lib/rag';
 import { rateLimitChat, verifyDomain, getClientIP, corsHeaders } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { trackEvent } from '@/lib/analytics';
+import { recordOpenAIError } from '@/lib/alerts';
 
 // POST /api/chat — Advanced RAG chat with streaming support
 export async function POST(request: NextRequest) {
@@ -63,6 +65,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (!allowed) {
+            trackEvent('limit.reached', { botId }, bot.user_id);
             return NextResponse.json({
                 error: 'Monthly message limit reached. Please upgrade your plan or buy an add-on pack.',
                 limitReached: true,
@@ -70,6 +73,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 4. Execute RAG pipeline
+        // If RAG fails after increment, we roll back the usage charge.
         const ragConfig = {
             userId: bot.user_id,
             dataSourceIds: bot.data_source_ids?.length > 0 ? bot.data_source_ids : undefined,
@@ -117,8 +121,22 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Non-streaming mode
-        const result = await executeRAG(query, botId, ragConfig);
+        // Non-streaming mode — wrap RAG in try/catch for rollback on failure
+        let result;
+        try {
+            result = await executeRAG(query, botId, ragConfig);
+        } catch (ragError: any) {
+            // RAG failed AFTER usage was incremented — rollback so user isn't charged
+            logger.warn('chat', 'RAG failed, rolling back usage', { error: ragError.message });
+            recordOpenAIError(ragError);
+            trackEvent('chat.failed', { botId, error: ragError.message }, bot.user_id);
+            const { error: rollbackErr } = await admin.rpc('rollback_message_increment', {
+                p_user_id: bot.user_id,
+                p_bot_id: botId,
+            });
+            if (rollbackErr) logger.error('chat', 'Rollback failed', { error: rollbackErr.message });
+            throw ragError; // re-throw to hit outer catch
+        }
 
         // 5. Save conversation and message (usage already counted atomically above)
         const convId = await saveConversation(admin, {
@@ -135,6 +153,13 @@ export async function POST(request: NextRequest) {
             queryRewrite: result.queryRewrite,
             chunksRetrieved: result.chunksRetrieved,
         });
+
+        trackEvent('chat.completed', {
+            botId,
+            model: result.model,
+            cached: result.cached || false,
+            responseTimeMs: result.responseTimeMs,
+        }, bot.user_id);
 
         return NextResponse.json({
             success: true,

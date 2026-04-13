@@ -26,6 +26,7 @@ CREATE TABLE public.profiles (
   max_chatbots INTEGER NOT NULL DEFAULT 1,
   overage_enabled BOOLEAN NOT NULL DEFAULT false,
   addon_message_balance INTEGER NOT NULL DEFAULT 0,
+  usage_reset_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   company TEXT,
   api_access BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -278,7 +279,8 @@ CREATE TABLE public.response_cache (
   UNIQUE(bot_id, query_hash)
 );
 
-CREATE INDEX idx_cache_lookup ON public.response_cache(bot_id, query_hash) WHERE expires_at > NOW();
+-- NOTE: partial indexes cannot use NOW() (not IMMUTABLE). Use a plain composite index.
+CREATE INDEX idx_cache_lookup ON public.response_cache(bot_id, query_hash);
 
 -- ================================
 -- Row Level Security (RLS)
@@ -489,43 +491,75 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ================================
--- Atomic Usage Check + Increment
+-- Atomic Usage Check + Increment (v2)
 -- ================================
--- Returns TRUE if message was counted (within plan quota, add-on balance, or overage).
--- Returns FALSE if all limits exhausted.
--- Uses pg_advisory_xact_lock(user_id) to prevent race-condition bypasses under concurrent load.
+-- Returns TRUE if message was counted, FALSE if all limits exhausted.
+-- Features:
+--   1. Advisory lock prevents race-condition bypasses under concurrent load
+--   2. Auto-resets monthly count when billing cycle expires (self-healing)
+--   3. Reconciles addon_message_balance with non-expired add-on packs
+--   4. Tracks per-addon usage in message_addons table
 CREATE OR REPLACE FUNCTION check_and_increment_message(p_user_id UUID, p_bot_id UUID)
 RETURNS BOOLEAN AS $$
 DECLARE
-  v_rows_updated INTEGER;
+  v_profile RECORD;
+  v_valid_addon_balance INTEGER;
+  v_used_addon BOOLEAN := FALSE;
 BEGIN
-  -- Acquire a per-user transaction-scoped advisory lock.
-  -- This serialises concurrent requests for the same user so no two requests can
-  -- both read the same count and both pass the limit check before either commits.
+  -- Per-user transaction-scoped advisory lock
   PERFORM pg_advisory_xact_lock(hashtext(p_user_id::text)::bigint);
 
-  -- Atomic UPDATE with priority order:
-  --   1. Plan quota (monthly_message_count < monthly_message_limit)
-  --   2. Add-on balance (addon_message_balance > 0)
-  --   3. Overage (overage_enabled = true)
-  UPDATE public.profiles
-  SET
-    monthly_message_count = monthly_message_count + 1,
-    addon_message_balance = GREATEST(0, CASE
-      WHEN monthly_message_count >= monthly_message_limit AND addon_message_balance > 0
-        THEN addon_message_balance - 1
-      ELSE addon_message_balance
-    END)
-  WHERE id = p_user_id
-    AND (
-      monthly_message_count < monthly_message_limit   -- within plan quota
-      OR addon_message_balance > 0                    -- has prepaid add-on credits
-      OR overage_enabled = true                       -- auto-overage billing enabled
+  -- Fetch & lock the profile row
+  SELECT * INTO v_profile FROM public.profiles WHERE id = p_user_id FOR UPDATE;
+  IF NOT FOUND THEN RETURN FALSE; END IF;
+
+  -- Auto-reset: if billing cycle (1 month) has elapsed, reset counter
+  IF v_profile.usage_reset_at + INTERVAL '1 month' <= NOW() THEN
+    UPDATE public.profiles
+    SET monthly_message_count = 0, usage_reset_at = NOW()
+    WHERE id = p_user_id;
+    v_profile.monthly_message_count := 0;
+  END IF;
+
+  -- Reconcile addon balance with only non-expired packs
+  SELECT COALESCE(SUM(GREATEST(messages_purchased - messages_used, 0)), 0)
+  INTO v_valid_addon_balance
+  FROM public.message_addons
+  WHERE user_id = p_user_id AND (expires_at IS NULL OR expires_at > NOW());
+
+  IF v_profile.addon_message_balance IS DISTINCT FROM v_valid_addon_balance THEN
+    UPDATE public.profiles SET addon_message_balance = v_valid_addon_balance WHERE id = p_user_id;
+    v_profile.addon_message_balance := v_valid_addon_balance;
+  END IF;
+
+  -- Priority: plan quota → addon balance → overage
+  IF v_profile.monthly_message_count < v_profile.monthly_message_limit THEN
+    -- Within plan quota
+    UPDATE public.profiles
+    SET monthly_message_count = monthly_message_count + 1
+    WHERE id = p_user_id;
+  ELSIF v_valid_addon_balance > 0 THEN
+    -- Deduct from addon
+    UPDATE public.profiles
+    SET monthly_message_count = monthly_message_count + 1,
+        addon_message_balance = addon_message_balance - 1
+    WHERE id = p_user_id;
+    -- Debit the oldest non-expired addon pack
+    UPDATE public.message_addons
+    SET messages_used = messages_used + 1
+    WHERE id = (
+      SELECT id FROM public.message_addons
+      WHERE user_id = p_user_id
+        AND messages_used < messages_purchased
+        AND (expires_at IS NULL OR expires_at > NOW())
+      ORDER BY created_at ASC LIMIT 1
     );
-
-  GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
-
-  IF v_rows_updated = 0 THEN
+    v_used_addon := TRUE;
+  ELSIF v_profile.overage_enabled THEN
+    UPDATE public.profiles
+    SET monthly_message_count = monthly_message_count + 1
+    WHERE id = p_user_id;
+  ELSE
     RETURN FALSE; -- all limits exhausted
   END IF;
 
@@ -543,4 +577,65 @@ BEGIN
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ================================
+-- Rollback Message Increment (on API failure)
+-- ================================
+-- Called when RAG pipeline fails AFTER check_and_increment_message returned TRUE.
+-- Reverses the usage so the user is not charged for a failed request.
+CREATE OR REPLACE FUNCTION rollback_message_increment(p_user_id UUID, p_bot_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE public.profiles
+  SET monthly_message_count = GREATEST(0, monthly_message_count - 1)
+  WHERE id = p_user_id;
+
+  UPDATE public.bots
+  SET total_conversations = GREATEST(0, total_conversations - 1)
+  WHERE id = p_bot_id;
+
+  UPDATE public.usage_monthly
+  SET message_count = GREATEST(0, message_count - 1)
+  WHERE user_id = p_user_id AND month = DATE_TRUNC('month', NOW());
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ================================
+-- Expire Addon Balances
+-- ================================
+-- Run daily via pg_cron or a scheduled API call.
+-- Recalculates addon_message_balance from non-expired packs.
+CREATE OR REPLACE FUNCTION expire_addon_balances()
+RETURNS INTEGER AS $$
+DECLARE
+  v_affected INTEGER := 0;
+BEGIN
+  UPDATE public.profiles p
+  SET addon_message_balance = COALESCE((
+    SELECT SUM(GREATEST(ma.messages_purchased - ma.messages_used, 0))
+    FROM public.message_addons ma
+    WHERE ma.user_id = p.id
+      AND (ma.expires_at IS NULL OR ma.expires_at > NOW())
+  ), 0)
+  WHERE p.addon_message_balance > 0;
+
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  RETURN v_affected;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ================================
+-- Analytics Events
+-- ================================
+CREATE TABLE IF NOT EXISTS public.analytics_events (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  event TEXT NOT NULL,
+  properties JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_analytics_user_id ON public.analytics_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_event ON public.analytics_events(event);
+CREATE INDEX IF NOT EXISTS idx_analytics_created ON public.analytics_events(created_at);
 
