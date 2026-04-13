@@ -1,7 +1,6 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
+  "buildCommand": "cd PageAI && npm run build",
+  "outputDirectory": "PageAI/.next",
   "framework": "nextjs",
-  "installCommand": "npm install",
-  "rootDirectory": "PageAI"
+  "installCommand": "cd PageAI && npm install"
 }
