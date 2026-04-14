@@ -13,6 +13,14 @@ export function isMockMode(): boolean {
     return process.env.DODO_MOCK_PAYMENTS === 'true';
 }
 
+// When DODO_TEST_MODE=true, a single DODO_TEST_PRODUCT_ID can stand in for every
+// plan / add-on that doesn't have its own specific env var. This lets you point all
+// checkout flows at one sandbox product without creating a Dodo product per tier.
+const _testFallback: string | null =
+    process.env.DODO_TEST_MODE === 'true'
+        ? (process.env.DODO_TEST_PRODUCT_ID || null)
+        : null;
+
 // Initialize Dodo Payments client lazily (server-side only)
 let _dodoClient: DodoPayments | null = null;
 
@@ -79,9 +87,9 @@ export const YEARLY_MONTHLY_EQUIV: Record<string, number> = {
 
 // Yearly product IDs (create in Dodo Dashboard with billing_period=yearly)
 export const YEARLY_PRODUCT_IDS: Record<string, string | null> = {
-    starter: process.env.DODO_PRODUCT_STARTER_YEARLY || null,
-    growth:  process.env.DODO_PRODUCT_GROWTH_YEARLY  || null,
-    scale:   process.env.DODO_PRODUCT_SCALE_YEARLY   || null,
+    starter: process.env.DODO_PRODUCT_STARTER_YEARLY || _testFallback,
+    growth:  process.env.DODO_PRODUCT_GROWTH_YEARLY  || _testFallback,
+    scale:   process.env.DODO_PRODUCT_SCALE_YEARLY   || _testFallback,
 };
 
 export const PLANS = {
@@ -114,7 +122,7 @@ export const PLANS = {
         id: 'starter',
         name: 'Starter',
         price: 29,
-        productId: process.env.DODO_PRODUCT_STARTER || null,
+        productId: process.env.DODO_PRODUCT_STARTER || _testFallback,
         trialDays: 7,
         description: 'For small businesses getting started',
         features: [
@@ -142,7 +150,7 @@ export const PLANS = {
         name: 'Growth',
         price: 69,
         popular: true,
-        productId: process.env.DODO_PRODUCT_GROWTH || null,
+        productId: process.env.DODO_PRODUCT_GROWTH || _testFallback,
         trialDays: 7,
         description: 'For growing companies',
         features: [
@@ -170,7 +178,7 @@ export const PLANS = {
         id: 'scale',
         name: 'Scale',
         price: 199,
-        productId: process.env.DODO_PRODUCT_SCALE || null,
+        productId: process.env.DODO_PRODUCT_SCALE || _testFallback,
         trialDays: 0,
         description: 'For high-volume operations',
         features: [
@@ -239,7 +247,7 @@ export const MESSAGE_ADDONS = {
         messages: 1000,
         price: 4,
         perK: 4.0,
-        productId: process.env.DODO_ADDON_1000 || null,
+        productId: process.env.DODO_ADDON_1000 || _testFallback,
     },
     '5000_messages': {
         id: '5000_messages',
@@ -247,7 +255,7 @@ export const MESSAGE_ADDONS = {
         messages: 5000,
         price: 18,
         perK: 3.6,
-        productId: process.env.DODO_ADDON_5000 || null,
+        productId: process.env.DODO_ADDON_5000 || _testFallback,
     },
     '10000_messages': {
         id: '10000_messages',
@@ -255,7 +263,7 @@ export const MESSAGE_ADDONS = {
         messages: 10000,
         price: 30,
         perK: 3.0,
-        productId: process.env.DODO_ADDON_10000 || null,
+        productId: process.env.DODO_ADDON_10000 || _testFallback,
     },
 } as const;
 

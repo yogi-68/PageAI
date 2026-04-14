@@ -48,11 +48,17 @@ export async function GET() {
     if (!dbOk) hints.push(`Database connection failed: ${dbError}`);
 
     const allRequiredSet = config.apiKeySet && config.webhookKeySet && dbOk;
+    const testProductId = process.env.DODO_TEST_PRODUCT_ID || null;
+
+    if (config.testMode && !testProductId) {
+        hints.push('Set DODO_TEST_PRODUCT_ID=<your sandbox product ID> so all plans/add-ons fall back to it in test mode.');
+    }
 
     return NextResponse.json({
         ok: allRequiredSet,
         testMode: config.testMode,
         mockMode: config.mockMode,
+        testProductId: config.testMode ? (testProductId ? 'set' : 'missing') : null,
         database: dbOk ? 'connected' : 'error',
         dodo: {
             apiKey: config.apiKeySet ? 'set' : 'missing',
