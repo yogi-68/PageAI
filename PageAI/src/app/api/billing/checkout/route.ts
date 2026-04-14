@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
                 .eq('has_used_trial', false); // idempotent: only update if still false
         }
 
+        console.log('[billing/checkout] creating subscription', { productId, planId, isTestMode: isTestMode() });
         const subscription = await dodo.subscriptions.create({
             billing: {
                 city: '',
