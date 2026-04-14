@@ -159,10 +159,22 @@ export default function BotManagePage() {
     setRecrawling(false);
   };
 
-  const copyEmbed = () => {
+  const copyEmbed = async () => {
     const code = `<script src="${window.location.origin}/widget.js" data-bot-id="${botId}"><\/script>`;
-    navigator.clipboard.writeText(code);
-    toast.success('Embed code copied!');
+    try {
+      await navigator.clipboard.writeText(code);
+      toast.success('Embed code copied!');
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = code;
+      el.style.position = 'fixed';
+      el.style.opacity = '0';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      toast.success('Embed code copied!');
+    }
   };
 
   if (loading) return (

@@ -471,9 +471,9 @@ export default function NewBotPage() {
                             <div className="flex items-center justify-between px-4 py-2.5 bg-surface/60 border-b border-edge">
                                 <span className="text-[12px] font-medium text-fg-secondary">Embed Code</span>
                                 <button
-                                    onClick={() => {
+                                    onClick={async () => {
                                         const code = `<script\n  src="${process.env.NEXT_PUBLIC_APP_URL || 'https://cdn.pageai.io'}/widget.js"\n  data-bot-id="${botId}"\n  data-color="${primaryColor}"\n  data-position="${position}"\n/>`;
-                                        navigator.clipboard.writeText(code);
+                                        try { await navigator.clipboard.writeText(code); } catch { const el = document.createElement('textarea'); el.value = code; el.style.position = 'fixed'; el.style.opacity = '0'; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); }
                                     }}
                                     className="px-3 py-1 rounded-md bg-primary/10 text-primary text-[12px] font-medium hover:bg-primary/20 transition-colors"
                                 >

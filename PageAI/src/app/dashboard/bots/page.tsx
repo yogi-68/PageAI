@@ -26,10 +26,23 @@ export default function BotsPage() {
       .then(({ data }) => { if (data) setBots(data); setLoading(false); });
   }, [user]);
 
-  const copyEmbed = (botId: string) => {
+  const copyEmbed = async (botId: string) => {
     const code = `<script src="${window.location.origin}/widget.js" data-bot-id="${botId}"><\/script>`;
-    navigator.clipboard.writeText(code);
-    toast.success('Embed code copied!');
+    try {
+      await navigator.clipboard.writeText(code);
+      toast.success('Embed code copied!');
+    } catch {
+      // Fallback for browsers without clipboard permission
+      const el = document.createElement('textarea');
+      el.value = code;
+      el.style.position = 'fixed';
+      el.style.opacity = '0';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      toast.success('Embed code copied!');
+    }
   };
 
   if (loading) return <div className="flex items-center justify-center py-32"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;

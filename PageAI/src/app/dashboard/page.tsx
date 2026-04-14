@@ -86,18 +86,18 @@ export default function DashboardPage() {
         <Link href="/dashboard/bots/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors">+ Create Bot</Link>
       </div>
 
-      {/* Quickstart guide — shown only when user has no bots */}
-      {bots.length === 0 && (
+      {/* Quickstart guide — shown only for free users with no bots */}
+      {bots.length === 0 && (!usage || usage.plan === 'free') && (
         <div className="p-5 rounded-xl border border-primary/20 bg-primary/3 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-[15px] font-semibold text-fg">Get started in 3 steps</h2>
-            <Link href="/guide" className="text-[12px] text-primary hover:text-primary-hover transition-colors">Full guide →</Link>
+            <Link href="/docs" className="text-[12px] text-primary hover:text-primary-hover transition-colors">Full guide →</Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               { step: '1', title: 'Connect your website', desc: 'Enter your site URL. PageAI crawls and indexes every page automatically.', href: '/dashboard/bots/new', cta: 'Start' },
               { step: '2', title: 'Create your bot', desc: 'Name it, pick a color, and choose your AI model. Takes 30 seconds.', href: '/dashboard/bots/new', cta: 'Create Bot' },
-              { step: '3', title: 'Embed on your site', desc: 'Copy one <script> tag, paste before </body>. Your bot is live!', href: '/guide', cta: 'See how' },
+              { step: '3', title: 'Embed on your site', desc: 'Copy one <script> tag, paste before </body>. Your bot is live!', href: '/docs', cta: 'See how' },
             ].map(s => (
               <div key={s.step} className="flex gap-3 p-4 rounded-xl border border-edge bg-bg/60">
                 <div className="w-7 h-7 rounded-full bg-primary text-white text-[12px] font-bold flex items-center justify-center shrink-0">{s.step}</div>

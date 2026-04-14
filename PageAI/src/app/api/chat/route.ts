@@ -52,6 +52,26 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        // 2b. Enforce plan-based model limits
+        // Free / Starter → gpt-4.1-mini only; Growth / Scale / Enterprise → any model including gpt-4.1 and auto
+        let allowedModel: 'gpt-4.1-mini' | 'gpt-4.1' | 'auto' = (bot.model as 'gpt-4.1-mini' | 'gpt-4.1' | 'auto') || 'gpt-4.1-mini';
+        try {
+            const { data: ownerProfile } = await admin
+                .from('profiles')
+                .select('plan')
+                .eq('id', bot.user_id)
+                .single();
+            const plan = ownerProfile?.plan || 'free';
+            const premiumPlans = ['growth', 'scale', 'enterprise'];
+            if (!premiumPlans.includes(plan)) {
+                // Force mini for free/starter — no GPT-4.1 or auto routing to GPT-4.1
+                allowedModel = 'gpt-4.1-mini';
+            }
+        } catch {
+            // If profile fetch fails, default to mini for safety
+            allowedModel = 'gpt-4.1-mini';
+        }
+
         // 3. Atomically check usage limit and increment counter
         // Uses a single DB UPDATE so concurrent requests cannot race past the limit
         const { data: allowed, error: usageErr } = await admin.rpc('check_and_increment_message', {
@@ -78,7 +98,7 @@ export async function POST(request: NextRequest) {
             userId: bot.user_id,
             dataSourceIds: bot.data_source_ids?.length > 0 ? bot.data_source_ids : undefined,
             systemPrompt: bot.system_prompt || undefined,
-            model: bot.model as 'gpt-4.1-mini' | 'gpt-4.1' | 'auto',
+            model: allowedModel,
             temperature: bot.temperature || 0.2,
             maxTokens: bot.max_tokens || 1024,
             confidenceThreshold: bot.confidence_threshold || 0.65,

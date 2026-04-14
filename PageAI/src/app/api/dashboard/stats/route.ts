@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getAdminClient } from '@/lib/supabase';
 
 // GET /api/dashboard/stats — fetch live dashboard statistics
 export async function GET(request: NextRequest) {
@@ -9,17 +9,20 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'userId required' }, { status: 400 });
         }
 
+        const admin = getAdminClient();
+
         // Fetch bots and profile in parallel — reduces 2 sequential round-trips to 1
+        // Admin client bypasses RLS so profile is always readable
         const [
             { data: bots, error: botsErr },
             { data: profile },
         ] = await Promise.all([
-            supabase
+            admin
                 .from('bots')
                 .select('*, website:websites(url, name, pages_count, total_words)')
                 .eq('user_id', userId)
                 .order('created_at', { ascending: false }),
-            supabase
+            admin
                 .from('profiles')
                 .select('plan, monthly_message_count, monthly_message_limit')
                 .eq('id', userId)
@@ -42,9 +45,9 @@ export async function GET(request: NextRequest) {
                 { count: rcCount },
                 { data: recent },
             ] = await Promise.all([
-                supabase.from('conversations').select('*', { count: 'exact', head: true }).in('bot_id', botIds),
-                supabase.from('conversations').select('*', { count: 'exact', head: true }).in('bot_id', botIds).eq('status', 'resolved'),
-                supabase
+                admin.from('conversations').select('*', { count: 'exact', head: true }).in('bot_id', botIds),
+                admin.from('conversations').select('*', { count: 'exact', head: true }).in('bot_id', botIds).eq('status', 'resolved'),
+                admin
                     .from('conversations')
                     .select('id, bot_id, status, message_count, created_at, bot:bots(name)')
                     .in('bot_id', botIds)
@@ -57,7 +60,7 @@ export async function GET(request: NextRequest) {
             // Batch-fetch first message pair for all recent convos (1 query instead of N)
             const convIds = (recent || []).map((c: any) => c.id);
             const { data: previewMsgs } = convIds.length > 0
-                ? await supabase
+                ? await admin
                     .from('messages')
                     .select('conversation_id, role, content')
                     .in('conversation_id', convIds)
@@ -96,7 +99,7 @@ export async function GET(request: NextRequest) {
             recentConversations,
             usage: profile || { plan: 'free', monthly_message_count: 0, monthly_message_limit: 50 },
         }, {
-            headers: { 'Cache-Control': 'private, max-age=30, stale-while-revalidate=60' },
+            headers: { 'Cache-Control': 'no-store' },
         });
     } catch (error: any) {
         console.error('Dashboard stats error:', error);

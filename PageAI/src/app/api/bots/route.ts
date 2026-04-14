@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, getAdminClient } from '@/lib/supabase';
 
-// GET /api/bots — fetch user's bots
+// GET /api/bots — fetch user's bots, or a single bot by id
 export async function GET(request: NextRequest) {
     try {
         const userId = request.nextUrl.searchParams.get('userId');
+        const botId = request.nextUrl.searchParams.get('id');
+
+        // Single bot fetch (used by chat-preview)
+        if (botId) {
+            const admin = getAdminClient();
+            const { data: bot, error } = await admin
+                .from('bots')
+                .select('id, name, primary_color, welcome_message, is_active')
+                .eq('id', botId)
+                .single();
+            if (error || !bot) return NextResponse.json({ error: 'Bot not found' }, { status: 404 });
+            return NextResponse.json(bot);
+        }
+
         if (!userId) {
             return NextResponse.json({ error: 'userId required' }, { status: 400 });
         }

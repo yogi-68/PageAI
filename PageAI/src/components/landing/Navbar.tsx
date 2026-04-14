@@ -1,17 +1,76 @@
-﻿'use client';
+'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeToggle } from '@/lib/theme';
 
-const links = [
+const mainLinks = [
   { label: 'Features', href: '#features' },
-  { label: 'How It Works', href: '#how-it-works' },
   { label: 'Pricing', href: '#pricing' },
-  { label: 'Guide', href: '/guide' },
-  { label: 'FAQ', href: '#faq' },
+  { label: 'Blog', href: '/blog' },
 ];
+
+const resourceLinks = [
+  { label: 'Documentation', href: '/docs' },
+  { label: 'API Reference', href: '/api-reference' },
+  { label: 'Changelog', href: '/changelog' },
+];
+
+const companyLinks = [
+  { label: 'About', href: '/about' },
+  { label: 'Careers', href: '/careers' },
+  { label: 'Contact', href: '/contact' },
+];
+
+function DropdownMenu({ label, items }: { label: string; items: { label: string; href: string }[] }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-1 text-[13.5px] text-fg-secondary hover:text-fg transition-colors duration-200"
+      >
+        {label}
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full left-1/2 -translate-x-1/2 mt-2 py-1.5 w-44 rounded-xl border border-edge bg-surface/95 backdrop-blur-xl shadow-lg z-50"
+          >
+            {items.map(item => (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="block px-4 py-2 text-[13px] text-fg-secondary hover:text-fg hover:bg-surface-elevated/50 transition-colors rounded-lg mx-1"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -44,8 +103,8 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-8">
-          {links.map((l) => (
+        <div className="hidden md:flex items-center gap-7">
+          {mainLinks.map((l) => (
             <Link
               key={l.label}
               href={l.href}
@@ -54,6 +113,8 @@ export default function Navbar() {
               {l.label}
             </Link>
           ))}
+          <DropdownMenu label="Resources" items={resourceLinks} />
+          <DropdownMenu label="Company" items={companyLinks} />
         </div>
 
         {/* Desktop Actions */}
@@ -100,7 +161,7 @@ export default function Navbar() {
             className="md:hidden bg-surface/95 backdrop-blur-2xl border-b border-edge overflow-hidden"
           >
             <div className="px-6 py-4 space-y-1">
-              {links.map((l) => (
+              {mainLinks.map((l) => (
                 <Link
                   key={l.label}
                   href={l.href}
@@ -110,6 +171,18 @@ export default function Navbar() {
                   {l.label}
                 </Link>
               ))}
+              <div className="pt-2">
+                <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-wide py-1.5">Resources</p>
+                {resourceLinks.map(l => (
+                  <Link key={l.label} href={l.href} onClick={() => setOpen(false)} className="block text-[14px] text-fg-secondary hover:text-fg py-2 pl-2 transition-colors">{l.label}</Link>
+                ))}
+              </div>
+              <div className="pt-1">
+                <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-wide py-1.5">Company</p>
+                {companyLinks.map(l => (
+                  <Link key={l.label} href={l.href} onClick={() => setOpen(false)} className="block text-[14px] text-fg-secondary hover:text-fg py-2 pl-2 transition-colors">{l.label}</Link>
+                ))}
+              </div>
               <div className="pt-3 mt-2 border-t border-edge space-y-2">
                 <div className="flex items-center justify-between py-2.5">
                   <span className="text-[14px] text-fg-secondary">Theme</span>
@@ -137,3 +210,4 @@ export default function Navbar() {
     </nav>
   );
 }
+
