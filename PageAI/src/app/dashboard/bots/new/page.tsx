@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { useRouter } from "next/navigation";
@@ -25,6 +25,10 @@ export default function NewBotPage() {
     const [crawledPages, setCrawledPages] = useState<CrawledPage[]>([]);
     const [crawlStats, setCrawlStats] = useState({ totalPages: 0, totalWords: 0, totalChunks: 0 });
     const [websiteId, setWebsiteId] = useState("");
+    const [dataSourceId, setDataSourceId] = useState("");
+    const [uploadedFiles, setUploadedFiles] = useState<{ name: string; dataSourceId: string; wordCount: number }[]>([]);
+    const [uploadingFile, setUploadingFile] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [botName, setBotName] = useState("");
     const [welcomeMessage, setWelcomeMessage] = useState(
         "Hi! I know everything about this website. Ask me anything!"
@@ -58,6 +62,7 @@ export default function NewBotPage() {
             setCrawledPages(data.pages || []);
             setCrawlStats(data.stats || {});
             setWebsiteId(data.websiteId);
+            setDataSourceId(data.dataSourceId || "");
             setCrawled(true);
         } catch (err: any) {
             setCrawlError(err.message || "Failed to crawl website");
@@ -66,41 +71,70 @@ export default function NewBotPage() {
         }
     };
 
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (!user || !files.length) return;
+        setUploadingFile(true);
+        for (const file of files) {
+            if (file.size > 10 * 1024 * 1024) {
+                alert(`"${file.name}" exceeds 10 MB — skipped`);
+                continue;
+            }
+            const content: string = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsText(file);
+            });
+            try {
+                const res = await fetch("/api/ingest", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ fileName: file.name, content, userId: user.id }),
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setUploadedFiles(prev => [...prev, { name: file.name, dataSourceId: data.dataSourceId, wordCount: data.wordCount }]);
+                }
+            } catch {
+                console.error("File upload failed for", file.name);
+            }
+        }
+        setUploadingFile(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
     const handleCreateBot = async () => {
-        if (!user || !websiteId) return;
+        if (!user) return;
+        const hasWebsite = !!websiteId;
+        const hasFiles = uploadedFiles.length > 0;
+        if (!hasWebsite && !hasFiles) return;
         setCreating(true);
 
         try {
+            const allDataSourceIds = [
+                ...(dataSourceId ? [dataSourceId] : []),
+                ...uploadedFiles.map(f => f.dataSourceId),
+            ];
+
             const res = await fetch("/api/bots", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     userId: user.id,
-                    websiteId,
+                    websiteId: websiteId || null,
                     name: botName || "AI Assistant",
                     welcomeMessage,
                     primaryColor,
                     position,
-                    model: "gpt-3.5-turbo",
+                    model: "gpt-4.1-mini",
+                    dataSourceIds: allDataSourceIds,
                 }),
             });
 
             const data = await res.json();
             if (data.bot) {
                 setBotId(data.bot.id);
-
-                await fetch("/api/crawl", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        url: url.trim(),
-                        userId: user.id,
-                        websiteId,
-                        botId: data.bot.id,
-                        maxPages: 20,
-                    }),
-                });
-
                 setStep("deploy");
             }
         } catch (err) {
@@ -173,18 +207,51 @@ export default function NewBotPage() {
                             <div className="flex-1 h-px bg-edge" />
                         </div>
 
-                        <div className="p-8 rounded-xl border-2 border-dashed border-edge hover:border-edge-light text-center transition-colors cursor-pointer">
-                            <p className="text-[14px] text-fg-secondary mb-1">Drag & drop files here</p>
-                            <p className="text-[12px] text-fg-muted">PDF, DOCX, TXT, CSV, MD - Max 50MB per file</p>
+                        <div
+                            className="p-8 rounded-xl border-2 border-dashed border-edge hover:border-primary/40 text-center transition-colors cursor-pointer"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                multiple
+                                accept=".txt,.md,.csv"
+                                className="hidden"
+                                onChange={handleFileSelect}
+                            />
+                            {uploadingFile ? (
+                                <div className="flex flex-col items-center gap-2">
+                                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                    <p className="text-[13px] text-fg-secondary">Processing files…</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <p className="text-[14px] text-fg-secondary mb-1">Click to upload files</p>
+                                    <p className="text-[12px] text-fg-muted">TXT, MD, CSV — max 10 MB per file</p>
+                                </>
+                            )}
                         </div>
+                        {uploadedFiles.length > 0 && (
+                            <div className="space-y-1.5">
+                                {uploadedFiles.map(f => (
+                                    <div key={f.dataSourceId} className="flex items-center justify-between px-3 py-2 rounded-lg bg-success/[0.06] border border-success/20">
+                                        <span className="text-[13px] text-fg">{f.name}</span>
+                                        <span className="text-[11px] text-fg-secondary">{f.wordCount.toLocaleString()} words indexed</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
                         <div className="flex justify-end">
                             <button
-                                onClick={() => { if (url) setStep("crawl"); }}
-                                disabled={!url}
+                                onClick={() => {
+                                    if (url) setStep("crawl");
+                                    else if (uploadedFiles.length > 0) setStep("customize");
+                                }}
+                                disabled={!url && uploadedFiles.length === 0}
                                 className="px-5 py-2.5 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                             >
-                                Next: Crawl Site
+                                {url ? "Next: Crawl Site" : "Next: Customize"}
                             </button>
                         </div>
                     </div>
