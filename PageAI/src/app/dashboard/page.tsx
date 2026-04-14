@@ -86,6 +86,32 @@ export default function DashboardPage() {
         <Link href="/dashboard/bots/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors">+ Create Bot</Link>
       </div>
 
+      {/* Quickstart guide — shown only when user has no bots */}
+      {bots.length === 0 && (
+        <div className="p-5 rounded-xl border border-primary/20 bg-primary/3 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[15px] font-semibold text-fg">Get started in 3 steps</h2>
+            <Link href="/guide" className="text-[12px] text-primary hover:text-primary-hover transition-colors">Full guide →</Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { step: '1', title: 'Connect your website', desc: 'Enter your site URL. PageAI crawls and indexes every page automatically.', href: '/dashboard/bots/new', cta: 'Start' },
+              { step: '2', title: 'Create your bot', desc: 'Name it, pick a color, and choose your AI model. Takes 30 seconds.', href: '/dashboard/bots/new', cta: 'Create Bot' },
+              { step: '3', title: 'Embed on your site', desc: 'Copy one <script> tag, paste before </body>. Your bot is live!', href: '/guide', cta: 'See how' },
+            ].map(s => (
+              <div key={s.step} className="flex gap-3 p-4 rounded-xl border border-edge bg-bg/60">
+                <div className="w-7 h-7 rounded-full bg-primary text-white text-[12px] font-bold flex items-center justify-center shrink-0">{s.step}</div>
+                <div>
+                  <p className="text-[13px] font-semibold text-fg">{s.title}</p>
+                  <p className="text-[11px] text-fg-muted mt-0.5 mb-2">{s.desc}</p>
+                  <Link href={s.href} className="text-[11px] text-primary font-medium hover:text-primary-hover transition-colors">{s.cta} →</Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Subscription Status Card */}
       {usage && (
         <div className="p-5 rounded-xl border border-edge bg-surface/40">
@@ -131,8 +157,11 @@ export default function DashboardPage() {
 
         {bots.length === 0 ? (
           <div className="p-8 text-center">
-            <p className="text-[15px] font-medium text-fg mb-1">No bots yet</p>
-            <p className="text-[13px] text-fg-secondary mb-4">Create your first AI chatbot to get started</p>
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+              <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/></svg>
+            </div>
+            <p className="text-[15px] font-semibold text-fg mb-1">Create your first bot</p>
+            <p className="text-[13px] text-fg-secondary mb-4 max-w-[320px] mx-auto">Connect your website, let PageAI crawl it, and deploy an AI assistant in minutes</p>
             <Link href="/dashboard/bots/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors">+ Create Bot</Link>
           </div>
         ) : (

@@ -80,7 +80,10 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-[22px] font-bold text-fg tracking-[-0.02em]">Analytics</h1>
+      <div>
+        <h1 className="text-[22px] font-bold text-fg tracking-[-0.02em]">Analytics</h1>
+        <p className="text-[14px] text-fg-secondary mt-0.5">Track conversations, message volume, and bot performance over time</p>
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">
@@ -126,7 +129,10 @@ export default function AnalyticsPage() {
             ))}
           </div>
         ) : (
-          <p className="px-5 py-8 text-center text-[13px] text-fg-secondary">No page data available yet.</p>
+          <div className="px-5 py-8 text-center">
+            <p className="text-[13px] text-fg-secondary">No knowledge base pages found.</p>
+            <p className="text-[11px] text-fg-muted mt-1">Create a bot and crawl a website to see your indexed pages here.</p>
+          </div>
         )}
       </div>
     </div>

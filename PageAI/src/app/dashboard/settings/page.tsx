@@ -47,7 +47,7 @@ export default function SettingsPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-[22px] font-bold text-fg tracking-[-0.02em]">Settings</h1>
-        <p className="text-[14px] text-fg-secondary mt-0.5">Manage your account preferences</p>
+        <p className="text-[14px] text-fg-secondary mt-0.5">Manage your account, profile, and notification preferences</p>
       </div>
 
       {/* Profile */}
