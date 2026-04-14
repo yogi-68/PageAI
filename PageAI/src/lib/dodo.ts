@@ -36,7 +36,10 @@ export function getDodoClient(): DodoPayments {
                 `Set ${envVar} in Vercel → Settings → Environment Variables and redeploy.`
             );
         }
-        _dodoClient = new DodoPayments({ bearerToken: apiKey });
+        _dodoClient = new DodoPayments({
+            bearerToken: apiKey,
+            environment: isTestMode() ? 'test_mode' : 'live_mode',
+        });
     }
     return _dodoClient;
 }

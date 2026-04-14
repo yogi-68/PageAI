@@ -46,3 +46,5 @@ admin/tsconfig.tsbuildinfo
 PageAI/next-env.d.ts
 admin/next-env.d.ts
 
+.vercel
+.env*.local
