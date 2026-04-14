@@ -27,13 +27,14 @@ interface UsageInfo {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
 
-  useEffect(() => { if (!user) router.push('/login'); }, [user, router]);
+  // Only redirect once auth has fully resolved — prevents race with OAuth callback
+  useEffect(() => { if (!loading && !user) router.push('/login'); }, [user, loading, router]);
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
   // Fetch usage for status bar
@@ -43,6 +44,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       .then(({ data }) => { if (data) setUsage(data as UsageInfo); });
   }, [user, pathname]);
 
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-bg">
+      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
   if (!user) return null;
 
   const initials = (user.user_metadata?.full_name || user.email || 'U').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();

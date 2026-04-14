@@ -19,11 +19,23 @@ export default function AnalyticsPage() {
     if (!user) return;
     (async () => {
       try {
+        // Step 1: get user's bot IDs
+        const { data: bots } = await supabase.from('bots').select('id').eq('user_id', user.id);
+        const botIds = (bots || []).map((b: any) => b.id);
+
+        const since7d = new Date(Date.now() - 7 * 86400000).toISOString();
+
+        if (botIds.length === 0) {
+          setLoading(false);
+          return;
+        }
+
+        // Step 2: conversations in last 7 days via bot_id
         const { data: conversations } = await supabase
           .from('conversations')
-          .select('created_at')
-          .eq('user_id', user.id)
-          .gte('created_at', new Date(Date.now() - 7 * 86400000).toISOString());
+          .select('created_at, message_count')
+          .in('bot_id', botIds)
+          .gte('created_at', since7d);
 
         const days: Record<string, number> = {};
         for (let i = 6; i >= 0; i--) {
@@ -41,15 +53,9 @@ export default function AnalyticsPage() {
         setChartData(chart);
 
         const total = (conversations || []).length;
-
-        // Count actual messages from conversations
-        const { count: msgCount } = await supabase
-          .from('messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .gte('created_at', new Date(Date.now() - 7 * 86400000).toISOString());
-
-        setTotals({ conversations: total, messages: msgCount || 0, avgPerDay: Math.round(total / 7) });
+        // Sum message_count from conversations (avoids fetching the messages table)
+        const totalMsgs = (conversations || []).reduce((s: number, c: any) => s + (c.message_count || 0), 0);
+        setTotals({ conversations: total, messages: totalMsgs, avgPerDay: Math.round(total / 7) });
 
         // Show top indexed documents
         const { data: pages } = await supabase
