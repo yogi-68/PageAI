@@ -1,33 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { PLAN_PRICES } from '@/lib/plans';
-
-// ─── In-memory cache (5-minute TTL) ──────────────────────
-const CACHE_TTL_MS = 5 * 60 * 1000;
-const _cache = new Map<string, { data: unknown; expiresAt: number }>();
-
-function getCached<T>(key: string): T | null {
-    const entry = _cache.get(key);
-    if (!entry || Date.now() > entry.expiresAt) return null;
-    return entry.data as T;
-}
-
-function setCached(key: string, data: unknown): void {
-    _cache.set(key, { data, expiresAt: Date.now() + CACHE_TTL_MS });
-}
+import { cacheGet, cacheSet, getCacheBackend } from '@/lib/cache';
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'overview';
-    const bust = searchParams.get('bust') === '1'; // ?bust=1 forces refresh
+    const bust = searchParams.get('bust') === '1'; // ?bust=1 forces a fresh DB fetch
     const admin = getAdminClient();
 
     try {
         switch (type) {
             case 'overview': {
                 if (!bust) {
-                    const cached = getCached<object>('overview');
-                    if (cached) return NextResponse.json({ ...cached, cached: true });
+                    const cached = await cacheGet<object>('stats:overview');
+                    if (cached) return NextResponse.json({ ...cached, cached: true, cacheBackend: getCacheBackend() });
                 }
 
                 const [
@@ -94,7 +81,7 @@ export async function GET(request: NextRequest) {
                     weeklyConvos: weeklyConvos || 0,
                     recentUsers: recentUsers || [],
                 };
-                setCached('overview', result);
+                await cacheSet('stats:overview', result, 300);
                 return NextResponse.json(result);
             }
 

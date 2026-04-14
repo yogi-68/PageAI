@@ -26,7 +26,7 @@ export default function NewBotPage() {
     const [crawlStats, setCrawlStats] = useState({ totalPages: 0, totalWords: 0, totalChunks: 0 });
     const [websiteId, setWebsiteId] = useState("");
     const [dataSourceId, setDataSourceId] = useState("");
-    const [uploadedFiles, setUploadedFiles] = useState<{ name: string; dataSourceId: string; wordCount: number }[]>([]);
+    const [uploadedFiles, setUploadedFiles] = useState<{ name: string; dataSourceId: string; wordCount: number; status: 'syncing' | 'indexed' | 'error' }[]>([]);
     const [uploadingFile, setUploadingFile] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [botName, setBotName] = useState("");
@@ -96,7 +96,25 @@ export default function NewBotPage() {
                     });
                     const data = await res.json();
                     if (data.success) {
-                        setUploadedFiles(prev => [...prev, { name: file.name, dataSourceId: data.dataSourceId, wordCount: data.wordCount }]);
+                        setUploadedFiles(prev => [...prev, { name: file.name, dataSourceId: data.dataSourceId, wordCount: data.wordCount, status: data.status === 'syncing' ? 'syncing' : 'indexed' }]);
+                        // Poll for completion if indexing is async
+                        if (data.status === 'syncing') {
+                            const pollId = data.dataSourceId;
+                            const poll = async () => {
+                                for (let t = 0; t < 12; t++) {
+                                    await new Promise(r => setTimeout(r, 5000));
+                                    try {
+                                        const sr = await fetch(`/api/ingest?dataSourceId=${pollId}`);
+                                        const sd = await sr.json();
+                                        if (sd.status === 'indexed' || sd.status === 'error') {
+                                            setUploadedFiles(prev => prev.map(f => f.dataSourceId === pollId ? { ...f, status: sd.status as 'indexed' | 'error' } : f));
+                                            break;
+                                        }
+                                    } catch { break; }
+                                }
+                            };
+                            poll();
+                        }
                         success = true;
                         break;
                     }
@@ -243,11 +261,28 @@ export default function NewBotPage() {
                         {uploadedFiles.length > 0 && (
                             <div className="space-y-1.5">
                                 {uploadedFiles.map(f => (
-                                    <div key={f.dataSourceId} className="flex items-center justify-between px-3 py-2 rounded-lg bg-success/[0.06] border border-success/20">
-                                        <span className="text-[13px] text-fg">{f.name}</span>
-                                        <span className="text-[11px] text-fg-secondary">{f.wordCount.toLocaleString()} words indexed</span>
+                                    <div key={f.dataSourceId} className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
+                                        f.status === 'error' ? 'bg-danger/[0.06] border-danger/20' :
+                                        f.status === 'syncing' ? 'bg-warning/[0.06] border-warning/20' :
+                                        'bg-success/[0.06] border-success/20'
+                                    }`}>
+                                        <div className="flex items-center gap-2">
+                                            {f.status === 'syncing' && <div className="w-3 h-3 border border-warning border-t-transparent rounded-full animate-spin shrink-0" />}
+                                            {f.status === 'indexed' && <svg className="w-3.5 h-3.5 text-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                                            {f.status === 'error' && <svg className="w-3.5 h-3.5 text-danger shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>}
+                                            <span className="text-[13px] text-fg">{f.name}</span>
+                                        </div>
+                                        <span className="text-[11px] text-fg-secondary">
+                                            {f.status === 'syncing' ? 'Indexing…' : f.status === 'error' ? 'Failed' : `${f.wordCount.toLocaleString()} words indexed`}
+                                        </span>
                                     </div>
                                 ))}
+                                {uploadedFiles.some(f => f.status === 'syncing') && (
+                                    <p className="text-[12px] text-warning/90 mt-2 flex items-center gap-1.5">
+                                        <span>&#9888;&#xFE0F;</span>
+                                        Files are indexing in the background — create your bot now, knowledge will be ready within 60 seconds.
+                                    </p>
+                                )}
                             </div>
                         )}
 

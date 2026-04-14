@@ -1,8 +1,9 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 // Plans — features kept in sync with PLANS in lib/dodo.ts
@@ -30,17 +31,47 @@ interface ProfileData {
   addon_message_balance: number;
 }
 
+interface BillingMode { testMode: boolean; mockMode: boolean; ok: boolean; }
+
 export default function BillingPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
+  const [billingMode, setBillingMode] = useState<BillingMode | null>(null);
 
-  useEffect(() => {
+  const refreshProfile = useCallback(() => {
     if (!user) return;
     supabase.from('profiles').select('plan, monthly_message_count, monthly_message_limit, total_pages_indexed, max_pages_indexed, dodo_subscription_id, addon_message_balance').eq('id', user.id).single().then(({ data }) => {
       if (data) setProfile(data as ProfileData);
     });
   }, [user]);
+
+  useEffect(() => {
+    refreshProfile();
+    // Check billing mode (test/mock)
+    fetch('/api/billing/health').then(r => r.json()).then(d => setBillingMode(d)).catch(() => {});
+  }, [refreshProfile]);
+
+  // Handle return from mock checkout or real checkout
+  useEffect(() => {
+    const mockUpgraded = searchParams.get('mock_upgraded');
+    const mockAddon = searchParams.get('mock_addon');
+    const mockMessages = searchParams.get('messages');
+    const upgraded = searchParams.get('upgraded');
+    const addonSuccess = searchParams.get('addon_success');
+
+    if (mockUpgraded) {
+      toast.success(`🧪 Mock upgrade to ${mockUpgraded} applied! DB updated.`);
+      refreshProfile();
+    }
+    if (mockAddon && mockMessages) {
+      toast.success(`🧪 Mock add-on: +${Number(mockMessages).toLocaleString()} messages added.`);
+      refreshProfile();
+    }
+    if (upgraded) toast.success('Plan upgraded successfully!');
+    if (addonSuccess) toast.success('Add-on messages added to your account!');
+  }, [searchParams, refreshProfile]);
 
   const handleUpgrade = async (planId: string) => {
     if (planId === (profile?.plan || 'free') || planId === 'free' || planId === 'enterprise') return;
@@ -95,9 +126,29 @@ export default function BillingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-[22px] font-bold text-fg tracking-[-0.02em]">Billing</h1>
-        <p className="text-[14px] text-fg-secondary mt-0.5">Manage your subscription and usage</p>
+        <h1 className="text-[22px] font-bold text-fg tracking-[-0.02em]">Billing &amp; Plans</h1>
+        <p className="text-[14px] text-fg-secondary mt-0.5">Manage your subscription, track usage, and buy message add-ons</p>
       </div>
+
+      {/* Test / Mock mode banners */}
+      {billingMode?.mockMode && (
+        <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl border border-danger/30 bg-danger/[0.04]">
+          <svg className="w-4 h-4 text-danger shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 3h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          <div>
+            <p className="text-[13px] font-semibold text-danger">Mock Payments Mode — DODO_MOCK_PAYMENTS=true</p>
+            <p className="text-[12px] text-fg-secondary mt-0.5">Checkout buttons apply plan changes directly to the database without any real payment. For local development only. Never enable in production.</p>
+          </div>
+        </div>
+      )}
+      {billingMode?.testMode && !billingMode?.mockMode && (
+        <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl border border-warning/30 bg-warning/[0.04]">
+          <svg className="w-4 h-4 text-warning shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+          <div>
+            <p className="text-[13px] font-semibold text-warning">Test Mode — DODO_TEST_MODE=true</p>
+            <p className="text-[12px] text-fg-secondary mt-0.5">Using Dodo sandbox environment. Payments are simulated — no real charges. Switch to live keys before launching.</p>
+          </div>
+        </div>
+      )}
 
       {/* Current Plan & Usage Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { generateEmbeddings } from '@/lib/openai';
 
@@ -26,6 +27,20 @@ function chunkText(text: string, maxChunk = 1000, overlap = 100): string[] {
         i += maxChunk - overlap;
     }
     return chunks;
+}
+
+// GET /api/ingest?dataSourceId=xxx — poll indexing status
+export async function GET(request: NextRequest) {
+    const dataSourceId = request.nextUrl.searchParams.get('dataSourceId');
+    if (!dataSourceId) return NextResponse.json({ error: 'dataSourceId required' }, { status: 400 });
+    const admin = getAdminClient();
+    const { data, error } = await admin
+        .from('data_sources')
+        .select('id, status, total_chunks, error_message, last_synced_at')
+        .eq('id', dataSourceId)
+        .single();
+    if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json({ dataSourceId: data.id, status: data.status, chunks: data.total_chunks, errorMessage: data.error_message, lastSyncedAt: data.last_synced_at });
 }
 
 export async function POST(request: NextRequest) {
@@ -77,42 +92,55 @@ export async function POST(request: NextRequest) {
             .single();
         if (docError) throw docError;
 
-        // Chunk & embed in batches to stay within rate limits
+        // Compute chunks synchronously (fast — just string splitting)
         const textChunks = chunkText(content);
-        const allEmbeddings: number[][] = [];
-        for (let i = 0; i < textChunks.length; i += EMBED_BATCH) {
-            const batch = textChunks.slice(i, i + EMBED_BATCH);
-            const batchEmbeddings = await generateEmbeddings(batch);
-            allEmbeddings.push(...batchEmbeddings);
-        }
 
-        const chunkRows = textChunks.map((chunk, idx) => ({
-            document_id: doc.id,
-            data_source_id: dataSource.id,
-            user_id: userId,
-            content: chunk,
-            embedding: allEmbeddings[idx],
-            chunk_index: idx,
-            word_count: chunk.split(/\s+/).filter(Boolean).length,
-        }));
+        // Schedule embedding + DB writes for AFTER the response is sent
+        // This makes the endpoint feel instant regardless of file size.
+        after(async () => {
+            const adminBg = getAdminClient();
+            try {
+                const allEmbeddings: number[][] = [];
+                for (let i = 0; i < textChunks.length; i += EMBED_BATCH) {
+                    const batch = textChunks.slice(i, i + EMBED_BATCH);
+                    const batchEmbeddings = await generateEmbeddings(batch);
+                    allEmbeddings.push(...batchEmbeddings);
+                }
 
-        const { error: chunkError } = await admin.from('chunks').insert(chunkRows);
-        if (chunkError) throw chunkError;
+                const chunkRows = textChunks.map((chunk, idx) => ({
+                    document_id: doc.id,
+                    data_source_id: dataSource.id,
+                    user_id: userId,
+                    content: chunk,
+                    embedding: allEmbeddings[idx],
+                    chunk_index: idx,
+                    word_count: chunk.split(/\s+/).filter(Boolean).length,
+                }));
 
-        // Update data source status
-        await admin.from('data_sources').update({
-            status: 'indexed',
-            documents_count: 1,
-            total_chunks: chunkRows.length,
-            last_synced_at: new Date().toISOString(),
-        }).eq('id', dataSource.id);
+                await adminBg.from('chunks').insert(chunkRows);
+                await adminBg.from('data_sources').update({
+                    status: 'indexed',
+                    documents_count: 1,
+                    total_chunks: chunkRows.length,
+                    last_synced_at: new Date().toISOString(),
+                }).eq('id', dataSource.id);
+            } catch (bgErr: any) {
+                console.error('Ingest background error:', bgErr);
+                await adminBg.from('data_sources').update({
+                    status: 'error',
+                    error_message: bgErr.message,
+                }).eq('id', dataSource.id);
+            }
+        });
 
+        // Return immediately — embedding happens in background
         return NextResponse.json({
             success: true,
             dataSourceId: dataSource.id,
             fileName,
             wordCount,
-            chunks: chunkRows.length,
+            chunks: textChunks.length,
+            status: 'syncing', // will update to 'indexed' within seconds
         });
     } catch (error: any) {
         console.error('Ingest error:', error);

@@ -1,15 +1,53 @@
 import DodoPayments from 'dodopayments';
 
+// ─── Test / Mock Modes ────────────────────────────────────
+// DODO_TEST_MODE=true   → Uses DODO_TEST_PAYMENTS_API_KEY (Dodo sandbox). Real API calls,
+//                          sandbox payment forms, no real money. Shows yellow banner.
+// DODO_MOCK_PAYMENTS=true → No Dodo API calls at all. Mock checkout simulates the full
+//                           billing flow entirely in-app. Perfect for local dev without
+//                           Dodo credentials. Shows red banner.
+export function isTestMode(): boolean {
+    return process.env.DODO_TEST_MODE === 'true';
+}
+export function isMockMode(): boolean {
+    return process.env.DODO_MOCK_PAYMENTS === 'true';
+}
+
 // Initialize Dodo Payments client lazily (server-side only)
 let _dodoClient: DodoPayments | null = null;
 
 export function getDodoClient(): DodoPayments {
     if (!_dodoClient) {
-        _dodoClient = new DodoPayments({
-            bearerToken: process.env.DODO_PAYMENTS_API_KEY || '',
-        });
+        const apiKey = isTestMode()
+            ? (process.env.DODO_TEST_PAYMENTS_API_KEY || process.env.DODO_PAYMENTS_API_KEY || '')
+            : (process.env.DODO_PAYMENTS_API_KEY || '');
+        _dodoClient = new DodoPayments({ bearerToken: apiKey });
     }
     return _dodoClient;
+}
+
+/**
+ * Returns a sanitized summary of which Dodo env vars are configured.
+ * Safe to expose through /api/billing/health — no actual key values returned.
+ */
+export function getDodoConfigStatus() {
+    const testMode = isTestMode();
+    const mockMode = isMockMode();
+    const apiKey = testMode
+        ? (process.env.DODO_TEST_PAYMENTS_API_KEY || process.env.DODO_PAYMENTS_API_KEY)
+        : process.env.DODO_PAYMENTS_API_KEY;
+
+    const planIds = ['starter', 'growth', 'scale'] as const;
+    const addonIds = ['1000_messages', '5000_messages', '10000_messages'] as const;
+
+    return {
+        testMode,
+        mockMode,
+        apiKeySet: !!apiKey,
+        webhookKeySet: !!process.env.DODO_PAYMENTS_WEBHOOK_KEY,
+        plans: Object.fromEntries(planIds.map(p => [p, !!(PLANS as any)[p]?.productId])) as Record<string, boolean>,
+        addons: Object.fromEntries(addonIds.map(a => [a, !!(MESSAGE_ADDONS as any)[a]?.productId])) as Record<string, boolean>,
+    };
 }
 
 // ─── Plan Configuration ───────────────────────────────────

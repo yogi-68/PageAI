@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDodoClient, PLANS, PlanId, YEARLY_PRODUCT_IDS, YEARLY_PRICES } from '@/lib/dodo';
+import { getDodoClient, PLANS, PlanId, YEARLY_PRODUCT_IDS, YEARLY_PRICES, isMockMode, isTestMode } from '@/lib/dodo';
 import { getAdminClient } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
@@ -24,6 +24,16 @@ export async function POST(request: NextRequest) {
         const productId = isAnnual
             ? (YEARLY_PRODUCT_IDS[planId] || null)
             : plan.productId;
+
+        // ─── Mock mode (local dev, no Dodo credentials) ───────────────
+        if (isMockMode()) {
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+            return NextResponse.json({
+                success: true,
+                url: `${appUrl}/api/billing/mock-complete?planId=${planId}&userId=${userId}&billing=${billing}`,
+                mock: true,
+            });
+        }
 
         if (!productId) {
             const missing = isAnnual

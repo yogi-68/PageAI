@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDodoClient, MESSAGE_ADDONS, AddonId } from '@/lib/dodo';
+import { getDodoClient, MESSAGE_ADDONS, AddonId, isMockMode } from '@/lib/dodo';
 import { getAdminClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 
@@ -18,8 +18,17 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid add-on ID' }, { status: 400 });
         }
         if (!addon.productId) {
+            // Mock mode: simulate add-on without Dodo
+            if (isMockMode()) {
+                const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+                return NextResponse.json({
+                    success: true,
+                    url: `${appUrl}/api/billing/mock-complete?addonId=${addonId}&userId=${userId}`,
+                    mock: true,
+                });
+            }
             return NextResponse.json(
-                { error: `Add-on product not configured. Set DODO_ADDON_${addonId.split('_')[0].toUpperCase()} in environment variables.` },
+                { error: `Add-on product not configured. Set DODO_ADDON_${addonId.split('_')[0].toUpperCase()} in environment variables. Set DODO_MOCK_PAYMENTS=true to test without credentials.` },
                 { status: 503 }
             );
         }
