@@ -17,7 +17,7 @@ const NAV = [
 
 function SunIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
       <circle cx="8" cy="8" r="3" />
       <path d="M8 1v2M8 13v2M1 8h2m10 0h2M3.2 3.2l1.4 1.4m6.8 6.8 1.4 1.4M3.2 12.8l1.4-1.4m6.8-6.8 1.4-1.4" />
     </svg>
@@ -26,7 +26,7 @@ function SunIcon() {
 
 function MoonIcon() {
   return (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
       <path d="M14 10a6 6 0 01-8-8 6 6 0 100 12 6 6 0 008-4z" />
     </svg>
   );
@@ -34,17 +34,163 @@ function MoonIcon() {
 
 function MenuIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
-      <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/>
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
     </svg>
   );
 }
 
 function CloseIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
     </svg>
+  );
+}
+
+function SidebarContent({
+  adminEmail,
+  initials,
+  pathname,
+  isActive,
+  handleLogout,
+  onClose,
+}: {
+  adminEmail: string;
+  initials: string;
+  pathname: string;
+  isActive: (href: string) => boolean;
+  handleLogout: () => void;
+  onClose?: () => void;
+}) {
+  return (
+    <>
+      {/* Logo */}
+      <div style={{
+        padding: '0 20px',
+        height: 56,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottom: '1px solid var(--edge)',
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 28, height: 28,
+            borderRadius: 8,
+            background: 'rgba(79,109,245,0.12)',
+            border: '1px solid rgba(79,109,245,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+              <path d="M3 5a2 2 0 012-2h10a2 2 0 012 2v7a2 2 0 01-2 2H8.5l-4 4V14H5a2 2 0 01-2-2V5z" fill="#4f6df5" />
+            </svg>
+          </div>
+          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg)' }}>PageAI</span>
+          <span style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.08em',
+            textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4,
+            background: 'rgba(79,109,245,0.12)', color: 'var(--primary)',
+          }}>Admin</span>
+        </div>
+
+        {/* Close button — only visible on mobile overlay */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            style={{
+              width: 32, height: 32,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: 8, border: '1px solid var(--edge)',
+              background: 'transparent', cursor: 'pointer',
+              color: 'var(--fg-secondary)',
+              flexShrink: 0,
+            }}
+            title="Close sidebar"
+          >
+            <CloseIcon />
+          </button>
+        )}
+      </div>
+
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: '12px 12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {NAV.map(({ href, label, icon }) => {
+          const active = isActive(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '9px 12px', borderRadius: 8,
+                fontSize: 14, fontWeight: active ? 500 : 400,
+                textDecoration: 'none',
+                color: active ? 'var(--primary)' : 'var(--fg-secondary)',
+                background: active ? 'rgba(79,109,245,0.1)' : 'transparent',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => {
+                if (!active) {
+                  (e.currentTarget as HTMLElement).style.background = 'var(--surface-elevated)';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--fg)';
+                }
+              }}
+              onMouseLeave={e => {
+                if (!active) {
+                  (e.currentTarget as HTMLElement).style.background = 'transparent';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--fg-secondary)';
+                }
+              }}
+            >
+              <span style={{ fontSize: 13, width: 16, textAlign: 'center', lineHeight: 1, flexShrink: 0 }}>{icon}</span>
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* User footer */}
+      <div style={{ padding: '12px', borderTop: '1px solid var(--edge)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', marginBottom: 4 }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: '50%',
+            background: 'rgba(79,109,245,0.15)', color: 'var(--primary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, fontWeight: 700, flexShrink: 0,
+          }}>
+            {initials}
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
+              {adminEmail || 'Admin'}
+            </p>
+            <p style={{ fontSize: 11, color: 'var(--fg-muted)', margin: 0 }}>Administrator</p>
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          style={{
+            width: '100%', textAlign: 'left', padding: '9px 12px',
+            borderRadius: 8, border: 'none', background: 'transparent',
+            cursor: 'pointer', fontSize: 14, color: 'var(--fg-secondary)',
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.08)';
+            (e.currentTarget as HTMLElement).style.color = 'var(--danger)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.background = 'transparent';
+            (e.currentTarget as HTMLElement).style.color = 'var(--fg-secondary)';
+          }}
+        >
+          Sign out
+        </button>
+      </div>
+    </>
   );
 }
 
@@ -69,7 +215,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setReady(true);
   }, [router]);
 
+  // Close sidebar on route change
   useEffect(() => { setMobileOpen(false); }, [pathname]);
+
+  // Lock body scroll when mobile sidebar is open
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
 
   const toggleTheme = useCallback(() => {
     const next = theme === 'dark' ? 'light' : 'dark';
@@ -95,196 +248,163 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-        <div className="w-5 h-5 rounded-full animate-spin" style={{ border: '2px solid var(--edge)', borderTopColor: 'var(--primary)' }} />
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+        <div style={{
+          width: 20, height: 20, borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+          border: '2px solid var(--edge)', borderTopColor: 'var(--primary)',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
+  const sidebarProps = { adminEmail, initials, pathname, isActive, handleLogout };
+
   return (
-    <div className="flex min-h-screen" style={{ background: 'var(--bg)', color: 'var(--fg)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)', color: 'var(--fg)' }}>
 
-      {/* ── Desktop sidebar ── */}
-      <aside className="hidden lg:flex w-[240px] flex-col fixed inset-y-0 left-0 z-30"
-        style={{ background: 'var(--surface)', borderRight: '1px solid var(--edge)' }}>
-
-        {/* Logo */}
-        <div className="px-5 h-14 flex items-center shrink-0" style={{ borderBottom: '1px solid var(--edge)' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-              style={{ background: 'rgba(79,109,245,0.12)', border: '1px solid rgba(79,109,245,0.25)' }}>
-              <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
-                <path d="M3 5a2 2 0 012-2h10a2 2 0 012 2v7a2 2 0 01-2 2H8.5l-4 4V14H5a2 2 0 01-2-2V5z" fill="#4f6df5"/>
-              </svg>
-            </div>
-            <span className="text-[14px] font-semibold" style={{ color: 'var(--fg)' }}>PageAI</span>
-            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-              style={{ background: 'rgba(79,109,245,0.12)', color: 'var(--primary)' }}>Admin</span>
-          </div>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-          {NAV.map(({ href, label, icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] transition-all duration-150 ${
-                isActive(href)
-                  ? 'font-medium'
-                  : 'hover:text-[var(--fg)] hover:bg-[var(--surface-elevated)]'
-              }`}
-              style={isActive(href) ? {
-                background: 'rgba(79,109,245,0.1)',
-                color: 'var(--primary)',
-              } : { color: 'var(--fg-secondary)' }}
-            >
-              <span className="text-[12px] w-4 text-center leading-none">{icon}</span>
-              {label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* User footer */}
-        <div className="px-3 py-3 shrink-0" style={{ borderTop: '1px solid var(--edge)' }}>
-          <div className="flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold"
-              style={{ background: 'rgba(79,109,245,0.15)', color: 'var(--primary)' }}>
-              {initials}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-medium truncate" style={{ color: 'var(--fg)' }}>
-                {adminEmail || 'Admin'}
-              </p>
-              <p className="text-[10px]" style={{ color: 'var(--fg-muted)' }}>Administrator</p>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-full text-left px-3 py-2 rounded-lg text-[13px] transition-colors hover:bg-[rgba(239,68,68,0.08)] hover:text-[var(--danger)]"
-            style={{ color: 'var(--fg-secondary)' }}
-          >
-            Sign out
-          </button>
-        </div>
+      {/* ── Desktop sidebar — STICKY (participates in flex flow, no margin offset needed) ── */}
+      <aside
+        className="hidden lg:flex flex-col"
+        style={{
+          width: 240,
+          flexShrink: 0,
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          overflowY: 'auto',
+          background: 'var(--surface)',
+          borderRight: '1px solid var(--edge)',
+          zIndex: 30,
+        }}
+      >
+        <SidebarContent {...sidebarProps} />
       </aside>
 
       {/* ── Mobile sidebar overlay ── */}
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-40">
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 50 }}
+          aria-modal="true"
+          role="dialog"
+        >
+          {/* Backdrop — click to close */}
           <div
-            className="absolute inset-0"
-            style={{ background: 'rgba(11,14,24,0.7)', backdropFilter: 'blur(4px)' }}
+            style={{
+              position: 'absolute', inset: 0,
+              background: 'rgba(11,14,24,0.75)',
+              backdropFilter: 'blur(4px)',
+              cursor: 'pointer',
+            }}
             onClick={() => setMobileOpen(false)}
+            aria-label="Close sidebar"
           />
-          <aside className="absolute left-0 top-0 bottom-0 w-[260px] flex flex-col z-50"
-            style={{ background: 'var(--surface)', borderRight: '1px solid var(--edge)' }}>
 
-            <div className="flex items-center justify-between px-5 h-14 shrink-0"
-              style={{ borderBottom: '1px solid var(--edge)' }}>
-              <div className="flex items-center gap-2">
-                <span className="text-[14px] font-semibold" style={{ color: 'var(--fg)' }}>PageAI</span>
-                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                  style={{ background: 'rgba(79,109,245,0.12)', color: 'var(--primary)' }}>Admin</span>
-              </div>
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="p-1.5 rounded-md transition-colors hover:bg-[var(--surface-elevated)]"
-                style={{ color: 'var(--fg-secondary)' }}
-              >
-                <CloseIcon />
-              </button>
-            </div>
-
-            <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-              {NAV.map(({ href, label, icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] transition-colors ${
-                    isActive(href) ? 'font-medium' : 'hover:text-[var(--fg)]'
-                  }`}
-                  style={isActive(href) ? {
-                    background: 'rgba(79,109,245,0.1)',
-                    color: 'var(--primary)',
-                  } : { color: 'var(--fg-secondary)' }}
-                >
-                  <span className="text-[13px]">{icon}</span>
-                  {label}
-                </Link>
-              ))}
-            </nav>
-
-            <div className="px-3 py-3 shrink-0" style={{ borderTop: '1px solid var(--edge)' }}>
-              <button
-                onClick={handleLogout}
-                className="w-full text-left px-3 py-2 rounded-lg text-[13px] transition-colors hover:bg-[rgba(239,68,68,0.08)]"
-                style={{ color: 'var(--danger)' }}
-              >
-                Sign out
-              </button>
-            </div>
+          {/* Sidebar panel */}
+          <aside
+            style={{
+              position: 'absolute',
+              left: 0, top: 0, bottom: 0,
+              width: 280,
+              display: 'flex',
+              flexDirection: 'column',
+              background: 'var(--surface)',
+              borderRight: '1px solid var(--edge)',
+              zIndex: 51,
+              animation: 'slideIn 0.2s ease',
+            }}
+          >
+            <SidebarContent {...sidebarProps} onClose={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
 
-      {/* ── Main ── */}
-      <div className="flex-1 lg:ml-[240px] flex flex-col min-h-screen">
+      {/* ── Main content ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
         {/* Sticky header */}
-        <header
-          className="h-14 flex items-center gap-4 px-5 lg:px-6 sticky top-0 z-20 shrink-0"
-          style={{
-            background: 'rgba(11,14,24,0.85)',
-            borderBottom: '1px solid var(--edge)',
-            backdropFilter: 'blur(16px)',
-          }}
-        >
+        <header style={{
+          height: 56,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '0 24px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          flexShrink: 0,
+          background: 'rgba(11,14,24,0.9)',
+          borderBottom: '1px solid var(--edge)',
+          backdropFilter: 'blur(16px)',
+        }}>
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(true)}
-            className="lg:hidden p-1.5 rounded-md transition-colors hover:bg-[var(--surface-elevated)]"
-            style={{ color: 'var(--fg-secondary)' }}
+            className="lg:hidden"
+            style={{
+              width: 36, height: 36,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: 8, border: 'none', background: 'transparent',
+              cursor: 'pointer', color: 'var(--fg-secondary)',
+              flexShrink: 0,
+            }}
+            aria-label="Open navigation"
           >
             <MenuIcon />
           </button>
 
           {/* Breadcrumb */}
-          <div className="flex items-center gap-1.5 text-[13px]">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}>
             <span style={{ color: 'var(--fg-muted)' }}>Admin</span>
             <span style={{ color: 'var(--fg-muted)' }}>/</span>
-            <span className="font-medium" style={{ color: 'var(--fg)' }}>{currentPage}</span>
+            <span style={{ fontWeight: 500, color: 'var(--fg)' }}>{currentPage}</span>
           </div>
 
-          <div className="flex-1" />
+          <div style={{ flex: 1 }} />
 
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
-            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-            className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors hover:bg-[var(--surface-elevated)]"
-            style={{ color: 'var(--fg-secondary)' }}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            style={{
+              width: 36, height: 36,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: 8, border: 'none', background: 'transparent',
+              cursor: 'pointer', color: 'var(--fg-secondary)',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface-elevated)'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
           >
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
           </button>
 
           {/* Admin avatar */}
           <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-            style={{ background: 'rgba(79,109,245,0.2)', color: 'var(--primary)' }}
+            style={{
+              width: 30, height: 30, borderRadius: '50%',
+              background: 'rgba(79,109,245,0.2)', color: 'var(--primary)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 700, flexShrink: 0, cursor: 'default',
+            }}
             title={adminEmail}
           >
             {initials}
           </div>
         </header>
 
-        {/* Content */}
-        <main className="flex-1 p-5 lg:p-8">
-          <div className="max-w-[1200px]">
+        {/* Page content */}
+        <main style={{ flex: 1, padding: '28px 32px' }}>
+          <div style={{ maxWidth: 1200, width: '100%' }}>
             {children}
           </div>
         </main>
       </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0.7; } to { transform: translateX(0); opacity: 1; } }
+      `}</style>
     </div>
   );
 }

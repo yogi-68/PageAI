@@ -1,5 +1,6 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
+/* ── CSS variables ── */
 :root {
   --bg: #0b0e18;
   --bg-secondary: #0f1322;
@@ -18,7 +19,7 @@
   --danger: #ef4444;
 }
 
-/* Light theme overrides */
+/* Light theme */
 [data-theme="light"] {
   --bg: #f4f6fb;
   --bg-secondary: #eaeff8;
@@ -37,23 +38,48 @@
   --danger: #dc2626;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Base ──
+   NOTE: Do NOT add * { margin: 0; padding: 0 } here.
+   In Tailwind v4 all utilities live in @layer utilities.
+   Unlayered CSS overrides @layer utilities regardless of
+   specificity, breaking every p-*, m-*, gap-*, space-y-* class.
+   Tailwind v4 preflight already handles box-sizing resets.
+*/
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
 
 body {
   background: var(--bg);
   color: var(--fg);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  -webkit-font-smoothing: antialiased;
+  font-family: 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Scrollbar */
+/* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--edge-light); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--fg-muted); }
 
-/* Recharts tooltip override */
+/* ── Recharts tooltip ── */
 .recharts-default-tooltip {
   background: var(--surface) !important;
   border: 1px solid var(--edge) !important;
   border-radius: 8px !important;
+}
+
+/* ── Form element base ── */
+input, select, textarea, button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+select option {
+  background: var(--surface);
+  color: var(--fg);
 }
