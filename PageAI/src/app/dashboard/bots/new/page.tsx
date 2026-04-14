@@ -37,6 +37,7 @@ export default function NewBotPage() {
     const [position, setPosition] = useState<"right" | "left">("right");
     const [creating, setCreating] = useState(false);
     const [botId, setBotId] = useState("");
+    const [limitReached, setLimitReached] = useState(false);
 
     const handleCrawl = async () => {
         if (!user || !url) return;
@@ -160,6 +161,10 @@ export default function NewBotPage() {
             });
 
             const data = await res.json();
+            if (data.limitReached) {
+                setLimitReached(true);
+                return;
+            }
             if (data.bot) {
                 setBotId(data.bot.id);
                 setStep("deploy");
@@ -452,6 +457,18 @@ export default function NewBotPage() {
                                 {creating ? 'Creating Bot...' : 'Create & Deploy'}
                             </button>
                         </div>
+
+                        {/* Bot limit reached — show upgrade CTA */}
+                        {limitReached && (
+                            <div className="p-4 rounded-xl border border-warning/30 bg-warning/5 flex items-start gap-3">
+                                <svg className="w-4 h-4 text-warning mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9.303 3.376c.866 1.5-.217 3.374-1.948 3.374H4.645c-1.73 0-2.813-1.874-1.948-3.374l7.109-12.374c.866-1.5 3.032-1.5 3.898 0l7.598 12.374z"/></svg>
+                                <div className="flex-1">
+                                    <p className="text-[13px] font-semibold text-warning">Bot limit reached</p>
+                                    <p className="text-[12px] text-fg-secondary mt-0.5">You&apos;ve used all bot slots on your current plan. Upgrade to create more bots.</p>
+                                </div>
+                                <Link href="/dashboard/billing" className="shrink-0 px-3 py-1.5 rounded-lg bg-primary text-white text-[12px] font-medium hover:bg-primary-hover transition-colors">Upgrade →</Link>
+                            </div>
+                        )}
                     </div>
                 )}
 

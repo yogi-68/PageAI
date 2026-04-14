@@ -1,25 +1,25 @@
 // PageAI Embeddable Widget Script
-// Usage: <script src="https://cdn.pageai.io/widget.js" data-bot-id="bot_xxx" />
+// Usage: <script src="https://pageai-tau.vercel.app/widget.js" data-bot-id="bot_xxx" async />
 (function () {
     "use strict";
 
-    const WIDGET_VERSION = "2.0.0";
+    const WIDGET_VERSION = "2.1.0";
 
-    // Auto-detect API base from script src URL, fallback to window override or Vercel URL
-    const scriptSrc = (document.currentScript || document.querySelector("script[data-bot-id]"))?.src || "";
+    // Must capture script reference synchronously — document.currentScript is only valid now
+    const scriptEl = document.currentScript || document.querySelector("script[data-bot-id]");
+    if (!scriptEl) return;
+
+    const scriptSrc = scriptEl.src || "";
     const scriptOrigin = scriptSrc ? new URL(scriptSrc).origin : "";
     const API_BASE = window.PAGEAI_API || scriptOrigin || "https://pageai-tau.vercel.app";
 
-    // Get config from script tag
-    const script = document.currentScript || document.querySelector("script[data-bot-id]");
-    if (!script) return;
-
+    // Get config from script tag attributes
     const config = {
-        botId: script.getAttribute("data-bot-id"),
-        color: script.getAttribute("data-color") || "#6366f1",
-        position: script.getAttribute("data-position") || "right",
-        name: script.getAttribute("data-name") || "AI Assistant",
-        welcome: script.getAttribute("data-welcome") || "Hi! 👋 Ask me anything about this website!",
+        botId: scriptEl.getAttribute("data-bot-id"),
+        color: scriptEl.getAttribute("data-color") || "#6366f1",
+        position: scriptEl.getAttribute("data-position") || "right",
+        name: scriptEl.getAttribute("data-name") || "AI Assistant",
+        welcome: scriptEl.getAttribute("data-welcome") || "Hi! 👋 Ask me anything about this website!",
     };
 
     if (!config.botId) {
@@ -27,7 +27,8 @@
         return;
     }
 
-    // Inject styles
+    // Defer all DOM work until the page is idle so we don't block first paint
+    function initWidget() {
     const style = document.createElement("style");
     style.textContent = `
     #pageai-widget-container {
@@ -477,4 +478,17 @@
     });
 
     console.log(`[PageAI] Widget v${WIDGET_VERSION} loaded for bot ${config.botId}`);
+    } // end initWidget
+
+    // Schedule initialization after page becomes idle — avoids blocking first paint
+    if (typeof requestIdleCallback !== "undefined") {
+        requestIdleCallback(initWidget, { timeout: 2000 });
+    } else {
+        // Fallback: defer until after load event
+        if (document.readyState === "complete") {
+            setTimeout(initWidget, 1);
+        } else {
+            window.addEventListener("load", function () { setTimeout(initWidget, 1); }, { once: true });
+        }
+    }
 })();

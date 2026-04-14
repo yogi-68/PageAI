@@ -6,6 +6,9 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
+const PLAN_BOT_LIMITS: Record<string, number> = { free: 1, starter: 1, growth: 3, scale: 10, enterprise: -1 };
+const PLAN_LABELS: Record<string, string> = { free: 'Free', starter: 'Starter', growth: 'Growth', scale: 'Scale', enterprise: 'Enterprise' };
+
 interface BotRow {
   id: string;
   name: string;
@@ -18,13 +21,24 @@ interface BotRow {
 export default function BotsPage() {
   const { user } = useAuth();
   const [bots, setBots] = useState<BotRow[]>([]);
+  const [plan, setPlan] = useState<string>('free');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
-    supabase.from('bots').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
-      .then(({ data }) => { if (data) setBots(data); setLoading(false); });
+    Promise.all([
+      supabase.from('bots').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('profiles').select('plan').eq('id', user.id).single(),
+    ]).then(([{ data: botsData }, { data: profileData }]) => {
+      if (botsData) setBots(botsData);
+      if (profileData?.plan) setPlan(profileData.plan);
+      setLoading(false);
+    });
   }, [user]);
+
+  const botLimit = PLAN_BOT_LIMITS[plan] ?? 1;
+  const atLimit = botLimit !== -1 && bots.length >= botLimit;
+  const overLimit = botLimit !== -1 && bots.length > botLimit;
 
   const copyEmbed = async (botId: string) => {
     const code = `<script src="${window.location.origin}/widget.js" data-bot-id="${botId}"><\/script>`;
@@ -52,10 +66,37 @@ export default function BotsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-[22px] font-bold text-fg tracking-[-0.02em]">Bots</h1>
-          <p className="text-[14px] text-fg-secondary mt-0.5">{bots.length} bot{bots.length !== 1 ? 's' : ''} created</p>
+          <p className="text-[14px] text-fg-secondary mt-0.5">
+            {bots.length} / {botLimit === -1 ? '∞' : botLimit} bot{botLimit !== 1 ? 's' : ''} used
+          </p>
         </div>
-        <Link href="/dashboard/bots/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors">+ New Bot</Link>
+        {atLimit ? (
+          <Link href="/dashboard/billing" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-warning/10 border border-warning/30 text-warning text-[13px] font-medium hover:bg-warning/20 transition-colors">⬆ Upgrade for more bots</Link>
+        ) : (
+          <Link href="/dashboard/bots/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors">+ New Bot</Link>
+        )}
       </div>
+
+      {/* Over-limit warning — user downgraded while having more bots than allowed */}
+      {overLimit && (
+        <div className="p-4 rounded-xl border border-danger/30 bg-danger/5 flex items-start gap-3">
+          <svg className="w-4 h-4 text-danger mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+          <div className="flex-1">
+            <p className="text-[13px] font-semibold text-danger">Bot limit exceeded</p>
+            <p className="text-[12px] text-fg-secondary mt-0.5">Your {PLAN_LABELS[plan]} plan allows {botLimit} bot{botLimit !== 1 ? 's' : ''}. You currently have {bots.length}. Extra bots are paused until you upgrade.</p>
+          </div>
+          <Link href="/dashboard/billing" className="shrink-0 px-3 py-1.5 rounded-lg bg-danger text-white text-[12px] font-medium hover:opacity-90 transition-opacity">Upgrade now</Link>
+        </div>
+      )}
+
+      {/* At-limit nudge — not over, just at cap */}
+      {atLimit && !overLimit && (
+        <div className="p-4 rounded-xl border border-warning/30 bg-warning/5 flex items-center gap-3">
+          <svg className="w-4 h-4 text-warning shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9.303 3.376c.866 1.5-.217 3.374-1.948 3.374H4.645c-1.73 0-2.813-1.874-1.948-3.374l7.109-12.374c.866-1.5 3.032-1.5 3.898 0l7.598 12.374z"/></svg>
+          <p className="text-[13px] text-fg-secondary flex-1">You&apos;ve reached the <strong className="text-fg">{botLimit}-bot limit</strong> on your {PLAN_LABELS[plan]} plan.</p>
+          <Link href="/dashboard/billing" className="shrink-0 text-[12px] text-primary font-medium hover:text-primary-hover transition-colors">Upgrade →</Link>
+        </div>
+      )}
 
       {bots.length === 0 ? (
         <div className="p-12 rounded-xl border border-edge bg-surface/40 text-center">
@@ -87,7 +128,11 @@ export default function BotsPage() {
               </div>
             </div>
           ))}
-          <Link href="/dashboard/bots/new" className="flex items-center justify-center p-4 rounded-xl border border-dashed border-edge text-[13px] text-fg-muted hover:text-fg hover:border-edge-light transition-all duration-200">+ Create New Bot</Link>
+          {atLimit ? (
+            <Link href="/dashboard/billing" className="flex items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-warning/40 text-[13px] text-warning hover:bg-warning/5 transition-all duration-200">⬆ Upgrade to create more bots</Link>
+          ) : (
+            <Link href="/dashboard/bots/new" className="flex items-center justify-center p-4 rounded-xl border border-dashed border-edge text-[13px] text-fg-muted hover:text-fg hover:border-edge-light transition-all duration-200">+ Create New Bot</Link>
+          )}
         </div>
       )}
     </div>

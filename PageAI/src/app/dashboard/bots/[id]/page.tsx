@@ -362,7 +362,10 @@ export default function BotManagePage() {
 
           {/* AI Model */}
           <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">
-            <h3 className="text-[14px] font-semibold text-fg">AI Model</h3>
+            <div>
+              <h3 className="text-[14px] font-semibold text-fg">AI Model</h3>
+              <p className="text-[12px] text-fg-muted mt-0.5">Smart routing automatically adapts to query complexity — no action needed.</p>
+            </div>
             <div className="space-y-2">
               {[
                 { id: 'gpt-4.1-mini', name: 'Fast AI', desc: 'Fast & cost-efficient. Best for most support bots.' },
