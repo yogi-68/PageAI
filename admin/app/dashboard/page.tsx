@@ -19,123 +19,258 @@ interface OverviewData {
   recentUsers: any[];
 }
 
-const PLAN_COLORS: Record<string, string> = {
-  free: '#6b7280', starter: '#4f6df5', growth: '#8b5cf6', scale: '#f59e0b', enterprise: '#ef4444',
+const PLAN_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
+  free:       { label: 'Free',       color: '#9ca3af', bg: 'rgba(107,114,128,0.12)', dot: '#6b7280' },
+  starter:    { label: 'Starter',    color: '#4f6df5', bg: 'rgba(79,109,245,0.12)',  dot: '#4f6df5' },
+  growth:     { label: 'Growth',     color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)', dot: '#8b5cf6' },
+  scale:      { label: 'Scale',      color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', dot: '#f59e0b' },
+  enterprise: { label: 'Enterprise', color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   dot: '#ef4444' },
 };
 
-function KPI({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+function PlanBadge({ plan }: { plan: string }) {
+  const cfg = PLAN_CONFIG[plan] || PLAN_CONFIG.free;
   return (
-    <div className="p-5 rounded-xl bg-[var(--surface)] border border-[var(--edge)]">
-      <p className="text-[12px] text-[var(--fg-secondary)] mb-1.5">{label}</p>
-      <p className="text-[26px] font-bold text-[var(--fg)] leading-none">{value}</p>
-      {sub && <p className="text-[11.5px] text-[var(--fg-muted)] mt-1.5">{sub}</p>}
-    </div>
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-semibold uppercase tracking-wide"
+      style={{ background: cfg.bg, color: cfg.color }}
+    >
+      {cfg.label}
+    </span>
   );
 }
 
-function PlanBadge({ plan }: { plan: string }) {
-  const colors: Record<string, string> = {
-    free: 'bg-[rgba(107,114,128,0.15)] text-[#9ca3af]',
-    starter: 'bg-[rgba(79,109,245,0.15)] text-[#4f6df5]',
-    growth: 'bg-[rgba(139,92,246,0.15)] text-[#8b5cf6]',
-    scale: 'bg-[rgba(245,158,11,0.15)] text-[#f59e0b]',
-    enterprise: 'bg-[rgba(239,68,68,0.15)] text-[#ef4444]',
-  };
+function KPICard({
+  label, value, sub, accent,
+}: { label: string; value: string | number; sub?: string; accent?: string }) {
   return (
-    <span className={`inline-block px-2 py-0.5 rounded-full text-[10.5px] font-semibold uppercase tracking-wide ${colors[plan] || colors.free}`}>
-      {plan}
-    </span>
+    <div
+      className="p-5 rounded-xl flex flex-col gap-1"
+      style={{ background: 'var(--surface)', border: '1px solid var(--edge)' }}
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--fg-muted)' }}>{label}</p>
+      <p className="text-[28px] font-bold leading-none tabular-nums" style={{ color: accent || 'var(--fg)' }}>{value}</p>
+      {sub && <p className="text-[11.5px]" style={{ color: 'var(--fg-secondary)' }}>{sub}</p>}
+    </div>
   );
 }
 
 export default function DashboardOverview() {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch('/api/stats?type=overview').then(r => r.json()).then(setData).catch(console.error).finally(() => setLoading(false));
+    fetch('/api/stats?type=overview')
+      .then(r => r.json())
+      .then(setData)
+      .catch(() => setError('Failed to load overview data'))
+      .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-[var(--fg-secondary)]">Loading…</div>;
-  if (!data) return <div className="p-8 text-[var(--danger)]">Failed to load data</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center py-32">
+      <div className="w-5 h-5 rounded-full animate-spin" style={{ border: '2px solid var(--edge)', borderTopColor: 'var(--primary)' }} />
+    </div>
+  );
 
-  const conversionRate = data.totalUsers > 0 ? ((data.activeSubscriptions / data.totalUsers) * 100).toFixed(1) : '0';
+  if (error || !data) return (
+    <div className="flex items-center justify-center py-32">
+      <div className="text-center">
+        <p className="text-[15px] font-medium" style={{ color: 'var(--danger)' }}>{error || 'No data'}</p>
+        <button onClick={() => window.location.reload()} className="mt-3 text-[13px] underline" style={{ color: 'var(--fg-secondary)' }}>Retry</button>
+      </div>
+    </div>
+  );
+
+  const conversionRate = data.totalUsers > 0
+    ? ((data.activeSubscriptions / data.totalUsers) * 100).toFixed(1)
+    : '0';
+
+  const totalPlanUsers = Object.values(data.planCounts).reduce((a, b) => a + b, 0);
 
   return (
-    <div>
-      <div className="mb-7">
-        <h1 className="text-[22px] font-bold text-[var(--fg)] tracking-tight">Overview</h1>
-        <p className="text-[13px] text-[var(--fg-secondary)] mt-0.5">Real-time platform metrics</p>
+    <div className="space-y-7">
+      {/* Page header */}
+      <div>
+        <h1 className="text-[22px] font-bold tracking-tight" style={{ color: 'var(--fg)' }}>Platform Overview</h1>
+        <p className="text-[13px] mt-0.5" style={{ color: 'var(--fg-secondary)' }}>
+          Real-time metrics across all users, bots, and revenue
+        </p>
       </div>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
-        <KPI label="Total Users" value={data.totalUsers.toLocaleString()} sub={`+${data.weeklySignups} this week · +${data.monthlySignups} this month`} />
-        <KPI label="Active Bots" value={data.totalBots.toLocaleString()} />
-        <KPI label="Conversations" value={data.totalConversations.toLocaleString()} sub={`+${data.weeklyConvos} this week`} />
-        <KPI label="Messages" value={data.totalMessages.toLocaleString()} />
-        <KPI label="MRR" value={`$${data.mrr.toLocaleString()}`} sub={`ARR $${(data.mrr * 12).toLocaleString()}`} />
-        <KPI label="Paid Subscribers" value={data.activeSubscriptions} sub={`${conversionRate}% conversion`} />
-        <KPI label="Cancelled" value={data.cancelledSubscriptions} sub="previously paid" />
-        <KPI label="Documents" value={data.totalDocuments.toLocaleString()} />
+      {/* KPI grid — top row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <KPICard
+          label="Total Users"
+          value={data.totalUsers.toLocaleString()}
+          sub={`+${data.weeklySignups} this week · +${data.monthlySignups} this month`}
+        />
+        <KPICard
+          label="MRR"
+          value={`$${data.mrr.toLocaleString()}`}
+          sub={`ARR $${(data.mrr * 12).toLocaleString()}`}
+          accent="var(--success)"
+        />
+        <KPICard
+          label="Paid Subscribers"
+          value={data.activeSubscriptions}
+          sub={`${conversionRate}% conversion rate`}
+          accent="var(--primary)"
+        />
+        <KPICard
+          label="Conversations"
+          value={data.totalConversations.toLocaleString()}
+          sub={`+${data.weeklyConvos} this week`}
+        />
       </div>
 
-      {/* Plan Distribution */}
-      <div className="p-6 rounded-xl bg-[var(--surface)] border border-[var(--edge)] mb-6">
-        <h2 className="text-[14px] font-semibold mb-4">Plan Distribution</h2>
-        <div className="space-y-3">
-          {Object.entries(data.planCounts).sort((a, b) => b[1] - a[1]).map(([plan, count]) => {
-            const pct = data.totalUsers > 0 ? Number(((count / data.totalUsers) * 100).toFixed(1)) : 0;
-            return (
-              <div key={plan} className="flex items-center gap-3">
-                <span className="text-[12px] text-[var(--fg-secondary)] capitalize w-20 shrink-0">{plan}</span>
-                <div className="flex-1 h-1.5 bg-[var(--edge)] rounded-full overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${pct}%`, background: PLAN_COLORS[plan] || 'var(--primary)' }} />
+      {/* Secondary KPI row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <KPICard label="Active Bots"     value={data.totalBots.toLocaleString()} />
+        <KPICard label="Messages"        value={data.totalMessages.toLocaleString()} />
+        <KPICard label="Websites"        value={data.totalWebsites?.toLocaleString() ?? '—'} />
+        <KPICard label="Documents"       value={data.totalDocuments.toLocaleString()} />
+      </div>
+
+      {/* Two-column lower section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* Plan distribution */}
+        <div className="rounded-xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--edge)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[14px] font-semibold" style={{ color: 'var(--fg)' }}>Plan Distribution</h2>
+            <span className="text-[12px]" style={{ color: 'var(--fg-muted)' }}>{totalPlanUsers} users</span>
+          </div>
+          <div className="space-y-3">
+            {Object.entries(data.planCounts)
+              .sort((a, b) => b[1] - a[1])
+              .map(([plan, count]) => {
+                const pct = totalPlanUsers > 0 ? ((count / totalPlanUsers) * 100).toFixed(1) : '0';
+                const cfg = PLAN_CONFIG[plan] || PLAN_CONFIG.free;
+                return (
+                  <div key={plan}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="flex items-center gap-1.5 text-[12px] font-medium" style={{ color: 'var(--fg)' }}>
+                        <span className="w-2 h-2 rounded-full" style={{ background: cfg.dot }} />
+                        {cfg.label}
+                      </span>
+                      <span className="text-[12px] tabular-nums" style={{ color: 'var(--fg-secondary)' }}>
+                        {count.toLocaleString()} <span style={{ color: 'var(--fg-muted)' }}>({pct}%)</span>
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--edge)' }}>
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${pct}%`, background: cfg.dot }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+          {/* Cancelled stat */}
+          {data.cancelledSubscriptions > 0 && (
+            <div className="mt-4 pt-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--edge)' }}>
+              <span className="text-[12px]" style={{ color: 'var(--fg-secondary)' }}>Cancelled subscriptions</span>
+              <span className="text-[12px] font-semibold" style={{ color: 'var(--danger)' }}>{data.cancelledSubscriptions}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Quick stats cards */}
+        <div className="rounded-xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--edge)' }}>
+          <h2 className="text-[14px] font-semibold mb-4" style={{ color: 'var(--fg)' }}>Business Health</h2>
+          <div className="space-y-3">
+            {[
+              { label: 'Paid / Total users', value: `${data.activeSubscriptions} / ${data.totalUsers}`, pct: data.totalUsers > 0 ? (data.activeSubscriptions / data.totalUsers * 100) : 0, color: 'var(--primary)' },
+              { label: 'Avg bots per user', value: data.totalUsers > 0 ? (data.totalBots / data.totalUsers).toFixed(2) : '0', pct: Math.min((data.totalBots / Math.max(data.totalUsers, 1)) * 30, 100), color: '#8b5cf6' },
+              { label: 'Avg msgs per conversation', value: data.totalConversations > 0 ? (data.totalMessages / data.totalConversations).toFixed(1) : '0', pct: Math.min((data.totalMessages / Math.max(data.totalConversations, 1)) * 5, 100), color: 'var(--success)' },
+              { label: 'Docs per website', value: data.totalWebsites > 0 ? (data.totalDocuments / data.totalWebsites).toFixed(1) : '0', pct: Math.min((data.totalDocuments / Math.max(data.totalWebsites, 1)) * 2, 100), color: 'var(--warning)' },
+            ].map(stat => (
+              <div key={stat.label}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[12px]" style={{ color: 'var(--fg-secondary)' }}>{stat.label}</span>
+                  <span className="text-[13px] font-semibold tabular-nums" style={{ color: 'var(--fg)' }}>{stat.value}</span>
                 </div>
-                <span className="text-[12px] text-[var(--fg-muted)] w-24 text-right shrink-0">{count} users ({pct}%)</span>
+                <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--edge)' }}>
+                  <div className="h-full rounded-full" style={{ width: `${Math.min(stat.pct, 100)}%`, background: stat.color }} />
+                </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Recent Signups */}
-      <div className="rounded-xl bg-[var(--surface)] border border-[var(--edge)] overflow-hidden">
-        <div className="px-6 py-4 border-b border-[var(--edge)]">
-          <h2 className="text-[14px] font-semibold">Recent Signups</h2>
+      {/* Recent Signups table */}
+      <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--edge)' }}>
+        <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: '1px solid var(--edge)' }}>
+          <h2 className="text-[14px] font-semibold" style={{ color: 'var(--fg)' }}>Recent Signups</h2>
+          <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(79,109,245,0.1)', color: 'var(--primary)' }}>
+            {data.recentUsers.length} users
+          </span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-[12.5px]">
             <thead>
-              <tr className="border-b border-[var(--edge)] bg-[rgba(255,255,255,0.02)]">
-                {['Email', 'Name', 'Plan', 'Status', 'Usage', 'Joined'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-[var(--fg-secondary)] font-medium whitespace-nowrap">{h}</th>
+              <tr style={{ borderBottom: '1px solid var(--edge)', background: 'rgba(255,255,255,0.015)' }}>
+                {['User', 'Plan', 'Status', 'Usage', 'Joined'].map(h => (
+                  <th key={h} className="text-left px-4 py-3 font-medium uppercase tracking-wide text-[11px]"
+                    style={{ color: 'var(--fg-muted)' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {data.recentUsers.map((u: any) => {
-                const sub = u.plan !== 'free' ? 'active' : u.dodo_subscription_id ? 'cancelled' : 'free';
-                const usagePct = u.monthly_message_limit > 0 ? Math.min((u.monthly_message_count / u.monthly_message_limit) * 100, 100) : 0;
+                const isPaid = u.plan && u.plan !== 'free';
+                const wasPaid = !isPaid && u.dodo_subscription_id;
+                const usagePct = u.monthly_message_limit > 0
+                  ? Math.min((u.monthly_message_count / u.monthly_message_limit) * 100, 100) : 0;
                 return (
-                  <tr key={u.id} className="border-b border-[var(--edge)] hover:bg-[var(--surface-elevated)] transition-colors">
-                    <td className="px-4 py-3 font-medium">{u.email}</td>
-                    <td className="px-4 py-3 text-[var(--fg-secondary)]">{u.full_name || '—'}</td>
-                    <td className="px-4 py-3"><PlanBadge plan={u.plan || 'free'} /></td>
+                  <tr key={u.id}
+                    className="transition-colors"
+                    style={{ borderBottom: '1px solid var(--edge)' }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--surface-elevated)'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ''}
+                  >
                     <td className="px-4 py-3">
-                      <span className={`text-[11.5px] font-medium ${sub === 'active' ? 'text-[var(--success)]' : sub === 'cancelled' ? 'text-[var(--danger)]' : 'text-[var(--fg-muted)]'}`}>
-                        {sub === 'active' ? '● Active' : sub === 'cancelled' ? '● Cancelled' : '○ Free'}
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                          style={{ background: 'rgba(79,109,245,0.12)', color: 'var(--primary)' }}>
+                          {(u.full_name || u.email || 'U').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium truncate max-w-[160px]" style={{ color: 'var(--fg)' }}>{u.email}</p>
+                          {u.full_name && <p className="text-[11px] truncate" style={{ color: 'var(--fg-muted)' }}>{u.full_name}</p>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <PlanBadge plan={u.plan || 'free'} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="flex items-center gap-1.5 text-[11.5px] font-medium">
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: isPaid ? 'var(--success)' : wasPaid ? 'var(--danger)' : 'var(--fg-muted)' }} />
+                        <span style={{ color: isPaid ? 'var(--success)' : wasPaid ? 'var(--danger)' : 'var(--fg-muted)' }}>
+                          {isPaid ? 'Active' : wasPaid ? 'Cancelled' : 'Free'}
+                        </span>
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-16 h-1 bg-[var(--edge)] rounded-full overflow-hidden">
-                          <div className="h-full rounded-full" style={{ width: `${usagePct}%`, background: usagePct >= 90 ? 'var(--danger)' : usagePct >= 70 ? 'var(--warning)' : 'var(--primary)' }} />
+                        <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--edge)' }}>
+                          <div className="h-full rounded-full" style={{
+                            width: `${usagePct}%`,
+                            background: usagePct >= 90 ? 'var(--danger)' : usagePct >= 70 ? 'var(--warning)' : 'var(--primary)',
+                          }} />
                         </div>
-                        <span className="text-[var(--fg-muted)] text-[11px]">{u.monthly_message_count}/{u.monthly_message_limit}</span>
+                        <span className="text-[11px] tabular-nums" style={{ color: 'var(--fg-muted)' }}>
+                          {u.monthly_message_count}/{u.monthly_message_limit}
+                        </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-[var(--fg-secondary)] whitespace-nowrap">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: 'var(--fg-secondary)' }}>
+                      {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
                   </tr>
                 );
               })}
