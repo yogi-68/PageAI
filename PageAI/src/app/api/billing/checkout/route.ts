@@ -90,7 +90,8 @@ export async function POST(request: NextRequest) {
             customer: {
                 email: profile.email,
                 name: profile.full_name || profile.email,
-                ...(profile.dodo_customer_id && { customer_id: profile.dodo_customer_id }),
+                // In test mode the stored customer_id is from the live environment — skip it
+                ...(!isTestMode() && profile.dodo_customer_id && { customer_id: profile.dodo_customer_id }),
             },
             product_id: productId,
             quantity: 1,
@@ -105,7 +106,8 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        if (subscription.customer?.customer_id && !profile.dodo_customer_id) {
+        // Only persist customer_id when in live mode (test IDs must not overwrite live IDs)
+        if (!isTestMode() && subscription.customer?.customer_id && !profile.dodo_customer_id) {
             await admin
                 .from('profiles')
                 .update({ dodo_customer_id: subscription.customer.customer_id })

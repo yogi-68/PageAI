@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDodoClient, MESSAGE_ADDONS, AddonId, isMockMode } from '@/lib/dodo';
+import { getDodoClient, MESSAGE_ADDONS, AddonId, isMockMode, isTestMode } from '@/lib/dodo';
 import { getAdminClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { validateEnv } from '@/lib/env';
@@ -56,7 +56,8 @@ export async function POST(request: NextRequest) {
             customer: {
                 email: profile.email,
                 name: profile.full_name || profile.email,
-                ...(profile.dodo_customer_id && { customer_id: profile.dodo_customer_id }),
+                // In test mode the stored customer_id is from the live environment — skip it
+                ...(!isTestMode() && profile.dodo_customer_id && { customer_id: profile.dodo_customer_id }),
             },
             product_cart: [{ product_id: addon.productId, quantity: 1 }],
             payment_link: true,
