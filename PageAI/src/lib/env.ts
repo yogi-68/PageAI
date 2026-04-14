@@ -27,19 +27,35 @@ const REQUIRED: Record<string, string[]> = {
 };
 
 export function validateEnv(...groups: Array<keyof typeof REQUIRED>): NextResponse | null {
+    // Collect all missing required keys for the requested groups
     const keys = [...new Set(groups.flatMap(g => REQUIRED[g] ?? []))];
     const missing = keys.filter(k => !process.env[k]);
-    if (missing.length === 0) return null;
 
-    // In test / mock mode the Dodo key isn't required; otherwise flag it
-    const dodoBilling = !process.env.DODO_MOCK_PAYMENTS && !process.env.DODO_TEST_MODE;
-    const dodoKey = dodoBilling
-        ? (!process.env.DODO_PAYMENTS_API_KEY ? ['DODO_PAYMENTS_API_KEY'] : [])
-        : (!process.env.DODO_TEST_PAYMENTS_API_KEY && process.env.DODO_TEST_MODE === 'true')
-            ? ['DODO_TEST_PAYMENTS_API_KEY']
-            : [];
+    // Also check the Dodo API key for billing group — must happen regardless of
+    // whether other keys are missing (fixed: removed early-return before this check)
+    const extraMissing: string[] = [];
+    if (groups.includes('billing')) {
+        const isMock = process.env.DODO_MOCK_PAYMENTS === 'true';
+        const isTest = process.env.DODO_TEST_MODE === 'true';
 
-    const allMissing = [...missing, ...dodoKey];
+        if (!isMock) {
+            // In test mode we need the test key; in production we need the live key
+            const requiredKey = isTest ? 'DODO_TEST_PAYMENTS_API_KEY' : 'DODO_PAYMENTS_API_KEY';
+            if (!process.env[requiredKey]) {
+                extraMissing.push(requiredKey);
+                if (!isTest) {
+                    // Also hint about test mode as an alternative
+                    extraMissing.push(
+                        '(or set DODO_TEST_MODE=true + DODO_TEST_PAYMENTS_API_KEY for sandbox testing, ' +
+                        'or DODO_MOCK_PAYMENTS=true for local dev without Dodo)'
+                    );
+                }
+            }
+        }
+    }
+
+    const allMissing = [...missing, ...extraMissing];
+    if (allMissing.length === 0) return null;
 
     return NextResponse.json(
         {
