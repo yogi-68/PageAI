@@ -62,15 +62,32 @@ export default function BillingPage() {
     const addonSuccess = searchParams.get('addon_success');
 
     if (mockUpgraded) {
-      toast.success(`🧪 Mock upgrade to ${mockUpgraded} applied! DB updated.`);
+      toast.success(`Plan upgraded to ${mockUpgraded}!`);
       refreshProfile();
     }
     if (mockAddon && mockMessages) {
-      toast.success(`🧪 Mock add-on: +${Number(mockMessages).toLocaleString()} messages added.`);
+      toast.success(`+${Number(mockMessages).toLocaleString()} messages added to your account!`);
       refreshProfile();
     }
-    if (upgraded) toast.success('Plan upgraded successfully!');
-    if (addonSuccess) toast.success('Add-on messages added to your account!');
+    if (upgraded) {
+      // Real Dodo checkout: webhook may take a few seconds to fire — poll until plan changes
+      toast.success('Payment received! Activating your plan...');
+      let attempts = 0;
+      const poll = setInterval(() => {
+        refreshProfile();
+        attempts++;
+        if (attempts >= 8) clearInterval(poll); // stop after ~16s
+      }, 2000);
+    }
+    if (addonSuccess) {
+      toast.success('Add-on messages added to your account!');
+      let attempts = 0;
+      const poll = setInterval(() => {
+        refreshProfile();
+        attempts++;
+        if (attempts >= 8) clearInterval(poll);
+      }, 2000);
+    }
   }, [searchParams, refreshProfile]);
 
   const handleUpgrade = async (planId: string) => {

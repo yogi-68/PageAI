@@ -7,17 +7,17 @@ import DodoPayments from 'dodopayments';
 //                           billing flow entirely in-app. Perfect for local dev without
 //                           Dodo credentials. Shows red banner.
 export function isTestMode(): boolean {
-    return process.env.DODO_TEST_MODE === 'true';
+    return (process.env.DODO_TEST_MODE || '').trim() === 'true';
 }
 export function isMockMode(): boolean {
-    return process.env.DODO_MOCK_PAYMENTS === 'true';
+    return (process.env.DODO_MOCK_PAYMENTS || '').trim() === 'true';
 }
 
 // When DODO_TEST_MODE=true, a single DODO_TEST_PRODUCT_ID can stand in for every
 // plan / add-on that doesn't have its own specific env var. This lets you point all
 // checkout flows at one sandbox product without creating a Dodo product per tier.
 const _testFallback: string | null =
-    process.env.DODO_TEST_MODE === 'true'
+    (process.env.DODO_TEST_MODE || '').trim() === 'true'
         ? (process.env.DODO_TEST_PRODUCT_ID || null)
         : null;
 
