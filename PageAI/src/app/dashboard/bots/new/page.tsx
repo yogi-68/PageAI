@@ -86,19 +86,28 @@ export default function NewBotPage() {
                 reader.onerror = reject;
                 reader.readAsText(file);
             });
-            try {
-                const res = await fetch("/api/ingest", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ fileName: file.name, content, userId: user.id }),
-                });
-                const data = await res.json();
-                if (data.success) {
-                    setUploadedFiles(prev => [...prev, { name: file.name, dataSourceId: data.dataSourceId, wordCount: data.wordCount }]);
+            let success = false;
+            for (let attempt = 1; attempt <= 2; attempt++) {
+                try {
+                    const res = await fetch("/api/ingest", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ fileName: file.name, content, userId: user.id }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        setUploadedFiles(prev => [...prev, { name: file.name, dataSourceId: data.dataSourceId, wordCount: data.wordCount }]);
+                        success = true;
+                        break;
+                    }
+                    if (attempt === 2) throw new Error(data.error || 'Upload failed');
+                } catch (err: any) {
+                    if (attempt === 2) {
+                        alert(`Failed to process "${file.name}" after 2 attempts: ${err.message}`);
+                    }
                 }
-            } catch {
-                console.error("File upload failed for", file.name);
             }
+            if (!success) console.warn('File upload failed for', file.name);
         }
         setUploadingFile(false);
         if (fileInputRef.current) fileInputRef.current.value = "";

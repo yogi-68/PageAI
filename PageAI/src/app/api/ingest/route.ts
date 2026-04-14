@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { generateEmbeddings } from '@/lib/openai';
 
+// Allow up to 60 s on Vercel (Pro/Team). Free tier is capped at 10 s by Vercel, not this flag.
+export const maxDuration = 60;
+
 const MAX_CONTENT_CHARS = 500_000; // ~100k words
+// Smaller batch = less risk of hitting token-rate limits in a single burst
+const EMBED_BATCH = 50;
 
 function detectDocType(fileName: string): string {
     const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
@@ -72,16 +77,21 @@ export async function POST(request: NextRequest) {
             .single();
         if (docError) throw docError;
 
-        // Chunk & embed
+        // Chunk & embed in batches to stay within rate limits
         const textChunks = chunkText(content);
-        const embeddings = await generateEmbeddings(textChunks);
+        const allEmbeddings: number[][] = [];
+        for (let i = 0; i < textChunks.length; i += EMBED_BATCH) {
+            const batch = textChunks.slice(i, i + EMBED_BATCH);
+            const batchEmbeddings = await generateEmbeddings(batch);
+            allEmbeddings.push(...batchEmbeddings);
+        }
 
         const chunkRows = textChunks.map((chunk, idx) => ({
             document_id: doc.id,
             data_source_id: dataSource.id,
             user_id: userId,
             content: chunk,
-            embedding: embeddings[idx],
+            embedding: allEmbeddings[idx],
             chunk_index: idx,
             word_count: chunk.split(/\s+/).filter(Boolean).length,
         }));

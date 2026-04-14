@@ -5,13 +5,13 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
-// Plans matching canonical PLANS in lib/dodo.ts
+// Plans — features kept in sync with PLANS in lib/dodo.ts
 const plans = [
-  { id: 'free', name: 'Free', price: 0, features: ['1 Chatbot', '50 messages/month', '100 Pages indexed', 'GPT-4.1 Mini', 'Basic analytics', 'Website connector', 'PageAI branding'] },
-  { id: 'starter', name: 'Starter', price: 29, trial: true, features: ['1 Chatbot', '4,000 messages/month', '1,000 Pages indexed', 'GPT-4.1 Mini', 'Full analytics', 'Custom branding', 'File uploads', 'Email support'] },
-  { id: 'growth', name: 'Growth', price: 69, popular: true, trial: true, features: ['3 Chatbots', '10,000 messages/month', '10,000 Pages indexed', 'GPT-4.1 + Auto routing', 'Notion & Google Drive', 'API access', 'Priority support', 'Streaming responses'] },
-  { id: 'scale', name: 'Scale', price: 199, trial: true, features: ['10 Chatbots', '40,000 messages/month', '50,000 Pages indexed', 'GPT-4.1 + Smart routing', 'All data connectors', 'Dedicated support', 'Custom branding', 'White-label option'] },
-  { id: 'enterprise', name: 'Enterprise', price: -1, features: ['Unlimited Chatbots', 'Unlimited messages', 'Unlimited pages', 'All AI models', 'All data sources', 'Dedicated manager', 'SLA guarantee', 'SSO / SAML', 'Custom fine-tuning'] },
+  { id: 'free',       name: 'Free',       price: 0,   trial: false, features: ['1 Chatbot', '50 messages/month', '100 Pages indexed', 'GPT-4.1 Mini', 'Basic analytics', 'Website connector', 'PageAI branding'] },
+  { id: 'starter',   name: 'Starter',    price: 29,  trial: true,  features: ['1 Chatbot', '4,000 messages/month', '1,000 Pages indexed', 'GPT-4.1 Mini + Auto-routing', 'Website + File upload', 'Basic analytics', 'Remove PageAI branding', 'Email support'] },
+  { id: 'growth',    name: 'Growth',     price: 69,  popular: true, trial: true, features: ['3 Chatbots', '10,000 messages/month', '10,000 Pages indexed', 'GPT-4.1 + Smart routing', 'All data sources incl. Notion', 'Advanced analytics', 'API access', 'Priority support', 'Custom system prompts'] },
+  { id: 'scale',     name: 'Scale',      price: 199, trial: false, features: ['10 Chatbots', '40,000 messages/month', '50,000 Pages indexed', 'GPT-4.1 priority access', 'All data sources + API', 'Analytics exports', 'Webhook integrations', 'Dedicated support', 'White-label + Team seats (5)'] },
+  { id: 'enterprise', name: 'Enterprise', price: -1, trial: false, features: ['Unlimited Chatbots', 'Unlimited messages', 'Unlimited pages', 'All AI models', 'All data sources', 'Dedicated account manager', 'SLA guarantee', 'SSO / SAML', 'Custom model fine-tuning'] },
 ];
 
 const MESSAGE_ADDONS = [
@@ -69,8 +69,13 @@ export default function BillingPage() {
         body: JSON.stringify({ addonId, userId: user?.id }),
       });
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else throw new Error(data.error || 'Failed');
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (res.status === 503) {
+        toast.error('Add-on payments are not configured yet — please contact support.');
+      } else {
+        throw new Error(data.error || 'Failed to create checkout');
+      }
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -152,12 +157,15 @@ export default function BillingPage() {
         </div>
       )}
 
-      {/* Message Add-on Packs */}
+      {/* Message Add-on Packs — available on all plans */}
       {currentPlan !== 'enterprise' && (
         <div>
           <div className="mb-3">
             <h2 className="text-[16px] font-bold text-fg">Message Add-on Packs</h2>
-            <p className="text-[13px] text-fg-secondary mt-0.5">Instantly add messages to your account — no plan change needed. Credits never expire and are used before overage billing kicks in.</p>
+            <p className="text-[13px] text-fg-secondary mt-0.5">
+              Instantly add messages to your account — no plan change needed. Credits never expire and are used before overage billing kicks in.
+              {currentPlan === 'free' && <span className="ml-1 text-primary font-medium">Available on all plans including Free.</span>}
+            </p>
           </div>
           <div className="grid sm:grid-cols-3 gap-3">
             {MESSAGE_ADDONS.map(addon => (

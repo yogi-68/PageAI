@@ -95,7 +95,7 @@ export default function AnalyticsPage() {
       {/* Chart */}
       <div className="p-5 rounded-xl border border-edge bg-surface/40">
         <h2 className="text-[15px] font-semibold text-fg mb-4">Conversations — Last 7 Days</h2>
-        <div style={{ height: 260 }}>
+        <div style={{ height: 260, width: '100%', minWidth: 0 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e2540" />
