@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface User {
   id: string;
@@ -45,6 +45,27 @@ export default function UsersPage() {
   const [planFilter, setPlanFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState('');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionMsg, setActionMsg] = useState<{ id: string; text: string; ok: boolean } | null>(null);
+
+  const resetTrial = useCallback(async (userId: string, email: string) => {
+    setActionLoading(userId);
+    setActionMsg(null);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+      const res = await fetch('/api/users/reset-trial', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ userId }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Failed');
+      setActionMsg({ id: userId, text: d.alreadyAvailable ? 'Trial already available' : `Trial reset for ${email}`, ok: true });
+    } catch (e: unknown) {
+      setActionMsg({ id: userId, text: e instanceof Error ? e.message : 'Error', ok: false });
+    }
+    setActionLoading(null);
+  }, []);
 
   const fetchUsers = (p: number, s: string, plan: string) => {
     setLoading(true);
@@ -133,7 +154,7 @@ export default function UsersPage() {
           <table className="w-full text-[12.5px]">
             <thead>
               <tr style={{ borderBottom: '1px solid var(--edge)', background: 'rgba(255,255,255,0.015)' }}>
-                {['User', 'Plan', 'Messages', 'Bots', 'Pages', 'Subscription', 'Joined'].map(h => (
+                {['User', 'Plan', 'Messages', 'Bots', 'Pages', 'Subscription', 'Joined', 'Actions'].map(h => (
                   <th key={h} className="text-left px-4 py-3 font-medium uppercase tracking-wide text-[11px] whitespace-nowrap"
                     style={{ color: 'var(--fg-muted)' }}>{h}</th>
                 ))}
@@ -142,7 +163,7 @@ export default function UsersPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center">
+                  <td colSpan={8} className="py-16 text-center">
                     <div className="inline-flex items-center gap-2" style={{ color: 'var(--fg-secondary)' }}>
                       <div className="w-4 h-4 rounded-full animate-spin" style={{ border: '2px solid var(--edge)', borderTopColor: 'var(--primary)' }} />
                       Loading users…
@@ -151,7 +172,7 @@ export default function UsersPage() {
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center text-[13px]" style={{ color: 'var(--fg-secondary)' }}>
+                  <td colSpan={8} className="py-16 text-center text-[13px]" style={{ color: 'var(--fg-secondary)' }}>
                     No users found
                   </td>
                 </tr>
@@ -213,6 +234,24 @@ export default function UsersPage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-[11.5px]" style={{ color: 'var(--fg-secondary)' }}>
                       {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          title="Reset 7-day trial eligibility"
+                          disabled={actionLoading === u.id}
+                          onClick={() => resetTrial(u.id, u.email)}
+                          className="px-2 py-1 rounded text-[10.5px] font-medium transition-colors disabled:opacity-40"
+                          style={{ background: 'rgba(79,109,245,0.10)', color: 'var(--primary)', border: '1px solid rgba(79,109,245,0.2)' }}
+                        >
+                          {actionLoading === u.id ? '…' : 'Reset Trial'}
+                        </button>
+                        {actionMsg?.id === u.id && (
+                          <span className="text-[10.5px]" style={{ color: actionMsg.ok ? 'var(--success)' : 'var(--danger)' }}>
+                            {actionMsg.text}
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

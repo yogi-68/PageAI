@@ -45,17 +45,6 @@ export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
     cleanup();
 
-    // ── Admin isolation ──────────────────────────────────
-    if (pathname.startsWith('/admin')) {
-        const adminHostname = process.env.ADMIN_HOSTNAME;
-        if (adminHostname) {
-            const host = request.headers.get('host') || '';
-            if (host !== adminHostname && !host.startsWith('admin.')) {
-                return new NextResponse(null, { status: 404 });
-            }
-        }
-    }
-
     // ── Soft rate limiting on /api/* ─────────────────────
     if (pathname.startsWith('/api/')) {
         const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
