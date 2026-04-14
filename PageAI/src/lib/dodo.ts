@@ -29,6 +29,13 @@ export function getDodoClient(): DodoPayments {
         const apiKey = isTestMode()
             ? (process.env.DODO_TEST_PAYMENTS_API_KEY || process.env.DODO_PAYMENTS_API_KEY || '')
             : (process.env.DODO_PAYMENTS_API_KEY || '');
+        if (!apiKey) {
+            const envVar = isTestMode() ? 'DODO_TEST_PAYMENTS_API_KEY' : 'DODO_PAYMENTS_API_KEY';
+            throw new Error(
+                `[PageAI] Dodo Payments API key not configured. ` +
+                `Set ${envVar} in Vercel → Settings → Environment Variables and redeploy.`
+            );
+        }
         _dodoClient = new DodoPayments({ bearerToken: apiKey });
     }
     return _dodoClient;

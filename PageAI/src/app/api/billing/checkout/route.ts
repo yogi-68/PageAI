@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDodoClient, PLANS, PlanId, YEARLY_PRODUCT_IDS, YEARLY_PRICES, isMockMode, isTestMode } from '@/lib/dodo';
 import { getAdminClient } from '@/lib/supabase';
+import { validateEnv } from '@/lib/env';
 
 export async function POST(request: NextRequest) {
+    const envErr = validateEnv('billing');
+    if (envErr) return envErr;
+
     try {
         const { planId, userId, billing = 'monthly' } = await request.json() as {
             planId: string;

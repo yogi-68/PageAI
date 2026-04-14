@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDodoClient, MESSAGE_ADDONS, AddonId, isMockMode } from '@/lib/dodo';
 import { getAdminClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { validateEnv } from '@/lib/env';
 
 // POST /api/billing/addons/checkout — purchase a prepaid message add-on
 export async function POST(request: NextRequest) {
+    const envErr = validateEnv('billing');
+    if (envErr) return envErr;
+
     try {
         const body = await request.json();
         const { addonId, userId } = body as { addonId: string; userId: string };

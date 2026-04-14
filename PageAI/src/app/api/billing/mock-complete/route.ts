@@ -16,11 +16,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { getMessageLimit, getPageLimit, getChatbotLimit, isMockMode } from '@/lib/dodo';
+import { validateEnv } from '@/lib/env';
 
 export async function GET(request: NextRequest) {
     if (!isMockMode()) {
         return NextResponse.json({ error: 'Mock mode is not enabled' }, { status: 403 });
     }
+
+    const envErr = validateEnv('supabase');
+    if (envErr) return envErr;
 
     const { searchParams } = new URL(request.url);
     const planId = searchParams.get('planId');

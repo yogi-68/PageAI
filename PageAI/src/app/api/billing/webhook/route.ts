@@ -4,6 +4,7 @@ import { getPlanByProductId, getMessageLimit, getPageLimit, getChatbotLimit, get
 import { logger } from '@/lib/logger';
 import { trackEvent } from '@/lib/analytics';
 import { recordWebhookFailure } from '@/lib/alerts';
+import { validateEnv } from '@/lib/env';
 import crypto from 'crypto';
 
 // Dodo Payments uses Svix-style webhook signatures
@@ -45,6 +46,9 @@ function verifyWebhookSignature(
 }
 
 export async function POST(request: NextRequest) {
+    const envErr = validateEnv('supabase');
+    if (envErr) return envErr;
+
     try {
         const body = await request.text();
         const webhookSecret = process.env.DODO_PAYMENTS_WEBHOOK_KEY;
