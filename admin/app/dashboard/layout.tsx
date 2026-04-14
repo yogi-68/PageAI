@@ -333,25 +333,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           top: 0,
           zIndex: 20,
           flexShrink: 0,
-          background: 'rgba(11,14,24,0.9)',
+          background: 'var(--surface)',
           borderBottom: '1px solid var(--edge)',
-          backdropFilter: 'blur(16px)',
         }}>
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="lg:hidden"
-            style={{
-              width: 36, height: 36,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              borderRadius: 8, border: 'none', background: 'transparent',
-              cursor: 'pointer', color: 'var(--fg-secondary)',
-              flexShrink: 0,
-            }}
-            aria-label="Open navigation"
-          >
-            <MenuIcon />
-          </button>
+          {/* Spacer: clears floating hamburger button on mobile */}
+          <div className="w-10 lg:hidden" style={{ flexShrink: 0 }} />
 
           {/* Breadcrumb */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}>
@@ -400,6 +386,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </main>
       </div>
+
+      {/* Floating mobile hamburger — lives in sidebar space, NOT inside main content */}
+      {!mobileOpen && (
+        <button
+          className="lg:hidden"
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open navigation"
+          style={{
+            position: 'fixed', top: 10, left: 10, zIndex: 35,
+            width: 38, height: 38,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: 10, border: '1px solid var(--edge)',
+            background: 'var(--surface)', cursor: 'pointer',
+            color: 'var(--fg)', boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+          }}
+        >
+          <MenuIcon />
+        </button>
+      )}
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }

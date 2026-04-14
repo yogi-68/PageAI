@@ -26,7 +26,26 @@ export async function GET(request: NextRequest) {
                     admin.from('documents').select('*', { count: 'exact', head: true }),
                 ]);
 
-                const { data: profiles } = await admin.from('profiles').select('plan, dodo_subscription_id, created_at');
+                const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+                const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+
+                // Run all remaining queries in parallel (was 6 sequential round-trips)
+                const [
+                    { data: profiles },
+                    { count: cancelledCount },
+                    { data: recentUsers },
+                    { count: weeklySignups },
+                    { count: monthlySignups },
+                    { count: weeklyConvos },
+                ] = await Promise.all([
+                    admin.from('profiles').select('plan, dodo_subscription_id'),
+                    admin.from('profiles').select('*', { count: 'exact', head: true }).eq('plan', 'free').not('dodo_subscription_id', 'is', null),
+                    admin.from('profiles').select('id, email, full_name, plan, created_at, monthly_message_count, monthly_message_limit, dodo_subscription_id').order('created_at', { ascending: false }).limit(10),
+                    admin.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', weekAgo),
+                    admin.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', monthAgo),
+                    admin.from('conversations').select('*', { count: 'exact', head: true }).gte('created_at', weekAgo),
+                ]);
+
                 let mrr = 0;
                 let activeSubscriptions = 0;
                 const planCounts: Record<string, number> = {};
@@ -38,40 +57,6 @@ export async function GET(request: NextRequest) {
                         mrr += PLAN_PRICES[plan] || 0;
                     }
                 });
-
-                // Cancelled = free users who still have a dodo_subscription_id (subscription cancelled but not removed)
-                const { count: cancelledCount } = await admin
-                    .from('profiles')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('plan', 'free')
-                    .not('dodo_subscription_id', 'is', null);
-
-                // Recent signups (last 10)
-                const { data: recentUsers } = await admin
-                    .from('profiles')
-                    .select('id, email, full_name, plan, created_at, monthly_message_count, monthly_message_limit, dodo_subscription_id')
-                    .order('created_at', { ascending: false })
-                    .limit(10);
-
-                // Signups last 7 days
-                const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-                const { count: weeklySignups } = await admin
-                    .from('profiles')
-                    .select('*', { count: 'exact', head: true })
-                    .gte('created_at', weekAgo);
-
-                // Signups last 30 days
-                const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString();
-                const { count: monthlySignups } = await admin
-                    .from('profiles')
-                    .select('*', { count: 'exact', head: true })
-                    .gte('created_at', monthAgo);
-
-                // Conversations last 7 days
-                const { count: weeklyConvos } = await admin
-                    .from('conversations')
-                    .select('*', { count: 'exact', head: true })
-                    .gte('created_at', weekAgo);
 
                 return NextResponse.json({
                     totalUsers: totalUsers || 0,
