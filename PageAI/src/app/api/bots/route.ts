@@ -47,6 +47,22 @@ export async function POST(request: NextRequest) {
         }
 
         const admin = getAdminClient();
+
+        // Enforce bot count limit for the user's plan
+        const [{ data: profile }, { data: existingBots }] = await Promise.all([
+            admin.from('profiles').select('plan').eq('id', userId).single(),
+            admin.from('bots').select('id').eq('user_id', userId),
+        ]);
+        const planLimits: Record<string, number> = { free: 1, starter: 1, growth: 3, scale: 10, enterprise: -1 };
+        const userPlan = (profile?.plan as string) || 'free';
+        const limit = planLimits[userPlan] ?? 1;
+        if (limit !== -1 && (existingBots?.length || 0) >= limit) {
+            return NextResponse.json(
+                { error: `Your ${userPlan} plan allows ${limit} bot${limit === 1 ? '' : 's'}. Upgrade to create more.`, limitReached: true },
+                { status: 403 }
+            );
+        }
+
         const { data: bot, error } = await admin
             .from('bots')
             .insert({

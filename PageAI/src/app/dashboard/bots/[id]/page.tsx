@@ -248,7 +248,7 @@ export default function BotManagePage() {
             </div>
             <div className="p-5 rounded-xl border border-edge bg-surface/40">
               <p className="text-[11px] font-medium text-fg-muted uppercase tracking-wide mb-1">Model</p>
-              <p className="text-[15px] font-semibold text-fg capitalize">{bot.model === 'auto' ? 'Auto-routing' : bot.model}</p>
+              <p className="text-[15px] font-semibold text-fg capitalize">{bot.model === 'auto' ? 'Smart routing' : bot.model === 'gpt-4.1-mini' ? 'Fast AI' : 'Advanced AI'}</p>
               <p className="text-[11px] text-fg-muted mt-0.5">{bot.model === 'gpt-4.1-mini' ? 'Fast & cost-efficient' : bot.model === 'gpt-4.1' ? 'Most capable' : 'Smart routing by complexity'}</p>
             </div>
             <div className="p-5 rounded-xl border border-edge bg-surface/40">
@@ -365,9 +365,9 @@ export default function BotManagePage() {
             <h3 className="text-[14px] font-semibold text-fg">AI Model</h3>
             <div className="space-y-2">
               {[
-                { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', desc: 'Fast & cost-efficient. Best for most support bots.' },
-                { id: 'auto', name: 'Auto-routing', desc: 'Smart routing — mini for simple queries, 4.1 for complex ones.' },
-                { id: 'gpt-4.1', name: 'GPT-4.1', desc: 'Most capable. Best for technical or complex topics.' },
+                { id: 'gpt-4.1-mini', name: 'Fast AI', desc: 'Fast & cost-efficient. Best for most support bots.' },
+                { id: 'auto', name: 'Smart routing', desc: 'Auto-selects the best AI for each query — fast for simple, advanced for complex.' },
+                { id: 'gpt-4.1', name: 'Advanced AI', desc: 'Most capable. Best for technical or complex topics.' },
               ].map(m => (
                 <button key={m.id} onClick={() => setModel(m.id)} className={`w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-all ${model === m.id ? 'border-primary bg-primary/5' : 'border-edge hover:border-edge-light'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${model === m.id ? 'border-primary' : 'border-edge'}`}>

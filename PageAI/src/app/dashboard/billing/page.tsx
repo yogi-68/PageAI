@@ -8,11 +8,11 @@ import toast from 'react-hot-toast';
 
 // Plans — features kept in sync with PLANS in lib/dodo.ts
 const plans = [
-  { id: 'free',       name: 'Free',       price: 0,   trial: false, features: ['1 Chatbot', '50 messages/month', '100 Pages indexed', 'GPT-4.1 Mini', 'Basic analytics', 'Website connector', 'PageAI branding'] },
-  { id: 'starter',   name: 'Starter',    price: 29,  trial: true,  features: ['1 Chatbot', '4,000 messages/month', '1,000 Pages indexed', 'GPT-4.1 Mini + Auto-routing', 'Website + File upload', 'Basic analytics', 'Remove PageAI branding', 'Email support'] },
-  { id: 'growth',    name: 'Growth',     price: 69,  popular: true, trial: true, features: ['3 Chatbots', '10,000 messages/month', '10,000 Pages indexed', 'GPT-4.1 + Smart routing', 'All data sources incl. Notion', 'Advanced analytics', 'API access', 'Priority support', 'Custom system prompts'] },
-  { id: 'scale',     name: 'Scale',      price: 199, trial: false, features: ['10 Chatbots', '40,000 messages/month', '50,000 Pages indexed', 'GPT-4.1 priority access', 'All data sources + API', 'Analytics exports', 'Webhook integrations', 'Dedicated support', 'White-label + Team seats (5)'] },
-  { id: 'enterprise', name: 'Enterprise', price: -1, trial: false, features: ['Unlimited Chatbots', 'Unlimited messages', 'Unlimited pages', 'All AI models', 'All data sources', 'Dedicated account manager', 'SLA guarantee', 'SSO / SAML', 'Custom model fine-tuning'] },
+  { id: 'free',       name: 'Free',       price: 0,   trial: false, features: ['1 Chatbot', '50 messages/month', '100 Pages indexed', 'Fast AI responses', 'Basic analytics', 'Website connector', 'PageAI branding'] },
+  { id: 'starter',   name: 'Starter',    price: 29,  trial: true,  features: ['1 Chatbot', '4,000 messages/month', '1,000 Pages indexed', 'Smart AI routing', 'Website + File upload', 'Basic analytics', 'Remove PageAI branding', 'Email support'] },
+  { id: 'growth',    name: 'Growth',     price: 69,  popular: true, trial: true, features: ['3 Chatbots', '10,000 messages/month', '10,000 Pages indexed', 'Advanced AI + Smart routing', 'All data sources incl. Notion', 'Advanced analytics', 'API access', 'Priority support', 'Custom system prompts'] },
+  { id: 'scale',     name: 'Scale',      price: 199, trial: false, features: ['10 Chatbots', '40,000 messages/month', '50,000 Pages indexed', 'Premium AI priority access', 'All data sources + API', 'Analytics exports', 'Webhook integrations', 'Dedicated support', 'White-label + Team seats (5)'] },
+  { id: 'enterprise', name: 'Enterprise', price: -1, trial: false, features: ['Unlimited Chatbots', 'Unlimited messages', 'Unlimited pages', 'All AI tiers unlocked', 'All data sources', 'Dedicated account manager', 'SLA guarantee', 'SSO / SAML', 'Custom model fine-tuning'] },
 ];
 
 const MESSAGE_ADDONS = [
