@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDodoClient, PLANS, PlanId, YEARLY_PRODUCT_IDS, YEARLY_PRICES, isMockMode, isTestMode } from '@/lib/dodo';
+import { getDodoClientForUser, isDevUser, getProductIdForUser, PLANS, PlanId, YEARLY_PRICES } from '@/lib/dodo';
 import { getAdminClient } from '@/lib/supabase';
 import { validateEnv } from '@/lib/env';
 
@@ -23,32 +23,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
         }
 
-        // Annual billing: use yearly product (full year charged upfront)
         const isAnnual = billing === 'annual';
-        const productId = isAnnual
-            ? (YEARLY_PRODUCT_IDS[planId] || null)
-            : plan.productId;
 
-        // ─── Mock mode (local dev, no Dodo credentials) ───────────────
-        if (isMockMode()) {
-            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-            return NextResponse.json({
-                success: true,
-                url: `${appUrl}/api/billing/mock-complete?planId=${planId}&userId=${userId}&billing=${billing}`,
-                mock: true,
-            });
-        }
-
-        if (!productId) {
-            const missing = isAnnual
-                ? `DODO_PRODUCT_${planId.toUpperCase()}_YEARLY`
-                : `DODO_PRODUCT_${planId.toUpperCase()}`;
-            return NextResponse.json(
-                { error: `${isAnnual ? 'Yearly' : 'Monthly'} product not configured. Set ${missing} in environment variables.` },
-                { status: 503 }
-            );
-        }
-
+        // Fetch user profile first — email determines whether to use sandbox or live payments
         const admin = getAdminClient();
         const { data: profile } = await admin
             .from('profiles')
@@ -60,17 +37,27 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const dodo = getDodoClient();
-        // Trial rules:
-        // 1. Annual plans never get a trial (they already save ~20%)
-        // 2. Scale/Enterprise plans have trialDays=0 (serious users; abuse risk)
-        // 3. Starter/Growth get 7 days — ONLY if user has never been given a trial before
-        //    We set has_used_trial=true HERE (at checkout) so even if payment fails later
-        //    the user cannot re-subscribe to get a second trial.
+        // Developer email → Dodo sandbox; everyone else → live payments
+        const userTestMode = isDevUser(profile.email);
+        const productId = getProductIdForUser(planId, isAnnual, userTestMode);
+
+        console.log('[billing/checkout] creating subscription', { productId, planId, userTestMode });
+
+        if (!productId) {
+            const missing = isAnnual
+                ? `DODO_PRODUCT_${planId.toUpperCase()}_YEARLY`
+                : `DODO_PRODUCT_${planId.toUpperCase()}`;
+            return NextResponse.json(
+                { error: `Product not configured. Set ${missing}${userTestMode ? ' or DODO_TEST_PRODUCT_ID' : ''} in environment variables.` },
+                { status: 503 }
+            );
+        }
+
+        const dodo = getDodoClientForUser(userTestMode);
+
         const willGetTrial = !isAnnual && plan.trialDays > 0 && !profile.has_used_trial;
         const trialDays = willGetTrial ? plan.trialDays : 0;
 
-        // Mark trial as used immediately — prevents abuse via abandoned checkout or failed payment
         if (willGetTrial) {
             await admin
                 .from('profiles')
@@ -79,7 +66,6 @@ export async function POST(request: NextRequest) {
                 .eq('has_used_trial', false); // idempotent: only update if still false
         }
 
-        console.log('[billing/checkout] creating subscription', { productId, planId, isTestMode: isTestMode() });
         const subscription = await dodo.subscriptions.create({
             billing: {
                 city: '',
@@ -92,7 +78,7 @@ export async function POST(request: NextRequest) {
                 email: profile.email,
                 name: profile.full_name || profile.email,
                 // In test mode the stored customer_id is from the live environment — skip it
-                ...(!isTestMode() && profile.dodo_customer_id && { customer_id: profile.dodo_customer_id }),
+                ...(!userTestMode && profile.dodo_customer_id && { customer_id: profile.dodo_customer_id }),
             },
             product_id: productId,
             quantity: 1,
@@ -108,7 +94,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Only persist customer_id when in live mode (test IDs must not overwrite live IDs)
-        if (!isTestMode() && subscription.customer?.customer_id && !profile.dodo_customer_id) {
+        if (!userTestMode && subscription.customer?.customer_id && !profile.dodo_customer_id) {
             await admin
                 .from('profiles')
                 .update({ dodo_customer_id: subscription.customer.customer_id })

@@ -13,35 +13,70 @@ export function isMockMode(): boolean {
     return (process.env.DODO_MOCK_PAYMENTS || '').trim() === 'true';
 }
 
-// When DODO_TEST_MODE=true, a single DODO_TEST_PRODUCT_ID can stand in for every
-// plan / add-on that doesn't have its own specific env var. This lets you point all
-// checkout flows at one sandbox product without creating a Dodo product per tier.
+// ─── Per-user Test Mode ───────────────────────────────────
+// Only the developer account uses Dodo sandbox — all other users get live payments.
+// Override via DEVELOPER_TEST_EMAIL env var if the developer email changes.
+const DEVELOPER_TEST_EMAIL = (process.env.DEVELOPER_TEST_EMAIL || 'yogeshwar0402@gmail.com').toLowerCase();
+
+/** Returns true only for the developer account — routes them to Dodo sandbox */
+export function isDevUser(email: string): boolean {
+    return email.toLowerCase() === DEVELOPER_TEST_EMAIL;
+}
+
+// When DODO_TEST_MODE=true (global), a single DODO_TEST_PRODUCT_ID stands in for every
+// plan / add-on. Per-user test mode also uses this same product ID.
 const _testFallback: string | null =
     (process.env.DODO_TEST_MODE || '').trim() === 'true'
         ? (process.env.DODO_TEST_PRODUCT_ID || null)
         : null;
 
-// Initialize Dodo Payments client lazily (server-side only)
-let _dodoClient: DodoPayments | null = null;
+// ─── Dodo Clients (two singletons: live + test) ──────────
+let _dodoClientLive: DodoPayments | null = null;
+let _dodoClientTest: DodoPayments | null = null;
 
-export function getDodoClient(): DodoPayments {
-    if (!_dodoClient) {
-        const apiKey = isTestMode()
-            ? (process.env.DODO_TEST_PAYMENTS_API_KEY || process.env.DODO_PAYMENTS_API_KEY || '')
-            : (process.env.DODO_PAYMENTS_API_KEY || '');
-        if (!apiKey) {
-            const envVar = isTestMode() ? 'DODO_TEST_PAYMENTS_API_KEY' : 'DODO_PAYMENTS_API_KEY';
-            throw new Error(
-                `[PageAI] Dodo Payments API key not configured. ` +
-                `Set ${envVar} in Vercel → Settings → Environment Variables and redeploy.`
-            );
+/** Get Dodo client scoped to the user's payment mode (test = sandbox, live = production) */
+export function getDodoClientForUser(userTestMode: boolean): DodoPayments {
+    if (userTestMode) {
+        if (!_dodoClientTest) {
+            const apiKey = process.env.DODO_TEST_PAYMENTS_API_KEY || process.env.DODO_PAYMENTS_API_KEY || '';
+            if (!apiKey) throw new Error('[PageAI] DODO_TEST_PAYMENTS_API_KEY not configured.');
+            _dodoClientTest = new DodoPayments({ bearerToken: apiKey, environment: 'test_mode' });
         }
-        _dodoClient = new DodoPayments({
-            bearerToken: apiKey,
-            environment: isTestMode() ? 'test_mode' : 'live_mode',
-        });
+        return _dodoClientTest;
+    } else {
+        if (!_dodoClientLive) {
+            const apiKey = process.env.DODO_PAYMENTS_API_KEY || '';
+            if (!apiKey) throw new Error('[PageAI] DODO_PAYMENTS_API_KEY not configured.');
+            _dodoClientLive = new DodoPayments({ bearerToken: apiKey, environment: 'live_mode' });
+        }
+        return _dodoClientLive;
     }
-    return _dodoClient;
+}
+
+/** Get the Dodo product ID for a plan, respecting the user's payment mode */
+export function getProductIdForUser(planId: string, isAnnual: boolean, userTestMode: boolean): string | null {
+    if (userTestMode) {
+        // Developer uses a single sandbox product for all plans
+        return process.env.DODO_TEST_PRODUCT_ID || null;
+    }
+    if (isAnnual) {
+        return process.env[`DODO_PRODUCT_${planId.toUpperCase()}_YEARLY`] || null;
+    }
+    return process.env[`DODO_PRODUCT_${planId.toUpperCase()}`] || null;
+}
+
+/** Get the Dodo product ID for a message add-on, respecting the user's payment mode */
+export function getAddonProductIdForUser(addonId: string, userTestMode: boolean): string | null {
+    if (userTestMode) {
+        return process.env.DODO_TEST_PRODUCT_ID || null;
+    }
+    const addonNum = addonId.split('_')[0];
+    return process.env[`DODO_ADDON_${addonNum}`] || null;
+}
+
+/** @deprecated Use getDodoClientForUser(isDevUser(email)) instead */
+export function getDodoClient(): DodoPayments {
+    return getDodoClientForUser(isTestMode());
 }
 
 /**
