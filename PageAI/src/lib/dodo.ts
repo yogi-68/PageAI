@@ -97,9 +97,9 @@ export const YEARLY_MONTHLY_EQUIV: Record<string, number> = {
 
 // Yearly product IDs (create in Dodo Dashboard with billing_period=yearly)
 export const YEARLY_PRODUCT_IDS: Record<string, string | null> = {
-    starter: process.env.DODO_PRODUCT_STARTER_YEARLY || _testFallback,
-    growth:  process.env.DODO_PRODUCT_GROWTH_YEARLY  || _testFallback,
-    scale:   process.env.DODO_PRODUCT_SCALE_YEARLY   || _testFallback,
+    starter: _testFallback || process.env.DODO_PRODUCT_STARTER_YEARLY || null,
+    growth:  _testFallback || process.env.DODO_PRODUCT_GROWTH_YEARLY  || null,
+    scale:   _testFallback || process.env.DODO_PRODUCT_SCALE_YEARLY   || null,
 };
 
 export const PLANS = {
@@ -132,7 +132,7 @@ export const PLANS = {
         id: 'starter',
         name: 'Starter',
         price: 29,
-        productId: process.env.DODO_PRODUCT_STARTER || _testFallback,
+        productId: _testFallback || process.env.DODO_PRODUCT_STARTER || null,
         trialDays: 7,
         description: 'For small businesses getting started',
         features: [
@@ -160,7 +160,7 @@ export const PLANS = {
         name: 'Growth',
         price: 69,
         popular: true,
-        productId: process.env.DODO_PRODUCT_GROWTH || _testFallback,
+        productId: _testFallback || process.env.DODO_PRODUCT_GROWTH || null,
         trialDays: 7,
         description: 'For growing companies',
         features: [
@@ -188,7 +188,7 @@ export const PLANS = {
         id: 'scale',
         name: 'Scale',
         price: 199,
-        productId: process.env.DODO_PRODUCT_SCALE || _testFallback,
+        productId: _testFallback || process.env.DODO_PRODUCT_SCALE || null,
         trialDays: 0,
         description: 'For high-volume operations',
         features: [
@@ -257,7 +257,7 @@ export const MESSAGE_ADDONS = {
         messages: 1000,
         price: 4,
         perK: 4.0,
-        productId: process.env.DODO_ADDON_1000 || _testFallback,
+        productId: _testFallback || process.env.DODO_ADDON_1000 || null,
     },
     '5000_messages': {
         id: '5000_messages',
@@ -265,7 +265,7 @@ export const MESSAGE_ADDONS = {
         messages: 5000,
         price: 18,
         perK: 3.6,
-        productId: process.env.DODO_ADDON_5000 || _testFallback,
+        productId: _testFallback || process.env.DODO_ADDON_5000 || null,
     },
     '10000_messages': {
         id: '10000_messages',
@@ -273,7 +273,7 @@ export const MESSAGE_ADDONS = {
         messages: 10000,
         price: 30,
         perK: 3.0,
-        productId: process.env.DODO_ADDON_10000 || _testFallback,
+        productId: _testFallback || process.env.DODO_ADDON_10000 || null,
     },
 } as const;
 
