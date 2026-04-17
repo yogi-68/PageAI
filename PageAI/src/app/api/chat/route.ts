@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Allow up to 60 s for streaming RAG responses (Vercel Pro)
-export const maxDuration = 60;
 import { getAdminClient } from '@/lib/supabase';
 import { executeRAG, executeRAGStream } from '@/lib/rag';
 import { rateLimitChat, verifyDomain, getClientIP, corsHeaders } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { trackEvent } from '@/lib/analytics';
 import { recordOpenAIError } from '@/lib/alerts';
+
+// Allow up to 60 s for streaming RAG responses (Vercel Pro)
+export const maxDuration = 60;
 
 // POST /api/chat — Advanced RAG chat with streaming support
 export async function POST(request: NextRequest) {
@@ -113,6 +113,13 @@ export async function POST(request: NextRequest) {
 
             // Save conversation async (don't block stream)
             metadata.then(async (meta) => {
+                // RAG failed inside the stream — roll back the usage increment so the user isn't charged
+                if (meta.model === 'error') {
+                    void Promise.resolve(
+                        admin.rpc('rollback_message_increment', { p_user_id: bot.user_id, p_bot_id: botId })
+                    ).then(() => {}, () => {});
+                    return;
+                }
                 try {
                     await saveConversation(admin, {
                         botId,

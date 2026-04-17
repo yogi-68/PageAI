@@ -267,9 +267,9 @@ export default function NewBotPage() {
                             <div className="space-y-1.5">
                                 {uploadedFiles.map(f => (
                                     <div key={f.dataSourceId} className={`flex items-center justify-between px-3 py-2 rounded-lg border ${
-                                        f.status === 'error' ? 'bg-danger/[0.06] border-danger/20' :
-                                        f.status === 'syncing' ? 'bg-warning/[0.06] border-warning/20' :
-                                        'bg-success/[0.06] border-success/20'
+                                        f.status === 'error' ? 'bg-danger/6 border-danger/20' :
+                                        f.status === 'syncing' ? 'bg-warning/6 border-warning/20' :
+                                        'bg-success/6 border-success/20'
                                     }`}>
                                         <div className="flex items-center gap-2">
                                             {f.status === 'syncing' && <div className="w-3 h-3 border border-warning border-t-transparent rounded-full animate-spin shrink-0" />}
@@ -324,7 +324,7 @@ export default function NewBotPage() {
                         )}
 
                         {crawling && (
-                            <div className="p-8 rounded-xl border border-primary/20 bg-primary/[0.04] text-center space-y-3">
+                            <div className="p-8 rounded-xl border border-primary/20 bg-primary/4 text-center space-y-3">
                                 <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
                                 <p className="text-[14px] font-medium text-fg">Crawling website...</p>
                                 <p className="text-[12px] text-fg-secondary">Discovering pages, extracting content, creating embeddings</p>
@@ -337,7 +337,7 @@ export default function NewBotPage() {
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                                     <p className="text-[14px] font-medium">Successfully crawled {crawledPages.length} pages</p>
                                 </div>
-                                <div className="space-y-1.5 max-h-[240px] overflow-y-auto">
+                                <div className="space-y-1.5 max-h-60 overflow-y-auto">
                                     {crawledPages.map((page) => (
                                         <div key={page.url} className="flex items-center justify-between p-3 rounded-lg bg-bg/40 border border-edge">
                                             <div className="min-w-0 flex-1">
@@ -348,7 +348,7 @@ export default function NewBotPage() {
                                         </div>
                                     ))}
                                 </div>
-                                <div className="p-3 rounded-lg bg-success/[0.06] border border-success/20">
+                                <div className="p-3 rounded-lg bg-success/6 border border-success/20">
                                     <p className="text-[13px] font-medium text-success mb-0.5">Content indexed successfully</p>
                                     <p className="text-[12px] text-fg-secondary">
                                         {crawlStats.totalWords?.toLocaleString() || 0} total words |{' '}
@@ -373,7 +373,9 @@ export default function NewBotPage() {
                 )}
 
                 {step === "customize" && (
-                    <div className="space-y-6">
+                    <div className="flex flex-col lg:flex-row gap-8">
+                        {/* ─── Form ─────────────────────────── */}
+                        <div className="flex-1 space-y-6">
                         <div>
                             <h2 className="text-[17px] font-semibold text-fg mb-1">Customize Your Bot</h2>
                             <p className="text-[13px] text-fg-secondary">Configure the appearance and behavior of your AI assistant.</p>
@@ -469,6 +471,96 @@ export default function NewBotPage() {
                                 <Link href="/dashboard/billing" className="shrink-0 px-3 py-1.5 rounded-lg bg-primary text-white text-[12px] font-medium hover:bg-primary-hover transition-colors">Upgrade →</Link>
                             </div>
                         )}
+                        </div>{/* end form */}
+
+                        {/* ─── Live Preview ──────────────────── */}
+                        <div className="hidden lg:flex flex-col items-center gap-3 w-75 shrink-0">
+                            <p className="text-[11px] font-medium text-fg-muted uppercase tracking-widest">Live Preview</p>
+                            {/* Browser chrome mockup */}
+                            <div className="relative w-full h-115 rounded-2xl border border-edge bg-[#0f1117] overflow-hidden shadow-2xl">
+                                {/* Title bar */}
+                                <div className="flex items-center gap-1.5 px-3 h-8 bg-[#1a1d27] border-b border-edge/60">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+                                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
+                                    <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
+                                    <div className="flex-1 mx-3 h-4 rounded bg-edge/60 flex items-center px-2">
+                                        <span className="text-[9px] text-fg-muted truncate">yourwebsite.com</span>
+                                    </div>
+                                </div>
+                                {/* Page content (faint lines) */}
+                                <div className="p-4 space-y-2 opacity-30">
+                                    {[80,60,70,40,65,50].map((w,i) => (
+                                        <div key={i} className="h-2 rounded bg-fg/20" style={{ width: `${w}%` }} />
+                                    ))}
+                                </div>
+                                {/* Widget */}
+                                <div
+                                    className="absolute bottom-4 flex flex-col items-end gap-2"
+                                    style={{ [position === 'right' ? 'right' : 'left']: '12px' }}
+                                >
+                                    {/* Chat window */}
+                                    <div className="w-60 rounded-2xl shadow-2xl border border-edge/60 overflow-hidden bg-[#0f1117]">
+                                        {/* Header */}
+                                        <div className="px-3 py-2.5 flex items-center justify-between" style={{ background: primaryColor }}>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="white" strokeWidth="2.5"><path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/><path d="M8 16s1.5 2 4 2 4-2 4-2"/></svg>
+                                                </div>
+                                                <span className="text-white text-[12px] font-semibold truncate max-w-35">{botName || 'AI Assistant'}</span>
+                                            </div>
+                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </div>
+                                        {/* Messages */}
+                                        <div className="p-3 space-y-2.5 min-h-35">
+                                            {/* Bot message */}
+                                            <div className="flex gap-2 items-start">
+                                                <div className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center" style={{ background: primaryColor }}>
+                                                    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="white" strokeWidth="2.5"><path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/></svg>
+                                                </div>
+                                                <div className="rounded-xl rounded-tl-none px-2.5 py-1.5 bg-[#1a1d27] border border-edge/40 text-[10px] text-fg/80 max-w-42 leading-relaxed">
+                                                    {welcomeMessage || 'Hi! How can I help you today?'}
+                                                </div>
+                                            </div>
+                                            {/* Sample user message */}
+                                            <div className="flex justify-end">
+                                                <div className="rounded-xl rounded-tr-none px-2.5 py-1.5 text-white text-[10px] max-w-32 leading-relaxed" style={{ background: primaryColor }}>
+                                                    What can you help me with?
+                                                </div>
+                                            </div>
+                                            {/* Typing indicator */}
+                                            <div className="flex gap-2 items-end">
+                                                <div className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center" style={{ background: primaryColor }}>
+                                                    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="white" strokeWidth="2.5"><path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/></svg>
+                                                </div>
+                                                <div className="rounded-xl rounded-tl-none px-3 py-2 bg-[#1a1d27] border border-edge/40 flex gap-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-fg-muted animate-bounce" style={{ animationDelay: '0ms' }} />
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-fg-muted animate-bounce" style={{ animationDelay: '150ms' }} />
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-fg-muted animate-bounce" style={{ animationDelay: '300ms' }} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {/* Input */}
+                                        <div className="px-3 pb-3">
+                                            <div className="flex items-center gap-2 rounded-lg bg-[#1a1d27] border border-edge/40 px-2.5 py-1.5">
+                                                <span className="flex-1 text-[10px] text-fg-muted">Ask a question...</span>
+                                                <div className="w-5 h-5 rounded-md flex items-center justify-center shrink-0" style={{ background: primaryColor }}>
+                                                    <svg viewBox="0 0 24 24" width="10" height="10" fill="white"><path d="M2 12L22 2l-10 20-2-8-8-2z"/></svg>
+                                                </div>
+                                            </div>
+                                            <p className="text-[8px] text-fg-muted/60 text-center mt-1.5">Powered by PageAI</p>
+                                        </div>
+                                    </div>
+                                    {/* Launcher button */}
+                                    <div
+                                        className="w-11 h-11 rounded-full flex items-center justify-center shadow-lg cursor-pointer self-end"
+                                        style={{ background: primaryColor }}
+                                    >
+                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="text-[11px] text-fg-muted text-center">This is how your bot appears on your website</p>
+                        </div>
                     </div>
                 )}
 

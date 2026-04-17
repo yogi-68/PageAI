@@ -507,8 +507,20 @@ export function executeRAGStream(
                     cached: false,
                 });
             } catch (err: any) {
-                const msg = err?.message || 'Failed to generate response';
-                send({ type: 'error', message: msg });
+                const isQuota = err?.code === 'insufficient_quota' ||
+                    (err?.status === 429 && (err?.message?.includes('quota') || err?.message?.includes('billing')));
+                const isRateLimit = err?.status === 429 && !isQuota;
+
+                let userMsg: string;
+                if (isQuota) {
+                    userMsg = 'This assistant is temporarily unavailable. The AI service has reached its usage limit. Please contact the site owner.';
+                } else if (isRateLimit) {
+                    userMsg = 'Too many requests right now. Please wait a moment and try again.';
+                } else {
+                    userMsg = 'Sorry, I could not generate a response. Please try again.';
+                }
+
+                send({ type: 'error', message: userMsg });
                 resolveMetadata({
                     sources: [],
                     confidence: 0,

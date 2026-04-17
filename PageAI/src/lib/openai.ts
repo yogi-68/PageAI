@@ -28,8 +28,11 @@ async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
             return await fn();
         } catch (err: any) {
             lastError = err;
+            // Do NOT retry billing quota errors — they won't resolve with retries
+            const isQuotaExhausted = err?.code === 'insufficient_quota' ||
+                (err?.status === 429 && err?.message?.includes('quota'));
             const isRetryable =
-                err?.status === 429 ||
+                (!isQuotaExhausted && err?.status === 429) ||
                 err?.status === 503 ||
                 err?.status === 502 ||
                 err?.code === 'ECONNRESET' ||
