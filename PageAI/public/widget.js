@@ -390,6 +390,24 @@
 
             removeTyping();
 
+            // Guard: non-2xx before attempting to read body
+            if (!res.ok) {
+                try {
+                    const errData = await res.json();
+                    const msg = errData.error || errData.message || "Sorry, something went wrong. Please try again.";
+                    if (errData.limitReached) {
+                        addMessage("bot", "You've reached your monthly message limit. Please upgrade your plan to continue.");
+                    } else {
+                        addMessage("bot", msg);
+                    }
+                } catch {
+                    addMessage("bot", `Server error (${res.status}). Please try again later.`);
+                }
+                sendBtn.disabled = false;
+                input.focus();
+                return;
+            }
+
             // Check if streaming response
             const contentType = res.headers.get("content-type") || "";
             if (contentType.includes("text/event-stream")) {
@@ -440,6 +458,11 @@
                         }
                     }
                     messages.scrollTop = messages.scrollHeight;
+                }
+
+                // Guard: stream ended with empty bubble — show fallback
+                if (!botText) {
+                    bubble.textContent = "I couldn't generate a response. Please try rephrasing your question.";
                 }
 
                 // Add sources if any

@@ -305,5 +305,20 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
+-- 10. analytics_events table (required by trackEvent() in analytics.ts)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.analytics_events (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  event TEXT NOT NULL,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  properties JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_analytics_events_user_id ON public.analytics_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_event ON public.analytics_events(event);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at ON public.analytics_events(created_at);
+
+-- ============================================================
 -- Done — all required tables and functions are now in place.
 -- ============================================================

@@ -415,6 +415,21 @@ export function executeRAGStream(
 
                 // 5. Confidence + model selection
                 const confidence = estimateConfidence(rankedChunks);
+
+                // Short-circuit: no knowledge base data — send fallback rather than calling OpenAI
+                if (rankedChunks.length === 0) {
+                    const fallback = config.fallbackMessage ||
+                        "I don't have enough information in my knowledge base to answer that question. " +
+                        "Please make sure the website has been crawled and indexed, or try rephrasing your question.";
+                    send({ type: 'token', content: fallback });
+                    send({ type: 'done', sources: [], confidence: 0, model: 'none',
+                        queryRewrite: rewrittenQuery !== query ? rewrittenQuery : null });
+                    resolveMetadata({ sources: [], confidence: 0, model: 'none',
+                        queryRewrite: rewrittenQuery !== query ? rewrittenQuery : null,
+                        chunksRetrieved: 0, responseTimeMs: Date.now() - startTime, cached: false });
+                    return;
+                }
+
                 const model = selectModel(query, confidence, config.model);
                 const context = buildContext(rankedChunks);
 
@@ -443,6 +458,7 @@ export function executeRAGStream(
 6. Never make up information that isn't in the context.`;
 
                 // 6. Stream OpenAI response token by token
+                let tokensSent = 0;
                 const openaiStream = await getOpenAI().chat.completions.create({
                     model,
                     messages: [
@@ -460,8 +476,16 @@ export function executeRAGStream(
                 for await (const chunk of openaiStream) {
                     const content = chunk.choices[0]?.delta?.content;
                     if (content) {
+                        tokensSent++;
                         send({ type: 'token', content });
                     }
+                }
+
+                // Guard: OpenAI returned no content — send fallback token so bubble is never empty
+                if (tokensSent === 0) {
+                    const fallback = config.fallbackMessage ||
+                        "I couldn't generate a response based on the available information. Please try rephrasing your question.";
+                    send({ type: 'token', content: fallback });
                 }
 
                 // Send final metadata event
