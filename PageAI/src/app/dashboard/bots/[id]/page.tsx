@@ -411,7 +411,7 @@ export default function BotManagePage() {
           {showDeleteConfirm && (
             <div className="p-4 rounded-xl border border-danger/30 bg-danger/4">
               <p className="text-[13px] font-semibold text-danger mb-1">Delete this bot?</p>
-              <p className="text-[12px] text-fg-secondary mb-3">This is permanent. All conversations and settings will be lost.</p>
+              <p className="text-[12px] text-fg-secondary mb-3">This is permanent and cannot be undone. All conversations, knowledge base chunks, indexed pages, and bot settings will be deleted from storage automatically.</p>
               <div className="flex gap-2">
                 <button onClick={deleteBot} disabled={deleting} className="px-4 py-1.5 rounded-lg bg-danger text-white text-[12px] font-medium hover:opacity-90 disabled:opacity-50 transition-all">
                   {deleting ? 'Deleting…' : 'Yes, delete'}

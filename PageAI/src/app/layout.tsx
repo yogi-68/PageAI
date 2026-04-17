@@ -109,6 +109,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </AuthProvider>
         </ThemeProvider>
+        {/* PageAI support widget */}
+        <script
+          src="https://pageai-tau.vercel.app/widget.js"
+          data-bot-id="54ab9e2c-bb23-4e9c-9c92-4d80da4b4570"
+          data-color="#f59e0b"
+          data-position="left"
+          async
+        />
       </body>
     </html>
   );

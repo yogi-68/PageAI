@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeToggle } from '@/lib/theme';
+import { useAuth } from '@/lib/auth';
 
 const mainLinks = [
   { label: 'Features', href: '#features' },
@@ -75,6 +76,7 @@ function DropdownMenu({ label, items }: { label: string; items: { label: string;
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -120,18 +122,29 @@ export default function Navbar() {
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-3">
           <ThemeToggle />
-          <Link
-            href="/login"
-            className="text-[13.5px] text-fg-secondary hover:text-fg transition-colors duration-200 px-3 py-1.5"
-          >
-            Log in
-          </Link>
-          <Link
-            href="/signup"
-            className="text-[13.5px] font-medium px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white transition-all duration-300 hover:shadow-[0_0_24px_rgba(79,109,245,0.25)]"
-          >
-            Get Started
-          </Link>
+          {user ? (
+            <Link
+              href="/dashboard"
+              className="text-[13.5px] font-medium px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white transition-all duration-300 hover:shadow-[0_0_24px_rgba(79,109,245,0.25)]"
+            >
+              Dashboard →
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-[13.5px] text-fg-secondary hover:text-fg transition-colors duration-200 px-3 py-1.5"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/signup"
+                className="text-[13.5px] font-medium px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white transition-all duration-300 hover:shadow-[0_0_24px_rgba(79,109,245,0.25)]"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Toggle */}
@@ -188,20 +201,32 @@ export default function Navbar() {
                   <span className="text-[14px] text-fg-secondary">Theme</span>
                   <ThemeToggle />
                 </div>
-                <Link
-                  href="/login"
-                  onClick={() => setOpen(false)}
-                  className="block text-[14px] text-fg-secondary hover:text-fg py-2.5"
-                >
-                  Log in
-                </Link>
-                <Link
-                  href="/signup"
-                  onClick={() => setOpen(false)}
-                  className="block text-[14px] font-medium text-center px-4 py-2.5 rounded-lg bg-primary hover:bg-primary-hover text-white transition-all"
-                >
-                  Get Started
-                </Link>
+                {user ? (
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setOpen(false)}
+                    className="block text-[14px] font-medium text-center px-4 py-2.5 rounded-lg bg-primary hover:bg-primary-hover text-white transition-all"
+                  >
+                    Dashboard →
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setOpen(false)}
+                      className="block text-[14px] text-fg-secondary hover:text-fg py-2.5"
+                    >
+                      Log in
+                    </Link>
+                    <Link
+                      href="/signup"
+                      onClick={() => setOpen(false)}
+                      className="block text-[14px] font-medium text-center px-4 py-2.5 rounded-lg bg-primary hover:bg-primary-hover text-white transition-all"
+                    >
+                      Get Started
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>
