@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+// Allow up to 60 s for streaming RAG responses (Vercel Pro)
+export const maxDuration = 60;
 import { getAdminClient } from '@/lib/supabase';
 import { executeRAG, executeRAGStream } from '@/lib/rag';
 import { rateLimitChat, verifyDomain, getClientIP, corsHeaders } from '@/lib/rate-limit';
@@ -103,9 +106,10 @@ export async function POST(request: NextRequest) {
             fallbackMessage: bot.fallback_message || undefined,
         };
 
-        // Streaming mode
+        // Streaming mode — executeRAGStream is synchronous (returns stream immediately;
+        // all async RAG work runs inside the stream controller to avoid Vercel timeouts)
         if (useStream) {
-            const { stream, metadata } = await executeRAGStream(query, botId, ragConfig);
+            const { stream, metadata } = executeRAGStream(query, botId, ragConfig);
 
             // Save conversation async (don't block stream)
             metadata.then(async (meta) => {

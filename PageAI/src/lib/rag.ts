@@ -367,42 +367,73 @@ export async function executeRAG(
 }
 
 // ─── Streaming RAG Pipeline ──────────────────────────────
-export async function executeRAGStream(
+// All heavy async work runs INSIDE the ReadableStream controller so the HTTP
+// response starts immediately and Vercel serverless timeouts are avoided.
+export function executeRAGStream(
     query: string,
     botId: string,
     config: RAGConfig
-): Promise<{
-    stream: ReadableStream;
-    metadata: Promise<Omit<RAGResult, 'answer'>>;
-}> {
+): { stream: ReadableStream; metadata: Promise<Omit<RAGResult, 'answer'>> } {
     const startTime = Date.now();
     const topK = config.topK || 5;
     const retrieveCount = config.retrieveCount || 20;
 
-    // 1. Rewrite query
-    const rewrittenQuery = await rewriteQuery(query);
+    let resolveMetadata!: (meta: Omit<RAGResult, 'answer'>) => void;
+    const metadata = new Promise<Omit<RAGResult, 'answer'>>((resolve) => {
+        resolveMetadata = resolve;
+    });
 
-    // 2. Generate embedding
-    const queryEmbedding = await generateEmbedding(rewrittenQuery);
+    const stream = new ReadableStream({
+        async start(controller) {
+            const encoder = new TextEncoder();
+            const send = (data: object) => {
+                try {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+                } catch {
+                    // controller already closed
+                }
+            };
 
-    // 3. Hybrid search
-    const rawChunks = await hybridSearch(
-        queryEmbedding,
-        rewrittenQuery,
-        config.userId,
-        config.dataSourceIds,
-        retrieveCount
-    );
+            try {
+                // 1. Rewrite query
+                const rewrittenQuery = await rewriteQuery(query);
 
-    // 4. Re-rank
-    const rankedChunks = reRankChunks(rawChunks, rewrittenQuery, topK);
+                // 2. Generate embedding
+                const queryEmbedding = await generateEmbedding(rewrittenQuery);
 
-    // 5. Confidence + model selection
-    const confidence = estimateConfidence(rankedChunks);
-    const model = selectModel(query, confidence, config.model);
-    const context = buildContext(rankedChunks);
+                // 3. Hybrid search
+                const rawChunks = await hybridSearch(
+                    queryEmbedding,
+                    rewrittenQuery,
+                    config.userId,
+                    config.dataSourceIds,
+                    retrieveCount
+                );
 
-    const systemPrompt = config.systemPrompt || `You are a helpful AI assistant. Answer questions ONLY based on the provided context. Follow these rules strictly:
+                // 4. Re-rank
+                const rankedChunks = reRankChunks(rawChunks, rewrittenQuery, topK);
+
+                // 5. Confidence + model selection
+                const confidence = estimateConfidence(rankedChunks);
+                const model = selectModel(query, confidence, config.model);
+                const context = buildContext(rankedChunks);
+
+                // Build sources
+                const seenUrls = new Set<string>();
+                const sources = rankedChunks
+                    .filter((c) => {
+                        if (!c.page_url || seenUrls.has(c.page_url)) return false;
+                        seenUrls.add(c.page_url);
+                        return true;
+                    })
+                    .slice(0, 5)
+                    .map((c) => ({
+                        url: c.page_url!,
+                        title: c.page_title || c.heading || c.page_url!,
+                        relevance: Math.round(c.combined_score * 100) / 100,
+                    }));
+
+                const systemPrompt = config.systemPrompt || `You are a helpful AI assistant. Answer questions ONLY based on the provided context. Follow these rules strictly:
 
 1. Answer based ONLY on the provided context. Do not use prior knowledge.
 2. If the context doesn't contain enough information, say so honestly.
@@ -411,43 +442,38 @@ export async function executeRAGStream(
 5. If multiple sources provide information, synthesize them into a coherent answer.
 6. Never make up information that isn't in the context.`;
 
-    // 6. Stream the response
-    const openaiStream = await getOpenAI().chat.completions.create({
-        model,
-        messages: [
-            { role: 'system', content: systemPrompt },
-            {
-                role: 'user',
-                content: `Context from knowledge base:\n---\n${context}\n---\n\nQuestion: ${query}\n\nProvide a helpful, accurate answer based only on the context above.`,
-            },
-        ],
-        temperature: config.temperature ?? 0.2,
-        max_tokens: config.maxTokens || 1024,
-        stream: true,
-    });
+                // 6. Stream OpenAI response token by token
+                const openaiStream = await getOpenAI().chat.completions.create({
+                    model,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        {
+                            role: 'user',
+                            content: `Context from knowledge base:\n---\n${context}\n---\n\nQuestion: ${query}\n\nProvide a helpful, accurate answer based only on the context above.`,
+                        },
+                    ],
+                    temperature: config.temperature ?? 0.2,
+                    max_tokens: config.maxTokens || 1024,
+                    stream: true,
+                });
 
-    let fullAnswer = '';
+                for await (const chunk of openaiStream) {
+                    const content = chunk.choices[0]?.delta?.content;
+                    if (content) {
+                        send({ type: 'token', content });
+                    }
+                }
 
-    const seenUrls = new Set<string>();
-    const sources = rankedChunks
-        .filter((c) => {
-            if (!c.page_url || seenUrls.has(c.page_url)) return false;
-            seenUrls.add(c.page_url);
-            return true;
-        })
-        .slice(0, 5)
-        .map((c) => ({
-            url: c.page_url!,
-            title: c.page_title || c.heading || c.page_url!,
-            relevance: Math.round(c.combined_score * 100) / 100,
-        }));
+                // Send final metadata event
+                send({
+                    type: 'done',
+                    sources,
+                    confidence,
+                    model,
+                    queryRewrite: rewrittenQuery !== query ? rewrittenQuery : null,
+                });
 
-    const metadataPromise = new Promise<Omit<RAGResult, 'answer'>>((resolve) => {
-        // Will be resolved after stream completes
-        const interval = setInterval(() => {
-            if (fullAnswer.length > 0 || Date.now() - startTime > 30000) {
-                clearInterval(interval);
-                resolve({
+                resolveMetadata({
                     sources,
                     confidence,
                     model,
@@ -456,42 +482,23 @@ export async function executeRAGStream(
                     responseTimeMs: Date.now() - startTime,
                     cached: false,
                 });
-            }
-        }, 100);
-    });
-
-    const stream = new ReadableStream({
-        async start(controller) {
-            const encoder = new TextEncoder();
-            try {
-                for await (const chunk of openaiStream) {
-                    const content = chunk.choices[0]?.delta?.content;
-                    if (content) {
-                        fullAnswer += content;
-                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'token', content })}\n\n`));
-                    }
-                }
-                // Send final metadata
-                controller.enqueue(
-                    encoder.encode(
-                        `data: ${JSON.stringify({
-                            type: 'done',
-                            sources,
-                            confidence,
-                            model,
-                            queryRewrite: rewrittenQuery !== query ? rewrittenQuery : null,
-                        })}\n\n`
-                    )
-                );
-                controller.close();
-            } catch (err) {
-                controller.enqueue(
-                    encoder.encode(`data: ${JSON.stringify({ type: 'error', message: 'Stream error' })}\n\n`)
-                );
-                controller.close();
+            } catch (err: any) {
+                const msg = err?.message || 'Failed to generate response';
+                send({ type: 'error', message: msg });
+                resolveMetadata({
+                    sources: [],
+                    confidence: 0,
+                    model: 'error',
+                    queryRewrite: null,
+                    chunksRetrieved: 0,
+                    responseTimeMs: Date.now() - startTime,
+                    cached: false,
+                });
+            } finally {
+                try { controller.close(); } catch { /* already closed */ }
             }
         },
     });
 
-    return { stream, metadata: metadataPromise };
+    return { stream, metadata };
 }

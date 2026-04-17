@@ -429,6 +429,8 @@
                                     bubble.textContent = botText;
                                 } else if (parsed.type === 'done') {
                                     if (parsed.sources) sources = parsed.sources;
+                                } else if (parsed.type === 'error') {
+                                    bubble.textContent = "Sorry, I encountered an error. Please try again.";
                                 } else if (parsed.conversationId) {
                                     conversationId = parsed.conversationId;
                                 }
