@@ -80,11 +80,9 @@ export async function POST(request: NextRequest) {
         });
 
         if (usageErr) {
-            console.error('Usage RPC error:', usageErr);
-            return NextResponse.json({ error: 'Failed to check usage' }, { status: 500, headers: corsHeaders(origin) });
-        }
-
-        if (!allowed) {
+            // RPC may not exist in DB yet — allow the message rather than hard-failing with 500
+            console.error('[chat] check_and_increment_message RPC error (degraded mode):', usageErr.message);
+        } else if (!allowed) {
             trackEvent('limit.reached', { botId }, bot.user_id);
             return NextResponse.json({
                 error: 'Monthly message limit reached. Please upgrade your plan or buy an add-on pack.',

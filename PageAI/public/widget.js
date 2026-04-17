@@ -424,13 +424,13 @@
                             if (data === "[DONE]") continue;
                             try {
                                 const parsed = JSON.parse(data);
-                                if (parsed.token) {
-                                    botText += parsed.token;
+                                if (parsed.type === 'token' && parsed.content) {
+                                    botText += parsed.content;
                                     bubble.textContent = botText;
+                                } else if (parsed.type === 'done') {
+                                    if (parsed.sources) sources = parsed.sources;
                                 } else if (parsed.conversationId) {
                                     conversationId = parsed.conversationId;
-                                } else if (parsed.sources) {
-                                    sources = parsed.sources;
                                 }
                             } catch (e) {
                                 // Non-JSON data line, skip
