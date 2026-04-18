@@ -273,7 +273,6 @@ export default function KnowledgePage() {
             </div>
             );
           })}
-          ))}
         </div>
       )}
     </div>
