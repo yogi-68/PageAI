@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { after } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { generateEmbeddings } from '@/lib/openai';
-// pdf-parse is a CommonJS module — dynamic import avoids Edge Runtime issues
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require('pdf-parse');
 
 // Allow up to 60 s on Vercel (Pro/Team). Free tier is capped at 10 s by Vercel, not this flag.
 export const maxDuration = 60;
@@ -61,6 +58,8 @@ export async function POST(request: NextRequest) {
         if (ext === 'pdf') {
             if (!contentBase64) return NextResponse.json({ error: 'PDF requires contentBase64' }, { status: 400 });
             try {
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
+                const pdfParse = require('pdf-parse');
                 const buffer = Buffer.from(contentBase64, 'base64');
                 const parsed = await pdfParse(buffer);
                 textContent = parsed.text || '';

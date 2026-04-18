@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // pdf-parse uses pdfjs-dist which depends on DOMMatrix (browser API) — exclude from bundling
+  serverExternalPackages: ['pdf-parse'],
+
   // Enable static exports for maximum performance
   // output: 'export', // Uncomment for static site generation
 
