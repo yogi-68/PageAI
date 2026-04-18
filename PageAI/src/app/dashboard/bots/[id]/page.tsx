@@ -368,9 +368,14 @@ export default function BotManagePage() {
             </div>
             <div className="space-y-2">
               {[
-                { id: 'gpt-4.1-mini', name: 'Fast AI', desc: 'Fast & cost-efficient. Best for most support bots.' },
-                { id: 'auto', name: 'Smart routing', desc: 'Auto-selects the best AI for each query — fast for simple, advanced for complex.' },
-                { id: 'gpt-4.1', name: 'Advanced AI', desc: 'Most capable. Best for technical or complex topics.' },
+                { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', desc: 'Fast & cost-efficient. Best for most support bots.' },
+                { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Fast OpenAI multimodal model. Great balance of speed and quality.' },
+                { id: 'auto', name: 'Smart Routing', desc: 'Auto-selects the best AI for each query — fast for simple, advanced for complex.' },
+                { id: 'gpt-4o', name: 'GPT-4o', desc: 'OpenAI flagship multimodal model. High quality responses.' },
+                { id: 'gpt-4.1', name: 'GPT-4.1', desc: 'Latest GPT-4.1 — highly capable for complex and technical topics.' },
+                { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano', desc: 'Smallest & fastest GPT-4.1 variant. Ultra low latency.' },
+                { id: 'o4-mini', name: 'o4-mini', desc: 'Reasoning model — great for multi-step or analytical questions.' },
+                { id: 'o3-mini', name: 'o3-mini', desc: 'Compact reasoning model with strong problem-solving.' },
               ].map(m => (
                 <button key={m.id} onClick={() => setModel(m.id)} className={`w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-all ${model === m.id ? 'border-primary bg-primary/5' : 'border-edge hover:border-edge-light'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${model === m.id ? 'border-primary' : 'border-edge'}`}>

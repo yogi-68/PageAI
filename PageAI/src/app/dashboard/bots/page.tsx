@@ -23,6 +23,8 @@ export default function BotsPage() {
   const [bots, setBots] = useState<BotRow[]>([]);
   const [plan, setPlan] = useState<string>('free');
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -57,6 +59,20 @@ export default function BotsPage() {
       document.body.removeChild(el);
       toast.success('Embed code copied!');
     }
+  };
+
+  const handleDelete = async (botId: string) => {
+    setDeletingId(botId);
+    try {
+      const res = await fetch(`/api/bots?botId=${botId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete failed');
+      setBots(prev => prev.filter(b => b.id !== botId));
+      toast.success('Bot deleted');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to delete bot');
+    }
+    setDeletingId(null);
+    setConfirmDeleteId(null);
   };
 
   if (loading) return <div className="flex items-center justify-center py-32"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
@@ -125,7 +141,29 @@ export default function BotsPage() {
                 <Link href={`/dashboard/bots/${bot.id}`} className="px-3 py-1.5 rounded-lg border border-edge text-[12px] text-fg-secondary hover:text-fg hover:border-edge-light transition-all">Manage</Link>
                 <button onClick={() => window.open(`/chat-preview/${bot.id}`, '_blank')} className="px-3 py-1.5 rounded-lg border border-edge text-[12px] text-fg-secondary hover:text-fg hover:border-edge-light transition-all">Preview</button>
                 <button onClick={() => copyEmbed(bot.id)} className="px-3 py-1.5 rounded-lg border border-edge text-[12px] text-fg-secondary hover:text-fg hover:border-edge-light transition-all">Copy Embed</button>
+                <button
+                  onClick={() => setConfirmDeleteId(bot.id)}
+                  className="ml-auto px-3 py-1.5 rounded-lg border border-danger/30 text-[12px] text-danger hover:bg-danger/10 transition-all"
+                >
+                  Delete
+                </button>
               </div>
+              {/* Inline delete confirmation */}
+              {confirmDeleteId === bot.id && (
+                <div className="mt-3 p-3 rounded-lg border border-danger/30 bg-danger/5 flex items-center justify-between gap-3">
+                  <p className="text-[12px] text-danger font-medium">Delete <strong>{bot.name}</strong>? This cannot be undone.</p>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button onClick={() => setConfirmDeleteId(null)} className="px-3 py-1.5 rounded-lg border border-edge text-[12px] text-fg-secondary hover:text-fg transition-all">Cancel</button>
+                    <button
+                      onClick={() => handleDelete(bot.id)}
+                      disabled={deletingId === bot.id}
+                      className="px-3 py-1.5 rounded-lg bg-danger text-white text-[12px] font-medium hover:opacity-90 transition-all disabled:opacity-50"
+                    >
+                      {deletingId === bot.id ? 'Deleting…' : 'Yes, delete'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
           {atLimit ? (

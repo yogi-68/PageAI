@@ -40,7 +40,7 @@ export interface RAGConfig {
     userId: string;
     dataSourceIds?: string[];
     systemPrompt?: string;
-    model?: 'gpt-4.1-mini' | 'gpt-4.1' | 'auto';
+    model?: 'gpt-4.1-mini' | 'gpt-4o-mini' | 'gpt-4.1' | 'gpt-4o' | 'gpt-4.1-nano' | 'o4-mini' | 'o3-mini' | 'auto';
     temperature?: number;
     maxTokens?: number;
     confidenceThreshold?: number;
@@ -82,6 +82,12 @@ async function hybridSearch(
     matchCount: number = 20
 ): Promise<RAGChunk[]> {
     const admin = getAdminClient();
+
+    // Empty array means this bot has no data sources yet — return nothing immediately
+    // rather than searching all the user's chunks (which would leak other bots' content).
+    if (dataSourceIds !== undefined && dataSourceIds.length === 0) {
+        return [];
+    }
 
     try {
         // Use the hybrid_search database function

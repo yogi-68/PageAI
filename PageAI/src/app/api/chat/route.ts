@@ -56,8 +56,10 @@ export async function POST(request: NextRequest) {
         }
 
         // 2b. Enforce plan-based model limits
-        // Free / Starter → gpt-4.1-mini only; Growth / Scale / Enterprise → any model including gpt-4.1 and auto
-        let allowedModel: 'gpt-4.1-mini' | 'gpt-4.1' | 'auto' = (bot.model as 'gpt-4.1-mini' | 'gpt-4.1' | 'auto') || 'gpt-4.1-mini';
+        // Free / Starter → gpt-4.1-mini only; Growth / Scale / Enterprise → any model
+        type SupportedModel = 'gpt-4.1-mini' | 'gpt-4o-mini' | 'gpt-4.1' | 'gpt-4o' | 'gpt-4.1-nano' | 'o4-mini' | 'o3-mini' | 'auto';
+        const premiumModels: SupportedModel[] = ['gpt-4.1', 'gpt-4o', 'o4-mini', 'o3-mini', 'auto'];
+        let allowedModel: SupportedModel = (bot.model as SupportedModel) || 'gpt-4.1-mini';
         try {
             const { data: ownerProfile } = await admin
                 .from('profiles')
@@ -67,8 +69,10 @@ export async function POST(request: NextRequest) {
             const plan = ownerProfile?.plan || 'free';
             const premiumPlans = ['growth', 'scale', 'enterprise'];
             if (!premiumPlans.includes(plan)) {
-                // Force mini for free/starter — no GPT-4.1 or auto routing to GPT-4.1
-                allowedModel = 'gpt-4.1-mini';
+                // Free/Starter: force mini models only
+                if (premiumModels.includes(allowedModel)) {
+                    allowedModel = 'gpt-4.1-mini';
+                }
             }
         } catch {
             // If profile fetch fails, default to mini for safety
@@ -95,9 +99,26 @@ export async function POST(request: NextRequest) {
 
         // 4. Execute RAG pipeline
         // If RAG fails after increment, we roll back the usage charge.
+
+        // Resolve which data sources this bot may search.
+        // Prefer the explicit list stored on the bot; fall back to the data source
+        // linked to the bot's website.  If neither is set we pass an empty array
+        // so the search returns nothing (rather than leaking other bots' chunks).
+        let resolvedDataSourceIds: string[] = bot.data_source_ids ?? [];
+        if (resolvedDataSourceIds.length === 0 && bot.website_id) {
+            const { data: ws } = await admin
+                .from('websites')
+                .select('data_source_id')
+                .eq('id', bot.website_id)
+                .single();
+            if (ws?.data_source_id) resolvedDataSourceIds = [ws.data_source_id];
+        }
+
         const ragConfig = {
             userId: bot.user_id,
-            dataSourceIds: bot.data_source_ids?.length > 0 ? bot.data_source_ids : undefined,
+            // Always pass an array. Empty array → hybrid_search gets no results (correct).
+            // Never pass undefined — that would remove the filter and leak all user chunks.
+            dataSourceIds: resolvedDataSourceIds.length > 0 ? resolvedDataSourceIds : [],
             systemPrompt: bot.system_prompt || undefined,
             model: allowedModel,
             temperature: bot.temperature || 0.2,
