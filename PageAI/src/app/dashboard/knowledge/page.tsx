@@ -72,17 +72,30 @@ export default function KnowledgePage() {
     setUploadingFile(true);
     for (const file of files) {
       if (file.size > 10 * 1024 * 1024) { toast.error(`"${file.name}" exceeds 10 MB — skipped`); continue; }
-      const content: string = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsText(file);
-      });
+      const isPdf = file.name.toLowerCase().endsWith('.pdf');
       try {
+        let body: Record<string, unknown>;
+        if (isPdf) {
+          // PDFs must be sent as base64 — text extraction happens server-side
+          const arrayBuffer = await file.arrayBuffer();
+          const uint8 = new Uint8Array(arrayBuffer);
+          let binary = '';
+          for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+          const contentBase64 = btoa(binary);
+          body = { fileName: file.name, contentBase64, userId: user.id };
+        } else {
+          const content: string = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsText(file);
+          });
+          body = { fileName: file.name, content, userId: user.id };
+        }
         const res = await fetch('/api/ingest', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileName: file.name, content, userId: user.id }),
+          body: JSON.stringify(body),
         });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.error || 'Upload failed');
@@ -157,7 +170,34 @@ export default function KnowledgePage() {
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
           {uploadingFile ? 'Uploading…' : 'Upload Files'}
         </button>
-        <input ref={fileInputRef} type="file" multiple accept=".txt,.md,.csv" className="hidden" onChange={handleFileSelect} />
+        <input ref={fileInputRef} type="file" multiple accept=".pdf,.txt,.md,.csv" className="hidden" onChange={handleFileSelect} />
+      </div>
+
+      {/* Upload info */}
+      <div className="p-4 rounded-xl border border-edge bg-surface/40 space-y-3">
+        <div>
+          <h2 className="text-[13px] font-semibold text-fg">Supported file types</h2>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {[
+              { ext: 'PDF', note: 'Text-based PDFs only (not scanned images)' },
+              { ext: 'TXT', note: 'Plain text files' },
+              { ext: 'MD', note: 'Markdown files' },
+              { ext: 'CSV', note: 'Spreadsheet data' },
+            ].map(f => (
+              <span key={f.ext} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface border border-edge text-[12px] text-fg-secondary" title={f.note}>
+                <span className="font-mono font-bold text-primary text-[11px]">.{f.ext.toLowerCase()}</span>
+                <span>{f.note}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="border-t border-edge pt-3">
+          <h2 className="text-[13px] font-semibold text-fg">How website crawling works</h2>
+          <p className="text-[12px] text-fg-secondary mt-1 leading-relaxed">
+            PageAI uses <strong>Cheerio</strong> (a fast HTML parser) to crawl your website. It fetches each page, strips navigation/scripts/styles, and extracts the readable text content. That text is split into overlapping chunks, embedded with OpenAI, and stored in a vector database (Supabase pgvector). When a visitor asks a question, the most relevant chunks are retrieved and passed to the AI to generate an answer.
+          </p>
+          <p className="text-[12px] text-warning mt-1.5">⚠ JavaScript-heavy SPAs may return minimal content — the crawler reads static HTML only.</p>
+        </div>
       </div>
 
       {/* Stats */}

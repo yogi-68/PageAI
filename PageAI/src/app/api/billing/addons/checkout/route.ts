@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
 
         // One-time payment for an add-on (not a subscription)
         const payment = await (dodo as any).payments.create({
-            billing: { city: '', country: 'US', state: '', street: '', zipcode: '' },
             customer: {
                 email: profile.email,
                 name: profile.full_name || profile.email,

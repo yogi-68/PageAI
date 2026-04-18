@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { after } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { generateEmbeddings } from '@/lib/openai';
+// pdf-parse is a CommonJS module — dynamic import avoids Edge Runtime issues
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require('pdf-parse');
 
 // Allow up to 60 s on Vercel (Pro/Team). Free tier is capped at 10 s by Vercel, not this flag.
 export const maxDuration = 60;
@@ -14,6 +17,7 @@ function detectDocType(fileName: string): string {
     const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
     if (ext === 'md') return 'markdown';
     if (ext === 'csv') return 'sheet';
+    if (ext === 'pdf') return 'pdf';
     return 'other';
 }
 
@@ -45,20 +49,40 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const { fileName, content, userId } = await request.json();
+        const { fileName, content, userId, contentBase64 } = await request.json();
 
-        if (!fileName || !content || !userId) {
-            return NextResponse.json({ error: 'fileName, content, and userId are required' }, { status: 400 });
+        if (!fileName || !userId || (!content && !contentBase64)) {
+            return NextResponse.json({ error: 'fileName, userId, and content are required' }, { status: 400 });
         }
-        if (typeof content !== 'string') {
-            return NextResponse.json({ error: 'content must be a string' }, { status: 400 });
+
+        // Handle PDF: accept base64-encoded binary, extract text server-side
+        let textContent: string;
+        const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
+        if (ext === 'pdf') {
+            if (!contentBase64) return NextResponse.json({ error: 'PDF requires contentBase64' }, { status: 400 });
+            try {
+                const buffer = Buffer.from(contentBase64, 'base64');
+                const parsed = await pdfParse(buffer);
+                textContent = parsed.text || '';
+                if (!textContent.trim()) {
+                    return NextResponse.json({ error: 'PDF contains no extractable text (scanned/image PDF not supported)' }, { status: 422 });
+                }
+            } catch (pdfErr: any) {
+                return NextResponse.json({ error: `PDF parsing failed: ${pdfErr.message}` }, { status: 422 });
+            }
+        } else {
+            if (typeof content !== 'string') {
+                return NextResponse.json({ error: 'content must be a string' }, { status: 400 });
+            }
+            textContent = content;
         }
-        if (content.length > MAX_CONTENT_CHARS) {
+
+        if (textContent.length > MAX_CONTENT_CHARS) {
             return NextResponse.json({ error: 'File content exceeds 500k characters' }, { status: 413 });
         }
 
         const admin = getAdminClient();
-        const wordCount = content.split(/\s+/).filter(Boolean).length;
+        const wordCount = textContent.split(/\s+/).filter(Boolean).length;
         const docType = detectDocType(fileName);
 
         // Create data source
@@ -83,7 +107,7 @@ export async function POST(request: NextRequest) {
                 user_id: userId,
                 url: null,
                 title: fileName,
-                content,
+                content: textContent,
                 word_count: wordCount,
                 doc_type: docType,
                 status: 'indexed',
@@ -93,7 +117,7 @@ export async function POST(request: NextRequest) {
         if (docError) throw docError;
 
         // Compute chunks synchronously (fast — just string splitting)
-        const textChunks = chunkText(content);
+        const textChunks = chunkText(textContent);
 
         // Schedule embedding + DB writes for AFTER the response is sent
         // This makes the endpoint feel instant regardless of file size.
