@@ -42,6 +42,7 @@ export default function BotManagePage() {
 
   const [bot, setBot] = useState<Bot | null>(null);
   const [website, setWebsite] = useState<Website | null>(null);
+  const [plan, setPlan] = useState<string>('free');
   const [tab, setTab] = useState<Tab>('overview');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -71,6 +72,15 @@ export default function BotManagePage() {
     if (!data) { router.push('/dashboard/bots'); return; }
 
     setBot(data);
+
+    // Fetch plan for model gating
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('plan')
+      .eq('id', user.id)
+      .single();
+    setPlan(profile?.plan || 'free');
+
     setName(data.name);
     setWelcomeMessage(data.welcome_message || '');
     setFallbackMessage(data.fallback_message || '');
@@ -366,27 +376,51 @@ export default function BotManagePage() {
               <h3 className="text-[14px] font-semibold text-fg">AI Model</h3>
               <p className="text-[12px] text-fg-muted mt-0.5">Smart routing automatically adapts to query complexity — no action needed.</p>
             </div>
+            {/* Plan gating legend */}
+            {plan === 'free' && (
+              <div className="px-3 py-2 rounded-lg bg-warning/8 border border-warning/20 text-[11px] text-warning">
+                Free plan includes Fast AI only. <Link href="/dashboard/billing" className="underline font-medium">Upgrade to Starter</Link> to unlock Smart Routing, and Growth for Advanced AI.
+              </div>
+            )}
+            {plan === 'starter' && (
+              <div className="px-3 py-2 rounded-lg bg-primary/6 border border-primary/20 text-[11px] text-fg-secondary">
+                Starter includes Fast AI + Smart Routing. <Link href="/dashboard/billing" className="underline font-medium">Upgrade to Growth</Link> to unlock Advanced AI.
+              </div>
+            )}
             <div className="space-y-2">
-              {[
-                { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', desc: 'Fast & cost-efficient. Best for most support bots.' },
-                { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Fast OpenAI multimodal model. Great balance of speed and quality.' },
-                { id: 'auto', name: 'Smart Routing', desc: 'Auto-selects the best AI for each query — fast for simple, advanced for complex.' },
-                { id: 'gpt-4o', name: 'GPT-4o', desc: 'OpenAI flagship multimodal model. High quality responses.' },
-                { id: 'gpt-4.1', name: 'GPT-4.1', desc: 'Latest GPT-4.1 — highly capable for complex and technical topics.' },
-                { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano', desc: 'Smallest & fastest GPT-4.1 variant. Ultra low latency.' },
-                { id: 'o4-mini', name: 'o4-mini', desc: 'Reasoning model — great for multi-step or analytical questions.' },
-                { id: 'o3-mini', name: 'o3-mini', desc: 'Compact reasoning model with strong problem-solving.' },
-              ].map(m => (
-                <button key={m.id} onClick={() => setModel(m.id)} className={`w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-all ${model === m.id ? 'border-primary bg-primary/5' : 'border-edge hover:border-edge-light'}`}>
-                  <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${model === m.id ? 'border-primary' : 'border-edge'}`}>
-                    {model === m.id && <div className="w-2 h-2 rounded-full bg-primary" />}
+              {([
+                { id: 'gpt-4.1-mini', name: 'Fast AI', desc: 'Fast & cost-efficient. Best for most support bots.', minPlan: 'free' },
+                { id: 'auto', name: 'Smart Routing', desc: 'Auto-selects the best model per query — fast for simple, advanced for complex.', minPlan: 'starter' },
+                { id: 'gpt-4.1', name: 'Advanced AI', desc: 'Most capable model. Best for technical or complex topics.', minPlan: 'growth' },
+              ] as { id: string; name: string; desc: string; minPlan: string }[]).map(m => {
+                const planRank: Record<string, number> = { free: 0, starter: 1, growth: 2, scale: 3, enterprise: 4 };
+                const locked = (planRank[plan] ?? 0) < (planRank[m.minPlan] ?? 0);
+                const planLabel: Record<string, string> = { starter: 'Starter+', growth: 'Growth+' };
+                return (
+                <button
+                  key={m.id}
+                  onClick={() => !locked && setModel(m.id)}
+                  disabled={locked}
+                  className={`w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-all ${
+                    locked ? 'border-edge opacity-40 cursor-not-allowed' :
+                    model === m.id ? 'border-primary bg-primary/5' : 'border-edge hover:border-edge-light'
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${!locked && model === m.id ? 'border-primary' : 'border-edge'}`}>
+                    {!locked && model === m.id && <div className="w-2 h-2 rounded-full bg-primary" />}
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="text-[13px] font-medium text-fg">{m.name}</p>
                     <p className="text-[11px] text-fg-muted mt-0.5">{m.desc}</p>
                   </div>
+                  {locked && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-surface border border-edge text-fg-muted shrink-0 self-center">
+                      {planLabel[m.minPlan]}
+                    </span>
+                  )}
                 </button>
-              ))}
+              );
+              })}
             </div>
           </div>
 

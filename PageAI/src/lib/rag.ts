@@ -40,7 +40,7 @@ export interface RAGConfig {
     userId: string;
     dataSourceIds?: string[];
     systemPrompt?: string;
-    model?: 'gpt-4.1-mini' | 'gpt-4o-mini' | 'gpt-4.1' | 'gpt-4o' | 'gpt-4.1-nano' | 'o4-mini' | 'o3-mini' | 'auto';
+    model?: 'gpt-4.1-mini' | 'gpt-4.1' | 'auto';
     temperature?: number;
     maxTokens?: number;
     confidenceThreshold?: number;

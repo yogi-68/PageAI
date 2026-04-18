@@ -55,10 +55,11 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 2b. Enforce plan-based model limits
-        // Free / Starter → gpt-4.1-mini only; Growth / Scale / Enterprise → any model
-        type SupportedModel = 'gpt-4.1-mini' | 'gpt-4o-mini' | 'gpt-4.1' | 'gpt-4o' | 'gpt-4.1-nano' | 'o4-mini' | 'o3-mini' | 'auto';
-        const premiumModels: SupportedModel[] = ['gpt-4.1', 'gpt-4o', 'o4-mini', 'o3-mini', 'auto'];
+        // 2b. Enforce plan-based model limits (per README pricing table)
+        // Free            → Fast AI (gpt-4.1-mini) only
+        // Starter         → gpt-4.1-mini + auto (Smart Routing)
+        // Growth/Scale/Enterprise → any model including gpt-4.1 (Advanced AI)
+        type SupportedModel = 'gpt-4.1-mini' | 'gpt-4.1' | 'auto';
         let allowedModel: SupportedModel = (bot.model as SupportedModel) || 'gpt-4.1-mini';
         try {
             const { data: ownerProfile } = await admin
@@ -67,13 +68,14 @@ export async function POST(request: NextRequest) {
                 .eq('id', bot.user_id)
                 .single();
             const plan = ownerProfile?.plan || 'free';
-            const premiumPlans = ['growth', 'scale', 'enterprise'];
-            if (!premiumPlans.includes(plan)) {
-                // Free/Starter: force mini models only
-                if (premiumModels.includes(allowedModel)) {
-                    allowedModel = 'gpt-4.1-mini';
-                }
+            if (plan === 'free') {
+                // Free: Fast AI only — cannot use auto or gpt-4.1
+                allowedModel = 'gpt-4.1-mini';
+            } else if (plan === 'starter') {
+                // Starter: Fast AI + Smart Routing — no gpt-4.1 (Advanced AI)
+                if (allowedModel === 'gpt-4.1') allowedModel = 'auto';
             }
+            // Growth / Scale / Enterprise: any model — no restriction
         } catch {
             // If profile fetch fails, default to mini for safety
             allowedModel = 'gpt-4.1-mini';

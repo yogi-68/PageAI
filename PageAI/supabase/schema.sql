@@ -86,7 +86,7 @@ CREATE TABLE public.bots (
   name TEXT NOT NULL DEFAULT 'AI Assistant',
   system_prompt TEXT,
   welcome_message TEXT DEFAULT 'Hi! How can I help you today?',
-  model TEXT NOT NULL DEFAULT 'gpt-4.1-mini' CHECK (model IN ('gpt-4.1-mini', 'gpt-4o-mini', 'gpt-4.1', 'gpt-4o', 'gpt-4.1-nano', 'o4-mini', 'o3-mini', 'auto')),
+  model TEXT NOT NULL DEFAULT 'gpt-4.1-mini' CHECK (model IN ('gpt-4.1-mini', 'gpt-4.1', 'auto')),
   primary_color TEXT DEFAULT '#6366f1',
   position TEXT DEFAULT 'right' CHECK (position IN ('left', 'right')),
   is_active BOOLEAN NOT NULL DEFAULT true,
