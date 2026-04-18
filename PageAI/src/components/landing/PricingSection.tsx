@@ -12,7 +12,7 @@ const plans = [
     desc: 'For trying things out',
     price: { m: 0, a: 0 },
     cta: 'Start Free',
-    features: ['1 chatbot', '50 messages/month', '100 pages indexed', 'GPT-4.1 Mini', 'Basic analytics', 'Website connector'],
+    features: ['1 chatbot', '50 messages/month', '100 pages indexed', 'Fast AI', 'Basic analytics', 'Website connector'],
   },
   {
     id: 'starter',
@@ -22,7 +22,7 @@ const plans = [
     ctaMonthly: 'Start 7-Day Free Trial',
     ctaAnnual: 'Get Annual Plan',
     trial: true,
-    features: ['1 chatbot', '4,000 messages/month', '1,000 pages indexed', 'GPT-4.1 Mini', 'Full analytics', 'Custom branding', 'File uploads', 'Email support'],
+    features: ['1 chatbot', '4,000 messages/month', '1,000 pages indexed', 'Smart AI routing', 'File uploads', 'Remove branding', 'Email support'],
   },
   {
     id: 'growth',
@@ -33,7 +33,7 @@ const plans = [
     ctaAnnual: 'Get Annual Plan',
     popular: true,
     trial: true,
-    features: ['3 chatbots', '10,000 messages/month', '10,000 pages indexed', 'GPT-4.1 + Auto routing', 'Notion & Google Drive', 'API access', 'Priority support', 'Streaming responses'],
+    features: ['3 chatbots', '10,000 messages/month', '10,000 pages indexed', 'Advanced AI + Smart routing', 'All data connectors', 'Advanced analytics', 'Priority support', 'Custom system prompts'],
   },
   {
     id: 'scale',
@@ -43,7 +43,7 @@ const plans = [
     ctaMonthly: 'Start 7-Day Free Trial',
     ctaAnnual: 'Get Annual Plan',
     trial: true,
-    features: ['10 chatbots', '40,000 messages/month', '50,000 pages indexed', 'GPT-4.1 + Smart routing', 'All data connectors', 'Zendesk & Confluence', 'Dedicated support', 'Custom branding'],
+    features: ['10 chatbots', '40,000 messages/month', '50,000 pages indexed', 'All AI models', 'All data connectors', 'Dedicated support'],
   },
 ];
 

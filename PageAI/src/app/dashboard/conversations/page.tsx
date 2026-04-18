@@ -42,11 +42,12 @@ export default function ConversationsPage() {
 
       if (botIds.length === 0) { setLoading(false); return; }
 
-      // Step 2: fetch conversations via bot_id (RLS also enforces ownership)
+      // Step 2: fetch conversations with at least 1 message (skip empty widget opens)
       const { data } = await supabase
         .from('conversations')
         .select('id, bot_id, visitor_id, visitor_page_url, status, message_count, created_at')
         .in('bot_id', botIds)
+        .gt('message_count', 0)
         .order('created_at', { ascending: false })
         .limit(50);
 
