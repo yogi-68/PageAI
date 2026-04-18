@@ -16,7 +16,6 @@ const nav = [
   { label: 'Analytics', href: '/dashboard/analytics', icon: '▣' },
   { label: 'Billing', href: '/dashboard/billing', icon: '◆' },
   { label: 'Settings', href: '/dashboard/settings', icon: '⚙' },
-  { label: 'Guide', href: '/guide', icon: '⊞' },
 ];
 
 interface UsageInfo {

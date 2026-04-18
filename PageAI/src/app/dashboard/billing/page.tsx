@@ -161,7 +161,7 @@ export default function BillingPage() {
       )}
 
       {/* Current Plan & Usage Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="p-5 rounded-xl border border-edge bg-surface/40">
           <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">Current Plan</span>
           <p className={`text-[20px] font-bold mt-1 capitalize ${
@@ -171,28 +171,30 @@ export default function BillingPage() {
             <p className="text-[11px] text-fg-muted mt-1">Subscription active</p>
           )}
         </div>
-        <div className="p-5 rounded-xl border border-edge bg-surface/40">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">Messages</span>
-            <span className="text-[11px] text-fg-muted">{msgUsed.toLocaleString()} / {msgLimit.toLocaleString()}</span>
+        <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">Messages</span>
+              <span className="text-[11px] text-fg-muted">{msgUsed.toLocaleString()} / {msgLimit.toLocaleString()}</span>
+            </div>
+            <div className="h-2 rounded-full bg-edge overflow-hidden mb-1">
+              <div className={`h-full rounded-full transition-all ${msgPct > 90 ? 'bg-danger' : msgPct > 70 ? 'bg-warning' : 'bg-primary'}`} style={{ width: `${msgPct}%` }} />
+            </div>
+            <span className="text-[11px] text-fg-muted">{msgPct}% used this month</span>
+            {addonBalance > 0 && (
+              <p className="text-[11px] text-success mt-1">+{addonBalance.toLocaleString()} add-on messages available</p>
+            )}
           </div>
-          <div className="h-2 rounded-full bg-edge overflow-hidden mb-1">
-            <div className={`h-full rounded-full transition-all ${msgPct > 90 ? 'bg-danger' : msgPct > 70 ? 'bg-warning' : 'bg-primary'}`} style={{ width: `${msgPct}%` }} />
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">Pages Indexed</span>
+              <span className="text-[11px] text-fg-muted">{pagesUsed.toLocaleString()} / {pagesLimit.toLocaleString()}</span>
+            </div>
+            <div className="h-2 rounded-full bg-edge overflow-hidden mb-1">
+              <div className={`h-full rounded-full transition-all ${pagesPct > 90 ? 'bg-danger' : pagesPct > 70 ? 'bg-warning' : 'bg-primary'}`} style={{ width: `${pagesPct}%` }} />
+            </div>
+            <span className="text-[11px] text-fg-muted">{pagesPct}% of limit</span>
           </div>
-          <span className="text-[11px] text-fg-muted">{msgPct}% used this month</span>
-          {addonBalance > 0 && (
-            <p className="text-[11px] text-success mt-1">+{addonBalance.toLocaleString()} add-on messages available</p>
-          )}
-        </div>
-        <div className="p-5 rounded-xl border border-edge bg-surface/40">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">Pages Indexed</span>
-            <span className="text-[11px] text-fg-muted">{pagesUsed.toLocaleString()} / {pagesLimit.toLocaleString()}</span>
-          </div>
-          <div className="h-2 rounded-full bg-edge overflow-hidden mb-1">
-            <div className={`h-full rounded-full transition-all ${pagesPct > 90 ? 'bg-danger' : pagesPct > 70 ? 'bg-warning' : 'bg-primary'}`} style={{ width: `${pagesPct}%` }} />
-          </div>
-          <span className="text-[11px] text-fg-muted">{pagesPct}% of limit</span>
         </div>
       </div>
 

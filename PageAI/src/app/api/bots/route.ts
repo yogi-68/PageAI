@@ -123,10 +123,10 @@ export async function DELETE(request: NextRequest) {
 
         const admin = getAdminClient();
 
-        // Fetch the bot's data source IDs before deleting
+        // Fetch the bot's data source IDs and website_id before deleting
         const { data: bot } = await admin
             .from('bots')
-            .select('data_source_ids, user_id')
+            .select('data_source_ids, user_id, website_id')
             .eq('id', botId)
             .single();
 
@@ -147,6 +147,18 @@ export async function DELETE(request: NextRequest) {
                     // Orphaned data source — safe to delete; cascades to documents + chunks
                     await admin.from('data_sources').delete().eq('id', dsId);
                 }
+            }
+        }
+
+        // Clean up orphaned website — if no other bot references it, delete it
+        if (bot?.website_id) {
+            const { count: refCount } = await admin
+                .from('bots')
+                .select('id', { count: 'exact', head: true })
+                .eq('website_id', bot.website_id);
+
+            if (refCount === 0) {
+                await admin.from('websites').delete().eq('id', bot.website_id);
             }
         }
 
