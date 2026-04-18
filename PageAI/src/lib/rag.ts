@@ -418,9 +418,12 @@ export function executeRAGStream(
 
                 // Short-circuit: no knowledge base data — send fallback rather than calling OpenAI
                 if (rankedChunks.length === 0) {
+                    // Use a specific message that hints the KB may not be indexed yet,
+                    // rather than the generic "I don't have enough information" fallback.
                     const fallback = config.fallbackMessage ||
-                        "I don't have enough information in my knowledge base to answer that question. " +
-                        "Please make sure the website has been crawled and indexed, or try rephrasing your question.";
+                        "I don't have any indexed content to answer from yet. " +
+                        "Please make sure the website has been crawled and fully indexed, " +
+                        "or try again in a few moments.";
                     send({ type: 'token', content: fallback });
                     send({ type: 'done', sources: [], confidence: 0, model: 'none',
                         queryRewrite: rewrittenQuery !== query ? rewrittenQuery : null });

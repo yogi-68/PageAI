@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 
 interface DocPage { id: string; url: string; title: string; website_id: string; created_at: string; }
-interface Website { id: string; url: string; pages: DocPage[]; }
+interface Website { id: string; url: string; pages: DocPage[]; dataSourceId: string | null; chunkCount: number; status: string; }
 interface UploadedFile { name: string; dataSourceId: string; wordCount: number; status: 'syncing' | 'indexed' | 'error'; }
 
 export default function KnowledgePage() {
@@ -23,11 +23,29 @@ export default function KnowledgePage() {
 
   const loadData = async () => {
     if (!user) return;
-    const { data: ws } = await supabase.from('websites').select('id, url').eq('user_id', user.id);
+    const { data: ws } = await supabase.from('websites').select('id, url, data_source_id, status').eq('user_id', user.id);
     const { data: pages } = await supabase.from('documents').select('id, url, title, website_id, created_at').eq('user_id', user.id);
+    // Fetch chunk counts per data_source so we can detect un-indexed sites
+    const { data: chunkCounts } = await supabase
+      .from('chunks')
+      .select('data_source_id')
+      .eq('user_id', user.id);
+
+    const dsChunkMap: Record<string, number> = {};
+    (chunkCounts || []).forEach((c: any) => {
+      dsChunkMap[c.data_source_id] = (dsChunkMap[c.data_source_id] || 0) + 1;
+    });
 
     const siteMap: Record<string, Website> = {};
-    (ws || []).forEach((w: any) => { siteMap[w.id] = { ...w, pages: [] }; });
+    (ws || []).forEach((w: any) => {
+      siteMap[w.id] = {
+        ...w,
+        pages: [],
+        dataSourceId: w.data_source_id || null,
+        chunkCount: w.data_source_id ? (dsChunkMap[w.data_source_id] || 0) : 0,
+        status: w.status || 'indexed',
+      };
+    });
     (pages || []).forEach((p: any) => { if (siteMap[p.website_id]) siteMap[p.website_id].pages.push(p); });
 
     const result = Object.values(siteMap);
@@ -196,26 +214,49 @@ export default function KnowledgePage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {filtered.map(site => (
-            <div key={site.id} className="rounded-xl border border-edge bg-surface/40 overflow-hidden">
+          {filtered.map(site => {
+            const needsReindex = site.pages.length > 0 && site.chunkCount === 0;
+            const hasError = site.status === 'error';
+            return (
+            <div key={site.id} className={`rounded-xl border overflow-hidden ${needsReindex || hasError ? 'border-warning/40 bg-warning/5' : 'border-edge bg-surface/40'}`}>
               <div className="flex items-center gap-3 px-5 py-3.5">
                 <button onClick={() => toggle(site.id)} className="flex items-center gap-3 flex-1 text-left hover:opacity-80 transition-opacity min-w-0">
                   <svg className={`w-3.5 h-3.5 text-fg-muted transition-transform shrink-0 ${expanded.has(site.id) ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/></svg>
                   <span className="text-[14px] font-medium text-fg truncate">{site.url.replace(/https?:\/\//, '')}</span>
                   <span className="text-[12px] text-fg-muted shrink-0">— {site.pages.length} page{site.pages.length !== 1 ? 's' : ''}</span>
+                  {needsReindex || hasError ? (
+                    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/20 text-warning text-[10px] font-semibold uppercase tracking-wide">
+                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/></svg>
+                      Not indexed — Re-crawl
+                    </span>
+                  ) : (
+                    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success text-[10px] font-semibold">
+                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                      {site.chunkCount} chunks
+                    </span>
+                  )}
                 </button>
                 <button
                   onClick={() => handleRecrawl(site)}
                   disabled={recrawling === site.id}
-                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-edge text-[12px] text-fg-secondary hover:text-fg hover:border-edge-light transition-all disabled:opacity-50"
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[12px] font-medium transition-all disabled:opacity-50 ${needsReindex || hasError ? 'border-warning/40 text-warning hover:bg-warning/10' : 'border-edge text-fg-secondary hover:text-fg hover:border-edge-light'}`}
                 >
                   {recrawling === site.id ? (
-                    <><div className="w-3 h-3 border border-fg-muted border-t-transparent rounded-full animate-spin" /><span>Re-crawling…</span></>
+                    <><div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" /><span>Re-crawling…</span></>
                   ) : (
-                    <><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg><span>Re-crawl</span></>
+                    <><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg><span>{needsReindex || hasError ? 'Re-index Now' : 'Re-crawl'}</span></>
                   )}
                 </button>
               </div>
+              {(needsReindex || hasError) && (
+                <div className="px-5 pb-3 flex items-start gap-2">
+                  <svg className="w-3.5 h-3.5 text-warning mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/></svg>
+                  <p className="text-[12px] text-warning/90">
+                    This website has {site.pages.length} page{site.pages.length !== 1 ? 's' : ''} but no AI embeddings. Your bot cannot answer questions from it yet.
+                    Click <strong>Re-index Now</strong> to fix this.
+                  </p>
+                </div>
+              )}
               {expanded.has(site.id) && (
                 <div className="border-t border-edge divide-y divide-edge">
                   {site.pages.map((page: DocPage) => (
@@ -230,6 +271,8 @@ export default function KnowledgePage() {
                 </div>
               )}
             </div>
+            );
+          })}
           ))}
         </div>
       )}

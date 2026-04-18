@@ -217,6 +217,7 @@ export async function POST(request: NextRequest) {
         // 5. Generate embeddings in batch and store chunks with vectors
         const BATCH_SIZE = 50;
         let totalChunksStored = 0;
+        let embeddingError: string | null = null;
 
         for (let i = 0; i < allChunks.length; i += BATCH_SIZE) {
             const batch = allChunks.slice(i, i + BATCH_SIZE);
@@ -225,14 +226,25 @@ export async function POST(request: NextRequest) {
             try {
                 const embeddings = await generateEmbeddings(texts);
 
+                // Pre-fetch document IDs for this batch
+                const pageUrls = [...new Set(batch.map(c => c.pageUrl))];
+                const { data: docRows } = await admin
+                    .from('documents')
+                    .select('id, url')
+                    .eq('data_source_id', dataSourceId)
+                    .in('url', pageUrls);
+                const urlToDocId: Record<string, string> = {};
+                (docRows || []).forEach((d: any) => { urlToDocId[d.url] = d.id; });
+
                 const chunkRows = batch.map((chunk, j) => ({
                     data_source_id: dataSourceId,
                     user_id: userId,
-                    document_id: null as any, // Will be set below
+                    document_id: urlToDocId[chunk.pageUrl] || null,
                     content: chunk.content.substring(0, 10000),
                     token_count: chunk.tokenCount,
                     chunk_index: chunk.chunkIndex,
-                    embedding: JSON.stringify(embeddings[j]),
+                    // Pass as array — PostgREST serialises to pgvector text format
+                    embedding: embeddings[j],
                     heading: chunk.heading,
                     page_url: chunk.pageUrl,
                     page_title: chunk.pageTitle,
@@ -240,26 +252,45 @@ export async function POST(request: NextRequest) {
                     metadata: {},
                 }));
 
-                // Find document IDs
-                for (const row of chunkRows) {
-                    const { data: doc } = await admin
-                        .from('documents')
-                        .select('id')
-                        .eq('data_source_id', dataSourceId)
-                        .eq('url', row.page_url)
-                        .single();
-                    if (doc) row.document_id = doc.id;
-                }
-
-                // Insert chunks
                 const validRows = chunkRows.filter(r => r.document_id);
                 if (validRows.length > 0) {
-                    await admin.from('chunks').insert(validRows);
-                    totalChunksStored += validRows.length;
+                    const { error: insertErr } = await admin.from('chunks').insert(validRows);
+                    if (insertErr) {
+                        console.error(`Chunk insert error at batch ${i}:`, insertErr);
+                        embeddingError = insertErr.message;
+                    } else {
+                        totalChunksStored += validRows.length;
+                    }
                 }
-            } catch (err) {
+            } catch (err: any) {
                 console.error(`Embedding batch ${i} error:`, err);
+                // Surface the first meaningful embedding error so the caller knows
+                if (!embeddingError) {
+                    embeddingError = err?.message || 'Embedding generation failed';
+                }
             }
+        }
+
+        // If we crawled pages but couldn't generate any embeddings, surface the error.
+        // The bot won't be able to answer questions without chunks.
+        if (allChunks.length > 0 && totalChunksStored === 0) {
+            // Mark data source as error so UI can show re-index is needed
+            await admin.from('data_sources').update({
+                status: 'error',
+                error_message: embeddingError || 'Embedding generation failed — no chunks stored. Check OpenAI API key/quota.',
+            }).eq('id', dataSourceId);
+            await admin.from('websites').update({ status: 'error' }).eq('id', siteId);
+
+            return NextResponse.json({
+                success: false,
+                error: embeddingError
+                    ? `Pages crawled but embedding generation failed: ${embeddingError}`
+                    : 'Pages were crawled but could not be indexed (no embeddings generated). Ensure your OpenAI API key has available quota and re-crawl.',
+                websiteId: siteId,
+                dataSourceId,
+                pages: pages.map(p => ({ url: p.url, title: p.title, wordCount: p.wordCount, status: 'error' })),
+                stats: { totalPages: pages.length, totalWords: 0, totalChunks: 0, estimatedTokens: 0 },
+            }, { status: 500 });
         }
 
         // 6. Update website + data source status
