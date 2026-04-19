@@ -12,7 +12,7 @@ const plans = [
     desc: 'For trying things out',
     price: { m: 0, a: 0 },
     cta: 'Start Free',
-    features: ['1 chatbot', '50 messages/month', '100 pages indexed', 'Fast AI', 'Basic analytics', 'Website connector'],
+    features: ['1 chatbot', '100 messages/month', '200 pages indexed', 'Fast AI', 'Basic analytics', 'Website connector'],
   },
   {
     id: 'starter',

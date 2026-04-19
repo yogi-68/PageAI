@@ -55,9 +55,75 @@ function discoverLinks(html: string, baseUrl: string, allowedPaths: string[], bl
     return Array.from(links);
 }
 
+// Fetch a page using Cheerio (fast) with optional Jina AI SPA fallback
+async function fetchPageContent(
+    pageUrl: string,
+    crawlMode: string
+): Promise<{ title: string; text: string; headings: string[]; html: string } | null> {
+    // ── SPA mode: go straight to Jina AI Reader ──────────────────────────
+    if (crawlMode === 'spa') {
+        return jinaFetch(pageUrl);
+    }
+
+    // ── Static / Auto: try Cheerio first ────────────────────────────────
+    try {
+        const res = await fetch(pageUrl, {
+            headers: { 'User-Agent': 'PageAI Bot/2.0 (+https://pageai.io)' },
+            signal: AbortSignal.timeout(15000),
+        });
+        if (!res.ok) return null;
+        const ct = res.headers.get('content-type') || '';
+        if (!ct.includes('html')) return null;
+        const html = await res.text();
+        const { title, text, headings } = extractText(html, pageUrl);
+        // If static extraction gives <200 chars AND mode is auto, try Jina AI
+        if (text.length < 200 && crawlMode === 'auto') {
+            const jina = await jinaFetch(pageUrl);
+            if (jina) return jina;
+        }
+        return text.length >= 50 ? { title, text, headings, html } : null;
+    } catch {
+        // If static fetch fails and mode is auto, try Jina AI
+        if (crawlMode === 'auto') return jinaFetch(pageUrl);
+        return null;
+    }
+}
+
+// Jina AI Reader: renders JS-heavy pages and returns clean markdown
+// Free, no API key required, respects robots.txt
+async function jinaFetch(pageUrl: string): Promise<{ title: string; text: string; headings: string[]; html: string } | null> {
+    try {
+        const jinaUrl = `https://r.jina.ai/${pageUrl}`;
+        const res = await fetch(jinaUrl, {
+            headers: {
+                'User-Agent': 'PageAI Bot/2.0',
+                'X-Return-Format': 'markdown',
+            },
+            signal: AbortSignal.timeout(30000),
+        });
+        if (!res.ok) return null;
+        const markdown = await res.text();
+        if (markdown.length < 50) return null;
+        // Extract title from first # heading in markdown
+        const titleMatch = markdown.match(/^#\s+(.+)$/m);
+        const title = titleMatch ? titleMatch[1].trim() : pageUrl;
+        // Extract headings from markdown
+        const headings: string[] = [];
+        const headingMatches = markdown.matchAll(/^#{1,4}\s+(.+)$/gm);
+        for (const m of headingMatches) headings.push(m[1].trim());
+        return { title, text: markdown, headings, html: '' };
+    } catch {
+        return null;
+    }
+}
+
+
 export async function POST(request: NextRequest) {
     try {
-        const { url, botId, websiteId, userId, maxPages = 50, allowedPaths = [], blockedPaths = [] } = await request.json();
+        const { url, botId, websiteId, userId, maxPages = 50, allowedPaths = [], blockedPaths = [], mode = 'auto' } = await request.json();
+        // mode: 'auto' = Cheerio with Jina AI SPA fallback
+        //       'spa'  = force Jina AI Reader for all pages (JS-heavy sites)
+        //       'static' = Cheerio only, no fallback
 
         if (!url || !userId) {
             return NextResponse.json({ error: 'url and userId are required' }, { status: 400 });
@@ -95,7 +161,7 @@ export async function POST(request: NextRequest) {
                     user_id: userId,
                     type: 'website',
                     name: new URL(baseUrl).hostname,
-                    config: { url: baseUrl, maxPages, allowedPaths, blockedPaths },
+                    config: { url: baseUrl, maxPages, allowedPaths, blockedPaths, mode },
                     status: 'syncing',
                 })
                 .select()
@@ -138,28 +204,21 @@ export async function POST(request: NextRequest) {
             visited.add(normalized);
 
             try {
-                const res = await fetch(normalized, {
-                    headers: { 'User-Agent': 'PageAI Bot/2.0 (+https://pageai.io)' },
-                    signal: AbortSignal.timeout(15000),
-                });
-                if (!res.ok) continue;
-                const ct = res.headers.get('content-type') || '';
-                if (!ct.includes('html')) continue;
+                const result = await fetchPageContent(normalized, mode);
+                if (!result) continue;
 
-                const html = await res.text();
-                const { title, text, headings } = extractText(html, normalized);
-
-                if (text.length < 50) continue;
-
+                const { title, text, headings, html } = result;
                 const wordCount = text.split(/\s+/).length;
                 const hash = crypto.createHash('md5').update(text).digest('hex');
                 pages.push({ url: normalized, title, text, wordCount, headings, hash });
 
-                // Discover links
-                const links = discoverLinks(html, normalized, allowedPaths, blockedPaths);
-                for (const link of links) {
-                    if (!visited.has(link.replace(/\/$/, '')) && queue.length + visited.size < maxPages) {
-                        queue.push(link);
+                // Discover links (only when we have raw HTML — Jina mode won't yield new links)
+                if (html) {
+                    const links = discoverLinks(html, normalized, allowedPaths, blockedPaths);
+                    for (const link of links) {
+                        if (!visited.has(link.replace(/\/$/, '')) && queue.length + visited.size < maxPages) {
+                            queue.push(link);
+                        }
                     }
                 }
             } catch {

@@ -38,6 +38,7 @@ export default function NewBotPage() {
     const [creating, setCreating] = useState(false);
     const [botId, setBotId] = useState("");
     const [limitReached, setLimitReached] = useState(false);
+    const [crawlMode, setCrawlMode] = useState<'auto' | 'spa'>('auto');
 
     const handleCrawl = async () => {
         if (!user || !url) return;
@@ -52,6 +53,7 @@ export default function NewBotPage() {
                     url: url.trim(),
                     userId: user.id,
                     maxPages: 20,
+                    mode: crawlMode,
                 }),
             });
 
@@ -81,19 +83,31 @@ export default function NewBotPage() {
                 alert(`"${file.name}" exceeds 10 MB — skipped`);
                 continue;
             }
-            const content: string = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsText(file);
-            });
+            const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+            const isBinary = ext === 'pdf' || ext === 'docx';
+            let body: Record<string, unknown>;
+            if (isBinary) {
+                const arrayBuffer = await file.arrayBuffer();
+                const uint8 = new Uint8Array(arrayBuffer);
+                let binary = '';
+                for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+                body = { fileName: file.name, contentBase64: btoa(binary), userId: user.id };
+            } else {
+                const content: string = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsText(file);
+                });
+                body = { fileName: file.name, content, userId: user.id };
+            }
             let success = false;
             for (let attempt = 1; attempt <= 2; attempt++) {
                 try {
                     const res = await fetch("/api/ingest", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ fileName: file.name, content, userId: user.id }),
+                        body: JSON.stringify(body),
                     });
                     const data = await res.json();
                     if (data.success) {
@@ -247,7 +261,7 @@ export default function NewBotPage() {
                                 ref={fileInputRef}
                                 type="file"
                                 multiple
-                                accept=".txt,.md,.csv"
+                                accept=".pdf,.docx,.txt,.md,.csv,.html,.htm"
                                 className="hidden"
                                 onChange={handleFileSelect}
                             />
@@ -316,9 +330,22 @@ export default function NewBotPage() {
                         {crawlError && <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 text-[13px] text-danger">{crawlError}</div>}
 
                         {!crawling && !crawled && (
-                            <div className="p-6 rounded-xl border border-edge bg-bg/40 text-center space-y-3">
+                            <div className="p-6 rounded-xl border border-edge bg-bg/40 text-center space-y-4">
                                 <p className="text-[14px] font-medium text-fg">Ready to crawl</p>
                                 <p className="text-[13px] text-fg-secondary">Target: <span className="text-fg">{url}</span></p>
+                                {/* Deep Crawl toggle */}
+                                <div className="flex items-center justify-center gap-3">
+                                    <button
+                                        onClick={() => setCrawlMode(crawlMode === 'auto' ? 'spa' : 'auto')}
+                                        className={`relative w-9 h-5 rounded-full transition-colors duration-300 ${crawlMode === 'spa' ? 'bg-primary' : 'bg-edge-light'}`}
+                                    >
+                                        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-300 ${crawlMode === 'spa' ? 'left-4' : 'left-0.5'}`} />
+                                    </button>
+                                    <div className="text-left">
+                                        <p className="text-[13px] font-medium text-fg">Deep Crawl (SPA / React sites)</p>
+                                        <p className="text-[11px] text-fg-secondary">Uses Jina AI Reader to render JS-heavy pages. Slower but captures content Cheerio misses.</p>
+                                    </div>
+                                </div>
                                 <button onClick={handleCrawl} className="px-5 py-2.5 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors">Start Crawling</button>
                             </div>
                         )}

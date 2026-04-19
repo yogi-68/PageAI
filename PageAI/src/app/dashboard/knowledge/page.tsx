@@ -73,10 +73,12 @@ export default function KnowledgePage() {
     for (const file of files) {
       if (file.size > 10 * 1024 * 1024) { toast.error(`"${file.name}" exceeds 10 MB — skipped`); continue; }
       const isPdf = file.name.toLowerCase().endsWith('.pdf');
+      const isDocx = file.name.toLowerCase().endsWith('.docx');
+      const isBinaryFile = isPdf || isDocx;
       try {
         let body: Record<string, unknown>;
-        if (isPdf) {
-          // PDFs must be sent as base64 — text extraction happens server-side
+        if (isBinaryFile) {
+          // Binary files must be sent as base64 — text extraction happens server-side
           const arrayBuffer = await file.arrayBuffer();
           const uint8 = new Uint8Array(arrayBuffer);
           let binary = '';
@@ -170,7 +172,7 @@ export default function KnowledgePage() {
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
           {uploadingFile ? 'Uploading…' : 'Upload Files'}
         </button>
-        <input ref={fileInputRef} type="file" multiple accept=".pdf,.txt,.md,.csv" className="hidden" onChange={handleFileSelect} />
+        <input ref={fileInputRef} type="file" multiple accept=".pdf,.docx,.txt,.md,.csv,.html,.htm" className="hidden" onChange={handleFileSelect} />
       </div>
 
       {/* Upload info */}
@@ -180,9 +182,11 @@ export default function KnowledgePage() {
           <div className="flex flex-wrap gap-2 mt-2">
             {[
               { ext: 'PDF', note: 'Text-based PDFs only (not scanned images)' },
+              { ext: 'DOCX', note: 'Word documents' },
               { ext: 'TXT', note: 'Plain text files' },
               { ext: 'MD', note: 'Markdown files' },
               { ext: 'CSV', note: 'Spreadsheet data' },
+              { ext: 'HTML', note: 'Web page files' },
             ].map(f => (
               <span key={f.ext} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface border border-edge text-[12px] text-fg-secondary" title={f.note}>
                 <span className="font-mono font-bold text-primary text-[11px]">.{f.ext.toLowerCase()}</span>
