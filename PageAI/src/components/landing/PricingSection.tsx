@@ -54,7 +54,7 @@ const addons = [
 ];
 
 export default function PricingSection() {
-  const [annual, setAnnual] = useState(false);
+  const [annual, setAnnual] = useState(true);
 
   return (
     <section id="pricing" className="py-24 relative">
