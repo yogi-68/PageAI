@@ -325,7 +325,7 @@
     trigger.addEventListener("click", toggle);
     closeBtn.addEventListener("click", toggle);
 
-    function addMessage(role, text, sources) {
+    function addMessage(role, text) {
         const msg = document.createElement("div");
         msg.className = `pageai-msg ${role}`;
         msg.innerHTML = `
@@ -333,20 +333,6 @@
       <div class="pageai-msg-bubble">${text}</div>
     `;
         messages.appendChild(msg);
-
-        if (sources && sources.length > 0) {
-            const sourcesDiv = document.createElement("div");
-            sourcesDiv.className = "pageai-sources";
-            sources.forEach((s) => {
-                const tag = document.createElement("a");
-                tag.className = "pageai-source-tag";
-                tag.href = s.url;
-                tag.textContent = "📄 " + s.title;
-                sourcesDiv.appendChild(tag);
-            });
-            messages.appendChild(sourcesDiv);
-        }
-
         messages.scrollTop = messages.scrollHeight;
     }
 
@@ -463,20 +449,6 @@
                 // Guard: stream ended with empty bubble — show fallback
                 if (!botText) {
                     bubble.textContent = "I couldn't generate a response. Please try rephrasing your question.";
-                }
-
-                // Add sources if any
-                if (sources.length > 0) {
-                    const sourcesDiv = document.createElement("div");
-                    sourcesDiv.className = "pageai-sources";
-                    sources.forEach((s) => {
-                        const tag = document.createElement("a");
-                        tag.className = "pageai-source-tag";
-                        tag.href = s.url;
-                        tag.textContent = "\ud83d\udcc4 " + s.title;
-                        sourcesDiv.appendChild(tag);
-                    });
-                    messages.appendChild(sourcesDiv);
                 }
             } else {
                 // Fallback: non-streaming JSON response

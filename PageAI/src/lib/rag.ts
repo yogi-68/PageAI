@@ -239,11 +239,7 @@ function selectModel(
 // ─── Context Builder ──────────────────────────────────────
 function buildContext(chunks: RAGChunk[]): string {
     return chunks
-        .map((c, i) => {
-            const header = c.page_title || c.heading || `Source ${i + 1}`;
-            const url = c.page_url ? ` (${c.page_url})` : '';
-            return `[${header}${url}]\n${c.content}`;
-        })
+        .map((c) => c.content)
         .join('\n\n---\n\n');
 }
 
@@ -317,9 +313,9 @@ export async function executeRAG(
 
 Rules:
 1. Answer ONLY from the context provided below — never from prior training knowledge.
-2. If the context contains the answer, give it directly and confidently. Do NOT say "the context does not specify" if the information is present.
+2. If the context contains the answer, give it directly and confidently.
 3. If the context truly does not contain the answer, say: "I don't have information about that in my knowledge base."
-4. Be concise and helpful. Mention the source file or page title when it adds clarity.
+4. Be concise and helpful. Do NOT mention source files, document names, or URLs in your answer.
 5. Never fabricate information.`;
 
     const response = await getOpenAI().chat.completions.create({
@@ -453,9 +449,9 @@ export function executeRAGStream(
 
 Rules:
 1. Answer ONLY from the context provided below — never from prior training knowledge.
-2. If the context contains the answer, give it directly and confidently. Do NOT say "the context does not specify" if the information is present.
+2. If the context contains the answer, give it directly and confidently.
 3. If the context truly does not contain the answer, say: "I don't have information about that in my knowledge base."
-4. Be concise and helpful. Mention the source file or page title when it adds clarity.
+4. Be concise and helpful. Do NOT mention source files, document names, or URLs in your answer.
 5. Never fabricate information.`;
 
                 // 6. Stream OpenAI response token by token
