@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+ï»¿import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 
-// GET /api/dashboard/stats — fetch live dashboard statistics
+// GET /api/dashboard/stats
 export async function GET(request: NextRequest) {
     try {
         const userId = request.nextUrl.searchParams.get('userId');
@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
 
         const admin = getAdminClient();
 
-        // Fetch bots and profile in parallel
         const [
             { data: bots, error: botsErr },
             { data: profile },
