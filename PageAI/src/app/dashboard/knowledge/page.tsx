@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
@@ -8,6 +9,39 @@ import toast from 'react-hot-toast';
 interface DocPage { id: string; url: string; title: string; website_id: string; created_at: string; }
 interface Website { id: string; url: string; pages: DocPage[]; dataSourceId: string | null; chunkCount: number; status: string; }
 interface UploadedFile { name: string; dataSourceId: string; wordCount: number; status: 'syncing' | 'indexed' | 'error'; }
+
+const PLAN_LIMITS: Record<string, { pagesIndexed: number; chatbots: number; messagesPerMonth: number; storageMB: number; name: string }> = {
+  free:       { name: 'Free',    pagesIndexed: 200,   chatbots: 1,  messagesPerMonth: 100,   storageMB: 25    },
+  starter:    { name: 'Starter', pagesIndexed: 1000,  chatbots: 1,  messagesPerMonth: 4000,  storageMB: 250   },
+  growth:     { name: 'Growth',  pagesIndexed: 10000, chatbots: 3,  messagesPerMonth: 10000, storageMB: 2048  },
+  scale:      { name: 'Scale',   pagesIndexed: 50000, chatbots: 10, messagesPerMonth: 40000, storageMB: 10240 },
+  enterprise: { name: 'Enterprise', pagesIndexed: -1, chatbots: -1, messagesPerMonth: -1,   storageMB: -1    },
+};
+
+function UsageBar({ used, limit, label, unit }: { used: number; limit: number; label: string; unit: string }) {
+  const pct = limit <= 0 ? 0 : Math.min(100, Math.round((used / limit) * 100));
+  const isUnlimited = limit <= 0;
+  const isHigh = pct >= 90;
+  const isMid = pct >= 70;
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[12px] font-medium text-fg-secondary">{label}</span>
+        <span className={`text-[12px] font-semibold ${isHigh ? 'text-danger' : isMid ? 'text-warning' : 'text-fg'}`}>
+          {isUnlimited ? '∞ unlimited' : `${used.toLocaleString()} / ${limit.toLocaleString()} ${unit}`}
+        </span>
+      </div>
+      {!isUnlimited && (
+        <div className="h-1.5 rounded-full bg-edge overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${isHigh ? 'bg-danger' : isMid ? 'bg-warning' : 'bg-primary'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function KnowledgePage() {
   const { user } = useAuth();
@@ -20,6 +54,13 @@ export default function KnowledgePage() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [recrawling, setRecrawling] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [profile, setProfile] = useState<{ plan: string; monthly_message_count: number; monthly_message_limit: number } | null>(null);
+
+  const refreshProfile = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase.from('profiles').select('plan, monthly_message_count, monthly_message_limit').eq('id', user.id).single();
+    if (data) setProfile(data as any);
+  }, [user]);
 
   const loadData = async () => {
     if (!user) return;
@@ -57,6 +98,7 @@ export default function KnowledgePage() {
   useEffect(() => {
     if (!user) return;
     loadData().finally(() => setLoading(false));
+    refreshProfile();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
@@ -200,21 +242,56 @@ export default function KnowledgePage() {
           <p className="text-[12px] text-fg-secondary mt-1 leading-relaxed">
             PageAI uses <strong>Cheerio</strong> (a fast HTML parser) to crawl your website. It fetches each page, strips navigation/scripts/styles, and extracts the readable text content. That text is split into overlapping chunks, embedded with OpenAI, and stored in a vector database (Supabase pgvector). When a visitor asks a question, the most relevant chunks are retrieved and passed to the AI to generate an answer.
           </p>
-          <p className="text-[12px] text-warning mt-1.5">⚠ JavaScript-heavy SPAs may return minimal content — the crawler reads static HTML only.</p>
+          <p className="text-[12px] text-fg-secondary mt-1.5">✅ SPA / JavaScript-heavy sites supported — PageAI automatically falls back to Jina AI Reader for sites where static HTML returns minimal content.</p>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 max-w-100">
-        <div className="p-4 rounded-xl border border-edge bg-surface/40">
-          <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">Total Pages</span>
-          <p className="text-[24px] font-bold text-fg mt-1">{stats.totalPages}</p>
-        </div>
-        <div className="p-4 rounded-xl border border-edge bg-surface/40">
-          <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">Websites</span>
-          <p className="text-[24px] font-bold text-fg mt-1">{stats.totalWebsites}</p>
-        </div>
-      </div>
+      {/* Plan usage */}
+      {(() => {
+        const planId = profile?.plan || 'free';
+        const limits = PLAN_LIMITS[planId] || PLAN_LIMITS.free;
+        const msgUsed = profile?.monthly_message_count ?? 0;
+        const msgLimit = profile?.monthly_message_limit ?? limits.messagesPerMonth;
+        const pagesUsed = stats.totalPages;
+        const pagesLimit = limits.pagesIndexed;
+        const pagesPct = pagesLimit > 0 ? Math.min(100, Math.round((pagesUsed / pagesLimit) * 100)) : 0;
+        const isNearPageLimit = pagesLimit > 0 && pagesPct >= 80;
+        return (
+          <div className="p-4 rounded-xl border border-edge bg-surface/40 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] font-semibold text-fg">Plan Usage</span>
+                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-semibold">{limits.name}</span>
+              </div>
+              <Link href="/dashboard/billing" className="text-[12px] text-primary hover:text-primary-hover font-medium transition-colors">
+                {isNearPageLimit ? '⚠ Upgrade plan →' : 'Manage plan →'}
+              </Link>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <UsageBar used={pagesUsed} limit={pagesLimit} label="Pages Indexed" unit="pages" />
+              <UsageBar used={msgUsed} limit={msgLimit} label="Messages This Month" unit="msgs" />
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[12px] font-medium text-fg-secondary">Chatbots</span>
+                  <span className="text-[12px] font-semibold text-fg">
+                    {limits.chatbots <= 0 ? '∞ unlimited' : `max ${limits.chatbots}`}
+                  </span>
+                </div>
+                <div className="text-[11.5px] text-fg-muted">{stats.totalWebsites} website{stats.totalWebsites !== 1 ? 's' : ''} connected</div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[12px] font-medium text-fg-secondary">Storage</span>
+                  <span className="text-[12px] font-semibold text-fg">
+                    {limits.storageMB <= 0 ? '∞ unlimited' : limits.storageMB >= 1024 ? `${limits.storageMB / 1024} GB` : `${limits.storageMB} MB`}
+                  </span>
+                </div>
+                <div className="text-[11.5px] text-fg-muted">Knowledge base limit</div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Recently uploaded files */}
       {uploadedFiles.length > 0 && (
