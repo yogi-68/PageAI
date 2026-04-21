@@ -64,13 +64,13 @@ export default function KnowledgePage() {
 
   const loadData = async () => {
     if (!user) return;
-    const { data: ws } = await supabase.from('websites').select('id, url, data_source_id, status').eq('user_id', user.id);
-    const { data: pages } = await supabase.from('documents').select('id, url, title, website_id, created_at').eq('user_id', user.id);
-    // Fetch chunk counts per data_source so we can detect un-indexed sites
-    const { data: chunkCounts } = await supabase
-      .from('chunks')
-      .select('data_source_id')
-      .eq('user_id', user.id);
+    const [{ data: ws }, { data: pages }, { data: chunkCounts }, { count: docCount }] = await Promise.all([
+      supabase.from('websites').select('id, url, data_source_id, status').eq('user_id', user.id),
+      supabase.from('documents').select('id, url, title, website_id, created_at').eq('user_id', user.id),
+      supabase.from('chunks').select('data_source_id').eq('user_id', user.id),
+      // Exact count to match what the API plan-limit check uses
+      supabase.from('documents').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+    ]);
 
     const dsChunkMap: Record<string, number> = {};
     (chunkCounts || []).forEach((c: any) => {
@@ -91,7 +91,8 @@ export default function KnowledgePage() {
 
     const result = Object.values(siteMap);
     setWebsites(result);
-    setStats({ totalPages: (pages || []).length, totalWebsites: result.length });
+    // Use the exact server-side count so the limit bar matches the API enforcement
+    setStats({ totalPages: docCount ?? (pages || []).length, totalWebsites: result.length });
     setExpanded(prev => prev.size === 0 && result.length > 0 ? new Set([result[0].id]) : prev);
   };
 
@@ -262,33 +263,21 @@ export default function KnowledgePage() {
         </div>
       )}
 
-      {/* Upload info */}
-      <div className="p-4 rounded-xl border border-edge bg-surface/40 space-y-3">
-        <div>
-          <h2 className="text-[13px] font-semibold text-fg">Supported file types</h2>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {[
-              { ext: 'PDF', note: 'Text-based PDFs only (not scanned images)' },
-              { ext: 'DOCX', note: 'Word documents' },
-              { ext: 'TXT', note: 'Plain text files' },
-              { ext: 'MD', note: 'Markdown files' },
-              { ext: 'CSV', note: 'Spreadsheet data' },
-              { ext: 'HTML', note: 'Web page files' },
-            ].map(f => (
-              <span key={f.ext} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface border border-edge text-[12px] text-fg-secondary" title={f.note}>
-                <span className="font-mono font-bold text-primary text-[11px]">.{f.ext.toLowerCase()}</span>
-                <span>{f.note}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="border-t border-edge pt-3">
-          <h2 className="text-[13px] font-semibold text-fg">How website crawling works</h2>
-          <p className="text-[12px] text-fg-secondary mt-1 leading-relaxed">
-            PageAI uses <strong>Cheerio</strong> (a fast HTML parser) to crawl your website. It fetches each page, strips navigation/scripts/styles, and extracts the readable text content. That text is split into overlapping chunks, embedded with OpenAI, and stored in a vector database (Supabase pgvector). When a visitor asks a question, the most relevant chunks are retrieved and passed to the AI to generate an answer.
-          </p>
-          <p className="text-[12px] text-fg-secondary mt-1.5">✅ SPA / JavaScript-heavy sites supported — PageAI automatically falls back to Jina AI Reader for sites where static HTML returns minimal content.</p>
-        </div>
+      {/* Upload info — file type chips only */}
+      <div className="flex flex-wrap gap-2">
+        {[
+          { ext: 'PDF', note: 'Text-based PDFs only (not scanned images)' },
+          { ext: 'DOCX', note: 'Word documents' },
+          { ext: 'TXT', note: 'Plain text files' },
+          { ext: 'MD', note: 'Markdown files' },
+          { ext: 'CSV', note: 'Spreadsheet data' },
+          { ext: 'HTML', note: 'Web page files' },
+        ].map(f => (
+          <span key={f.ext} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface border border-edge text-[12px] text-fg-secondary" title={f.note}>
+            <span className="font-mono font-bold text-primary text-[11px]">.{f.ext.toLowerCase()}</span>
+            <span>{f.note}</span>
+          </span>
+        ))}
       </div>
 
       {/* Plan usage */}
