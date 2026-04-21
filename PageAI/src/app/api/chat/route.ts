@@ -103,30 +103,32 @@ export async function POST(request: NextRequest) {
         // If RAG fails after increment, we roll back the usage charge.
 
         // Resolve which data sources this bot may search.
-        // Prefer the explicit list stored on the bot; fall back to the data source
-        // linked to the bot's website.  If neither is set we pass an empty array
-        // so the search returns nothing (rather than leaking other bots' chunks).
-        let resolvedDataSourceIds: string[] = bot.data_source_ids ?? [];
-        if (resolvedDataSourceIds.length === 0 && bot.website_id) {
+        // Always search ALL of the user's indexed data sources.
+        // This ensures uploaded files, crawled websites, and any future
+        // sources are all searched regardless of which bot is asking.
+        // Bot-level data_source_ids are included too (for backwards compat).
+        const { data: allUserSources } = await admin
+            .from('data_sources')
+            .select('id')
+            .eq('user_id', bot.user_id)
+            .eq('status', 'indexed');
+
+        const allSourceIds = new Set<string>(allUserSources?.map((s: { id: string }) => s.id) ?? []);
+
+        // Also include any explicitly set IDs on the bot (even if not yet indexed)
+        for (const id of (bot.data_source_ids ?? [])) allSourceIds.add(id);
+
+        // Also include the website's datasource if set
+        if (bot.website_id) {
             const { data: ws } = await admin
                 .from('websites')
                 .select('data_source_id')
                 .eq('id', bot.website_id)
                 .single();
-            if (ws?.data_source_id) resolvedDataSourceIds = [ws.data_source_id];
+            if (ws?.data_source_id) allSourceIds.add(ws.data_source_id);
         }
-        // If still empty — no explicit sources AND no website — fall back to ALL of
-        // the owner's data sources so uploaded files are always searchable.
-        if (resolvedDataSourceIds.length === 0) {
-            const { data: allSources } = await admin
-                .from('data_sources')
-                .select('id')
-                .eq('user_id', bot.user_id)
-                .eq('status', 'indexed');
-            if (allSources && allSources.length > 0) {
-                resolvedDataSourceIds = allSources.map((s: { id: string }) => s.id);
-            }
-        }
+
+        const resolvedDataSourceIds = Array.from(allSourceIds);
 
         const ragConfig = {
             userId: bot.user_id,
