@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 
 interface DocPage { id: string; url: string; title: string; website_id: string; created_at: string; }
 interface Website { id: string; url: string; pages: DocPage[]; dataSourceId: string | null; chunkCount: number; status: string; }
-interface UploadedFile { name: string; dataSourceId: string; wordCount: number; status: 'syncing' | 'indexed' | 'error'; }
+interface UploadedFile { name: string; dataSourceId: string; wordCount: number; status: 'syncing' | 'indexed' | 'error'; docId?: string; }
 
 const PLAN_LIMITS: Record<string, { pagesIndexed: number; chatbots: number; messagesPerMonth: number; storageMB: number; name: string }> = {
   free:       { name: 'Free',    pagesIndexed: 200,   chatbots: 1,  messagesPerMonth: 100,   storageMB: 25    },
@@ -49,10 +49,13 @@ export default function KnowledgePage() {
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ totalPages: 0, totalWebsites: 0 });
+  const [stats, setStats] = useState({ totalPages: 0, totalWebsites: 0, storageMB: 0 });
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [recrawling, setRecrawling] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [viewDoc, setViewDoc] = useState<{ name: string; content: string } | null>(null);
+  const [viewLoading, setViewLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<{ plan: string; monthly_message_count: number; monthly_message_limit: number } | null>(null);
 
@@ -64,12 +67,11 @@ export default function KnowledgePage() {
 
   const loadData = async () => {
     if (!user) return;
-    const [{ data: ws }, { data: pages }, { data: chunkCounts }, { count: docCount }] = await Promise.all([
+    const [{ data: ws }, { data: pages, count: docCount }, { data: chunkCounts }, { data: fileSources }] = await Promise.all([
       supabase.from('websites').select('id, url, data_source_id, status').eq('user_id', user.id),
-      supabase.from('documents').select('id, url, title, website_id, created_at').eq('user_id', user.id),
+      supabase.from('documents').select('id, url, title, website_id, data_source_id, word_count, created_at', { count: 'exact' }).eq('user_id', user.id),
       supabase.from('chunks').select('data_source_id').eq('user_id', user.id),
-      // Exact count to match what the API plan-limit check uses
-      supabase.from('documents').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+      supabase.from('data_sources').select('id, name, status, created_at').eq('user_id', user.id).eq('type', 'file_upload').order('created_at', { ascending: false }),
     ]);
 
     const dsChunkMap: Record<string, number> = {};
@@ -91,9 +93,29 @@ export default function KnowledgePage() {
 
     const result = Object.values(siteMap);
     setWebsites(result);
-    // Use the exact server-side count so the limit bar matches the API enforcement
-    setStats({ totalPages: docCount ?? (pages || []).length, totalWebsites: result.length });
+
+    // Storage estimate: ≈5.5 bytes per word across all documents
+    const totalWords = (pages || []).reduce((sum: number, p: any) => sum + (p.word_count || 0), 0);
+    const storageMB = Math.round((totalWords * 5.5) / 1_000_000 * 10) / 10;
+
+    setStats({ totalPages: docCount ?? (pages || []).length, totalWebsites: result.length, storageMB });
     setExpanded(prev => prev.size === 0 && result.length > 0 ? new Set([result[0].id]) : prev);
+
+    // Populate uploaded files from DB — persistent across page reloads
+    const docsByDsId: Record<string, any> = {};
+    (pages || []).forEach((p: any) => { if (!p.website_id && p.data_source_id) docsByDsId[p.data_source_id] = p; });
+    const dbFiles: UploadedFile[] = (fileSources || []).map((fs: any) => ({
+      name: fs.name,
+      dataSourceId: fs.id,
+      wordCount: docsByDsId[fs.id]?.word_count || 0,
+      status: (fs.status === 'indexed' ? 'indexed' : fs.status === 'error' ? 'error' : 'syncing') as UploadedFile['status'],
+      docId: docsByDsId[fs.id]?.id,
+    }));
+    setUploadedFiles(prev => {
+      const dbIds = new Set(dbFiles.map(f => f.dataSourceId));
+      const sessionOnly = prev.filter(f => !dbIds.has(f.dataSourceId) && f.status === 'syncing');
+      return [...dbFiles, ...sessionOnly];
+    });
   };
 
   useEffect(() => {
@@ -198,6 +220,42 @@ export default function KnowledgePage() {
       toast.error(`Re-crawl failed: ${err.message}`);
     } finally {
       setRecrawling(null);
+    }
+  };
+
+  const handleDeleteFile = async (dataSourceId: string, name: string) => {
+    if (!user || !window.confirm(`Delete "${name}" and all its indexed content? This cannot be undone.`)) return;
+    setDeletingId(dataSourceId);
+    const { error } = await supabase.from('data_sources').delete().eq('id', dataSourceId).eq('user_id', user.id);
+    setDeletingId(null);
+    if (error) { toast.error('Delete failed'); return; }
+    toast.success(`"${name}" deleted`);
+    await loadData();
+  };
+
+  const handleDeleteSite = async (site: Website) => {
+    if (!user || !window.confirm(`Remove "${site.url.replace(/https?:\/\//, '')}" and all its indexed pages? This cannot be undone.`)) return;
+    setDeletingId(site.id);
+    if (site.dataSourceId) {
+      await supabase.from('data_sources').delete().eq('id', site.dataSourceId).eq('user_id', user.id);
+    }
+    await supabase.from('websites').delete().eq('id', site.id).eq('user_id', user.id);
+    setDeletingId(null);
+    toast.success('Website removed');
+    await loadData();
+  };
+
+  const handleViewFile = async (docId: string, name: string) => {
+    if (!user) return;
+    setViewLoading(true);
+    setViewDoc(null);
+    try {
+      const { data } = await supabase.from('documents').select('content').eq('id', docId).eq('user_id', user.id).single();
+      setViewDoc({ name, content: data?.content || '(no content available)' });
+    } catch {
+      toast.error('Failed to load file content');
+    } finally {
+      setViewLoading(false);
     }
   };
 
@@ -313,39 +371,56 @@ export default function KnowledgePage() {
                 </div>
                 <div className="text-[11.5px] text-fg-muted">{stats.totalWebsites} website{stats.totalWebsites !== 1 ? 's' : ''} connected</div>
               </div>
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[12px] font-medium text-fg-secondary">Storage</span>
-                  <span className="text-[12px] font-semibold text-fg">
-                    {limits.storageMB <= 0 ? '∞ unlimited' : limits.storageMB >= 1024 ? `${limits.storageMB / 1024} GB` : `${limits.storageMB} MB`}
-                  </span>
-                </div>
-                <div className="text-[11.5px] text-fg-muted">Knowledge base limit</div>
-              </div>
+              <UsageBar
+                used={stats.storageMB}
+                limit={limits.storageMB}
+                label="Storage Used"
+                unit="MB"
+              />
             </div>
           </div>
         );
       })()}
 
-      {/* Recently uploaded files */}
+      {/* Uploaded Files — persisted from DB */}
       {uploadedFiles.length > 0 && (
         <div className="space-y-2">
-          <h2 className="text-[13px] font-semibold text-fg">Recently Uploaded</h2>
+          <h2 className="text-[13px] font-semibold text-fg">Uploaded Files</h2>
           {uploadedFiles.map(f => (
             <div key={f.dataSourceId} className={`flex items-center justify-between px-4 py-2.5 rounded-lg border ${
               f.status === 'error' ? 'bg-danger/6 border-danger/20' :
               f.status === 'syncing' ? 'bg-warning/6 border-warning/20' :
-              'bg-success/6 border-success/20'
+              'bg-surface/60 border-edge'
             }`}>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 {f.status === 'syncing' && <div className="w-3 h-3 border border-warning border-t-transparent rounded-full animate-spin shrink-0" />}
                 {f.status === 'indexed' && <svg className="w-3.5 h-3.5 text-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
                 {f.status === 'error' && <svg className="w-3.5 h-3.5 text-danger shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>}
-                <span className="text-[13px] text-fg">{f.name}</span>
+                <div className="min-w-0">
+                  <p className="text-[13px] text-fg truncate">{f.name}</p>
+                  <p className="text-[11px] text-fg-muted">
+                    {f.status === 'syncing' ? 'Indexing…' : f.status === 'error' ? 'Failed to index' : `${f.wordCount.toLocaleString()} words`}
+                  </p>
+                </div>
               </div>
-              <span className="text-[11px] text-fg-secondary">
-                {f.status === 'syncing' ? 'Indexing…' : f.status === 'error' ? 'Failed' : `${f.wordCount.toLocaleString()} words`}
-              </span>
+              <div className="flex items-center gap-1.5 shrink-0 ml-3">
+                {f.status === 'indexed' && f.docId && (
+                  <button
+                    onClick={() => handleViewFile(f.docId!, f.name)}
+                    className="px-2.5 py-1 rounded-md border border-edge text-[11px] text-fg-secondary hover:text-fg hover:border-edge-light transition-colors"
+                  >
+                    View
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDeleteFile(f.dataSourceId, f.name)}
+                  disabled={deletingId === f.dataSourceId}
+                  title="Delete file"
+                  className="p-1.5 rounded-md text-fg-muted hover:text-danger hover:bg-danger/8 transition-colors disabled:opacity-40"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -402,6 +477,17 @@ export default function KnowledgePage() {
                     <><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg><span>{needsReindex || hasError ? 'Re-index Now' : 'Re-crawl'}</span></>
                   )}
                 </button>
+                <button
+                  onClick={() => handleDeleteSite(site)}
+                  disabled={deletingId === site.id}
+                  title="Remove website"
+                  className="shrink-0 p-1.5 rounded-lg border border-edge text-fg-muted hover:text-danger hover:border-danger/30 transition-all disabled:opacity-40"
+                >
+                  {deletingId === site.id
+                    ? <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
+                    : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  }
+                </button>
               </div>
               {(needsReindex || hasError) && (
                 <div className="px-5 pb-3 flex items-start gap-2">
@@ -428,6 +514,40 @@ export default function KnowledgePage() {
             </div>
             );
           })}
+        </div>
+      )}
+
+      {/* View file content modal */}
+      {(viewDoc !== null || viewLoading) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => { setViewDoc(null); setViewLoading(false); }}>
+          <div className="relative w-full max-w-2xl max-h-[80vh] rounded-2xl border border-edge bg-bg shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+            {viewLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : viewDoc && (
+              <>
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-edge shrink-0">
+                  <h3 className="text-[14px] font-semibold text-fg truncate pr-4">{viewDoc.name}</h3>
+                  <button onClick={() => setViewDoc(null)} className="shrink-0 p-1 rounded-md text-fg-muted hover:text-fg transition-colors">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+                <div className="overflow-y-auto px-5 py-4 flex-1">
+                  <pre className="text-[12px] text-fg-secondary whitespace-pre-wrap leading-relaxed font-mono">{viewDoc.content.slice(0, 20000)}{viewDoc.content.length > 20000 ? '\n\n… (truncated — showing first 20,000 characters)' : ''}</pre>
+                </div>
+                <div className="px-5 py-3 border-t border-edge flex items-center justify-between shrink-0">
+                  <span className="text-[11px] text-fg-muted">{viewDoc.content.length.toLocaleString()} characters</span>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(viewDoc.content).then(() => toast.success('Copied to clipboard'))}
+                    className="px-3 py-1.5 rounded-lg border border-edge text-[12px] text-fg-secondary hover:text-fg transition-colors"
+                  >
+                    Copy All
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
