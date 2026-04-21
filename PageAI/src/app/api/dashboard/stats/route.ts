@@ -11,6 +11,42 @@ export async function GET(request: NextRequest) {
 
         const admin = getAdminClient();
 
+        // Fetch bots and profile in parallel
+        const [
+            { data: bots, error: botsErr },
+            { data: profile },
+        ] = await Promise.all([
+            admin
+                .from('bots')
+                .select('*, website:websites(url, name, pages_count, total_words)')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false }),
+            admin
+                .from('profiles')
+                .select('plan, monthly_message_count, monthly_message_limit')
+                .eq('id', userId)
+                .single(),
+        ]);
+
+        if (botsErr) throw botsErr;
+        const botList = bots || [];
+
+        return NextResponse.json({
+            stats: {
+                activeBots: botList.filter((b: any) => b.is_active).length,
+            },
+            bots: botList,
+            usage: profile || { plan: 'free', monthly_message_count: 0, monthly_message_limit: 50 },
+        }, {
+            headers: { 'Cache-Control': 'no-store' },
+        });
+    } catch (error: any) {
+        console.error('Dashboard stats error:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+
         // Fetch bots and profile in parallel — reduces 2 sequential round-trips to 1
         // Admin client bypasses RLS so profile is always readable
         const [

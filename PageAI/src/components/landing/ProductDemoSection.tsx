@@ -6,10 +6,10 @@ export default function ProductDemoSection() {
   return (
     <section className="py-24 relative">
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] bg-primary/[0.03] rounded-full blur-[120px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-225 h-125 bg-primary/3 rounded-full blur-[120px]" />
       </div>
 
-      <div className="relative max-w-[1200px] mx-auto px-6">
+      <div className="relative max-w-300 mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -17,13 +17,13 @@ export default function ProductDemoSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-14"
         >
-          <p className="text-[13px] font-medium uppercase tracking-[0.1em] text-primary mb-4">Product Preview</p>
+          <p className="text-[13px] font-medium uppercase tracking-widest text-primary mb-4">Product Preview</p>
           <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.15] tracking-[-0.03em] mb-4">
             A complete AI chatbot
             <br className="hidden sm:block" /> management platform
           </h2>
-          <p className="text-[16px] text-fg-secondary max-w-[520px] mx-auto leading-relaxed">
-            Monitor conversations, track performance, and optimize your AI assistant from one intuitive dashboard.
+          <p className="text-[16px] text-fg-secondary max-w-130 mx-auto leading-relaxed">
+            Build your knowledge base, deploy bots, and track performance from one intuitive dashboard.
           </p>
         </motion.div>
 
@@ -55,10 +55,10 @@ export default function ProductDemoSection() {
               {/* Stats row */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                 {[
-                  { label: 'Total Conversations', value: '12,847', change: '+23%' },
-                  { label: 'Resolution Rate', value: '94.7%', change: '+5.2%' },
-                  { label: 'Avg Response Time', value: '1.2s', change: '-0.3s' },
-                  { label: 'Customer Satisfaction', value: '4.8/5', change: '+0.2' },
+                  { label: 'Questions Answered', value: '8,241', change: '+18%' },
+                  { label: 'Avg Response Time', value: '1.1s', change: '-0.4s' },
+                  { label: 'Knowledge Pages', value: '3,450', change: '+120' },
+                  { label: 'Active Bots', value: '3', change: '+1 this week' },
                 ].map((stat) => (
                   <div key={stat.label} className="p-4 rounded-xl border border-edge bg-surface/60">
                     <p className="text-[11.5px] text-fg-muted mb-1">{stat.label}</p>
@@ -73,7 +73,7 @@ export default function ProductDemoSection() {
                 {/* Chart area */}
                 <div className="lg:col-span-2 p-5 rounded-xl border border-edge bg-surface/60">
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-[13px] font-medium text-fg">Conversations Over Time</p>
+                    <p className="text-[13px] font-medium text-fg">Questions Over Time</p>
                     <div className="flex gap-1">
                       {['1D', '7D', '30D'].map((period) => (
                         <button
@@ -88,7 +88,7 @@ export default function ProductDemoSection() {
                     </div>
                   </div>
                   {/* Simulated bar chart */}
-                  <div className="flex items-end gap-1.5 h-[140px]">
+                  <div className="flex items-end gap-1.5 h-35">
                     {[45, 62, 38, 75, 55, 82, 67, 90, 72, 58, 85, 95, 78, 88].map((h, i) => (
                       <div
                         key={i}
@@ -99,21 +99,21 @@ export default function ProductDemoSection() {
                   </div>
                 </div>
 
-                {/* Recent conversations */}
+                {/* Knowledge sources */}
                 <div className="p-5 rounded-xl border border-edge bg-surface/60">
-                  <p className="text-[13px] font-medium text-fg mb-4">Recent Conversations</p>
+                  <p className="text-[13px] font-medium text-fg mb-4">Knowledge Sources</p>
                   <div className="space-y-3">
                     {[
-                      { q: 'What are your pricing plans?', time: '2m ago' },
-                      { q: 'Do you offer a free trial?', time: '5m ago' },
-                      { q: 'How do I integrate the widget?', time: '12m ago' },
-                      { q: 'Is there an API available?', time: '18m ago' },
-                    ].map((c, i) => (
-                      <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-lg hover:bg-surface-elevated/60 transition-colors">
-                        <div className="w-1.5 h-1.5 rounded-full bg-success mt-1.5 shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-[12.5px] text-fg truncate">{c.q}</p>
-                          <p className="text-[11px] text-fg-muted mt-0.5">{c.time}</p>
+                      { name: 'docs.acme.com', pages: '1,240 pages' },
+                      { name: 'acme.com/blog', pages: '86 pages' },
+                      { name: 'product-guide.pdf', pages: '48 pages' },
+                      { name: 'faq.md', pages: '12 pages' },
+                    ].map((s, i) => (
+                      <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-surface-elevated/60 transition-colors">
+                        <div className="w-1.5 h-1.5 rounded-full bg-success mt-0.5 shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[12.5px] text-fg truncate">{s.name}</p>
+                          <p className="text-[11px] text-fg-muted mt-0.5">{s.pages}</p>
                         </div>
                       </div>
                     ))}

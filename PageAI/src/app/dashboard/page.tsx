@@ -6,8 +6,6 @@ import Link from 'next/link';
 
 interface Stats {
   activeBots: number;
-  totalConversations: number;
-  resolutionRate: string;
 }
 
 interface Usage {
@@ -20,7 +18,6 @@ interface BotRow {
   id: string;
   name: string;
   is_active: boolean;
-  total_conversations: number;
   created_at: string;
 }
 
@@ -48,8 +45,6 @@ export default function DashboardPage() {
           const d = await res.json();
           setStats({
             activeBots: d.stats?.activeBots || 0,
-            totalConversations: d.stats?.totalConversations || 0,
-            resolutionRate: d.stats?.resolutionRate || '0.0',
           });
           setUsage({
             plan: d.usage?.plan || 'free',
@@ -137,8 +132,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: 'Active Bots', value: stats?.activeBots || 0 },
-          { label: 'Conversations', value: stats?.totalConversations || 0 },
-          { label: 'Resolution Rate', value: `${stats?.resolutionRate || '0'}%` },
+          { label: 'Messages Used', value: (usage?.monthly_message_count || 0).toLocaleString() },
+          { label: 'Messages Left', value: Math.max(0, (usage?.monthly_message_limit || 0) - (usage?.monthly_message_count || 0)).toLocaleString() },
           { label: 'Plan', value: (usage?.plan || 'free').charAt(0).toUpperCase() + (usage?.plan || 'free').slice(1) },
         ].map(k => (
           <div key={k.label} className="p-4 rounded-xl border border-edge bg-surface/40 hover:border-edge-light transition-all duration-200">
@@ -174,7 +169,6 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-medium ${bot.is_active ? 'bg-success/10 text-success' : 'bg-fg-muted/10 text-fg-muted'}`}>{bot.is_active ? 'active' : 'inactive'}</span>
-                  <span className="text-[12px] text-fg-secondary">{bot.total_conversations || 0} chats</span>
                 </div>
               </div>
             ))}
