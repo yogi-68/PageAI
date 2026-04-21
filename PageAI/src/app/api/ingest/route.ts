@@ -94,6 +94,9 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ error: 'content must be a string' }, { status: 400 });
             }
             textContent = content;
+            if (!textContent.trim()) {
+                return NextResponse.json({ error: `"${fileName}" appears to be empty. Nothing to index.` }, { status: 422 });
+            }
         }
 
         if (textContent.length > MAX_CONTENT_CHARS) {
@@ -190,8 +193,7 @@ export async function POST(request: NextRequest) {
                     chunk_index: chunk.chunkIndex,
                     token_count: chunk.tokenCount,
                     heading: chunk.heading,
-                    page_title: fileName,   // label so re-ranking and context-builder work
-                    word_count: chunk.content.split(/\s+/).filter(Boolean).length,
+                    page_title: fileName,
                     metadata: chunk.metadata,
                 }));
 

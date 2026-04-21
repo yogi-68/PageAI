@@ -54,6 +54,7 @@ export default function KnowledgePage() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [recrawling, setRecrawling] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [viewDoc, setViewDoc] = useState<{ name: string; content: string } | null>(null);
   const [viewLoading, setViewLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -229,7 +230,14 @@ export default function KnowledgePage() {
   };
 
   const handleDeleteFile = async (dataSourceId: string, name: string) => {
-    if (!user || !window.confirm(`Delete "${name}" and all its indexed content? This cannot be undone.`)) return;
+    if (!user) return;
+    const key = `file:${dataSourceId}`;
+    if (pendingDelete !== key) {
+      setPendingDelete(key);
+      setTimeout(() => setPendingDelete(prev => prev === key ? null : prev), 3000);
+      return;
+    }
+    setPendingDelete(null);
     setDeletingId(dataSourceId);
     const { error } = await supabase.from('data_sources').delete().eq('id', dataSourceId).eq('user_id', user.id);
     setDeletingId(null);
@@ -239,7 +247,14 @@ export default function KnowledgePage() {
   };
 
   const handleDeleteSite = async (site: Website) => {
-    if (!user || !window.confirm(`Remove "${site.url.replace(/https?:\/\//, '')}" and all its indexed pages? This cannot be undone.`)) return;
+    if (!user) return;
+    const key = `site:${site.id}`;
+    if (pendingDelete !== key) {
+      setPendingDelete(key);
+      setTimeout(() => setPendingDelete(prev => prev === key ? null : prev), 3000);
+      return;
+    }
+    setPendingDelete(null);
     setDeletingId(site.id);
     if (site.dataSourceId) {
       await supabase.from('data_sources').delete().eq('id', site.dataSourceId).eq('user_id', user.id);
@@ -438,10 +453,17 @@ export default function KnowledgePage() {
                 <button
                   onClick={() => handleDeleteFile(f.dataSourceId, f.name)}
                   disabled={deletingId === f.dataSourceId}
-                  title="Delete file"
-                  className="p-1.5 rounded-md text-fg-muted hover:text-danger hover:bg-danger/8 transition-colors disabled:opacity-40"
+                  title={pendingDelete === `file:${f.dataSourceId}` ? 'Click again to confirm' : 'Delete file'}
+                  className={`p-1.5 rounded-md transition-colors disabled:opacity-40 ${
+                    pendingDelete === `file:${f.dataSourceId}`
+                      ? 'text-danger bg-danger/10 hover:bg-danger/20'
+                      : 'text-fg-muted hover:text-danger hover:bg-danger/8'
+                  }`}
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  {pendingDelete === `file:${f.dataSourceId}`
+                    ? <span className="text-[10px] font-semibold px-0.5">Sure?</span>
+                    : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  }
                 </button>
               </div>
             </div>
@@ -503,12 +525,18 @@ export default function KnowledgePage() {
                 <button
                   onClick={() => handleDeleteSite(site)}
                   disabled={deletingId === site.id}
-                  title="Remove website"
-                  className="shrink-0 p-1.5 rounded-lg border border-edge text-fg-muted hover:text-danger hover:border-danger/30 transition-all disabled:opacity-40"
+                  title={pendingDelete === `site:${site.id}` ? 'Click again to confirm' : 'Remove website'}
+                  className={`shrink-0 p-1.5 rounded-lg border transition-all disabled:opacity-40 ${
+                    pendingDelete === `site:${site.id}`
+                      ? 'border-danger/40 text-danger bg-danger/10 hover:bg-danger/20'
+                      : 'border-edge text-fg-muted hover:text-danger hover:border-danger/30'
+                  }`}
                 >
                   {deletingId === site.id
                     ? <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
-                    : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    : pendingDelete === `site:${site.id}`
+                      ? <span className="text-[10px] font-semibold px-0.5">Sure?</span>
+                      : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                   }
                 </button>
               </div>
