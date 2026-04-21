@@ -348,7 +348,6 @@
         chat.classList.toggle("open", isOpen);
         if (isOpen && messages.children.length === 0) {
             addMessage("bot", config.welcome);
-            if (config.suggestedQuestions.length > 0) showSuggestions(config.suggestedQuestions);
         }
     }
 
@@ -489,7 +488,9 @@
                                     botText += parsed.content;
                                     bubble.textContent = botText;
                                 } else if (parsed.type === 'done') {
-                                    if (parsed.sources) sources = parsed.sources;
+                                    if (parsed.suggestions && parsed.suggestions.length > 0) {
+                                        showSuggestions(parsed.suggestions);
+                                    }
                                 } else if (parsed.type === 'error') {
                                     bubble.textContent = "Sorry, I encountered an error. Please try again.";
                                 } else if (parsed.conversationId) {
@@ -507,19 +508,16 @@
                 if (!botText) {
                     bubble.textContent = "I couldn't generate a response. Please try rephrasing your question.";
                 }
-
-                // Show follow-up suggestions after every bot reply
-                if (config.suggestedQuestions.length > 0) showSuggestions(config.suggestedQuestions);
             } else {
                 // Fallback: non-streaming JSON response
                 const data = await res.json();
                 if (data.success) {
                     conversationId = data.conversationId;
                     addMessage("bot", data.answer);
+                    if (data.suggestions && data.suggestions.length > 0) showSuggestions(data.suggestions);
                 } else {
                     addMessage("bot", "Sorry, I encountered an error. Please try again.");
                 }
-                if (config.suggestedQuestions.length > 0) showSuggestions(config.suggestedQuestions);
             }
         } catch (err) {
             removeTyping();

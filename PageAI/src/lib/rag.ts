@@ -34,6 +34,7 @@ export interface RAGResult {
     chunksRetrieved: number;
     responseTimeMs: number;
     cached: boolean;
+    suggestions?: string[];
 }
 
 export interface RAGConfig {
@@ -485,6 +486,23 @@ Rules:
                     send({ type: 'token', content: fallback });
                 }
 
+                // Generate AI follow-up suggestions (non-blocking — fires after stream)
+                let suggestions: string[] = [];
+                try {
+                    const suggestRes = await getOpenAI().chat.completions.create({
+                        model: 'gpt-4.1-mini',
+                        messages: [
+                            { role: 'system', content: 'You are a helpful assistant. Given a user question and the assistant answer, suggest 3 short follow-up questions the user might ask next. Return ONLY a JSON array of 3 strings, no explanation. Keep each question under 10 words.' },
+                            { role: 'user', content: `Question: ${query}\nAnswer: ${rankedChunks.map(c => c.content).join(' ').slice(0, 400)}\n\nReturn JSON array of 3 follow-up questions.` },
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 120,
+                    });
+                    const raw = suggestRes.choices[0]?.message?.content?.trim() || '[]';
+                    const parsed = JSON.parse(raw.replace(/^```json\s*/i, '').replace(/```\s*$/, ''));
+                    if (Array.isArray(parsed)) suggestions = parsed.slice(0, 3).map(String);
+                } catch { /* suggestions are optional — never fail the response */ }
+
                 // Send final metadata event
                 send({
                     type: 'done',
@@ -492,6 +510,7 @@ Rules:
                     confidence,
                     model,
                     queryRewrite: null,
+                    suggestions,
                 });
 
                 resolveMetadata({
@@ -502,6 +521,7 @@ Rules:
                     chunksRetrieved: rankedChunks.length,
                     responseTimeMs: Date.now() - startTime,
                     cached: false,
+                    suggestions,
                 });
             } catch (err: any) {
                 const isQuota = err?.code === 'insufficient_quota' ||

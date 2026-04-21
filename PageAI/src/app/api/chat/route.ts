@@ -148,32 +148,12 @@ export async function POST(request: NextRequest) {
         if (useStream) {
             const { stream, metadata } = executeRAGStream(query, botId, ragConfig);
 
-            // Save conversation async (don't block stream)
+            // Roll back usage if RAG failed inside the stream
             metadata.then(async (meta) => {
-                // RAG failed inside the stream — roll back the usage increment so the user isn't charged
                 if (meta.model === 'error') {
                     void Promise.resolve(
                         admin.rpc('rollback_message_increment', { p_user_id: bot.user_id, p_bot_id: botId })
                     ).then(() => {}, () => {});
-                    return;
-                }
-                try {
-                    await saveConversation(admin, {
-                        botId,
-                        conversationId,
-                        visitorId,
-                        pageUrl,
-                        query,
-                        answer: '[streamed]',
-                        sources: meta.sources,
-                        model: meta.model,
-                        responseTimeMs: meta.responseTimeMs,
-                        confidence: meta.confidence,
-                        queryRewrite: meta.queryRewrite,
-                        chunksRetrieved: meta.chunksRetrieved,
-                    });
-                } catch (e) {
-                    console.error('Failed to save streamed conversation:', e);
                 }
             });
 
@@ -204,22 +184,6 @@ export async function POST(request: NextRequest) {
             throw ragError; // re-throw to hit outer catch
         }
 
-        // 5. Save conversation and message (usage already counted atomically above)
-        const convId = await saveConversation(admin, {
-            botId,
-            conversationId,
-            visitorId,
-            pageUrl,
-            query,
-            answer: result.answer,
-            sources: result.sources,
-            model: result.model,
-            responseTimeMs: result.responseTimeMs,
-            confidence: result.confidence,
-            queryRewrite: result.queryRewrite,
-            chunksRetrieved: result.chunksRetrieved,
-        });
-
         trackEvent('chat.completed', {
             botId,
             model: result.model,
@@ -231,11 +195,11 @@ export async function POST(request: NextRequest) {
             success: true,
             answer: result.answer,
             sources: result.sources,
-            conversationId: convId,
             confidence: result.confidence,
             model: result.model,
             cached: result.cached,
             responseTimeMs: result.responseTimeMs,
+            suggestions: result.suggestions || [],
         }, { headers: corsHeaders(origin) });
 
     } catch (error: any) {
@@ -245,79 +209,6 @@ export async function POST(request: NextRequest) {
             { status: 500, headers: corsHeaders(request.headers.get('origin')) }
         );
     }
-}
-
-// Save conversation + messages helper
-async function saveConversation(
-    admin: any,
-    params: {
-        botId: string;
-        conversationId?: string;
-        visitorId?: string;
-        pageUrl?: string;
-        query: string;
-        answer: string;
-        sources: any[];
-        model: string;
-        responseTimeMs: number;
-        confidence: number;
-        queryRewrite: string | null;
-        chunksRetrieved: number;
-    }
-): Promise<string> {
-    let convId = params.conversationId;
-
-    if (!convId) {
-        const { data: conv, error: convErr } = await admin
-            .from('conversations')
-            .insert({
-                bot_id: params.botId,
-                visitor_id: params.visitorId || `anon_${Date.now()}`,
-                visitor_page_url: params.pageUrl || null,
-                status: 'active',
-                message_count: 0,
-            })
-            .select()
-            .single();
-        if (convErr) throw convErr;
-        convId = conv.id;
-    }
-
-    // Save user message
-    await admin.from('messages').insert({
-        conversation_id: convId,
-        role: 'user',
-        content: params.query,
-    });
-
-    // Save assistant message
-    await admin.from('messages').insert({
-        conversation_id: convId,
-        role: 'assistant',
-        content: params.answer,
-        sources: params.sources,
-        model_used: params.model,
-        response_time_ms: params.responseTimeMs,
-        confidence_score: params.confidence,
-        query_rewrite: params.queryRewrite,
-        chunks_retrieved: params.chunksRetrieved,
-    });
-
-    // Update conversation message count
-    const { count } = await admin
-        .from('messages')
-        .select('id', { count: 'exact', head: true })
-        .eq('conversation_id', convId);
-
-    await admin
-        .from('conversations')
-        .update({
-            message_count: count || 0,
-            updated_at: new Date().toISOString(),
-        })
-        .eq('id', convId);
-
-    return convId!;
 }
 
 // CORS preflight

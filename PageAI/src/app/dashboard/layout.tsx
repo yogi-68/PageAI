@@ -11,7 +11,6 @@ const nav = [
   { label: 'Overview', href: '/dashboard', icon: '◈' },
   { label: 'Websites', href: '/dashboard/websites', icon: '◎' },
   { label: 'Bots', href: '/dashboard/bots', icon: '✦' },
-  { label: 'Conversations', href: '/dashboard/conversations', icon: '◉' },
   { label: 'Knowledge', href: '/dashboard/knowledge', icon: '◇' },
   { label: 'Analytics', href: '/dashboard/analytics', icon: '▣' },
   { label: 'Billing', href: '/dashboard/billing', icon: '◆' },
