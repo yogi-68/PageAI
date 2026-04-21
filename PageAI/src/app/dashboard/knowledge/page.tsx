@@ -94,9 +94,14 @@ export default function KnowledgePage() {
     const result = Object.values(siteMap);
     setWebsites(result);
 
-    // Storage estimate: ≈5.5 bytes per word across all documents
+    // Storage estimate:
+    //   text  ≈ 5.5 bytes/word  (stored in documents.content + chunks.content)
+    //   embeddings ≈ 6 KB/chunk (1536 floats × 4 bytes), ~1 chunk per 150 words
     const totalWords = (pages || []).reduce((sum: number, p: any) => sum + (p.word_count || 0), 0);
-    const storageMB = Math.round((totalWords * 5.5) / 1_000_000 * 10) / 10;
+    const textBytes = totalWords * 5.5;
+    const estimatedChunks = Math.ceil(totalWords / 150);
+    const embeddingBytes = estimatedChunks * 1536 * 4;
+    const storageMB = Math.round(((textBytes + embeddingBytes) / 1_000_000) * 10) / 10;
 
     setStats({ totalPages: docCount ?? (pages || []).length, totalWebsites: result.length, storageMB });
     setExpanded(prev => prev.size === 0 && result.length > 0 ? new Set([result[0].id]) : prev);
@@ -371,12 +376,30 @@ export default function KnowledgePage() {
                 </div>
                 <div className="text-[11.5px] text-fg-muted">{stats.totalWebsites} website{stats.totalWebsites !== 1 ? 's' : ''} connected</div>
               </div>
-              <UsageBar
-                used={stats.storageMB}
-                limit={limits.storageMB}
-                label="Storage Used"
-                unit="MB"
-              />
+              {(() => {
+                const usedGb = stats.storageMB >= 1024;
+                const limitGb = limits.storageMB >= 1024;
+                const usedDisplay = usedGb ? `${(stats.storageMB / 1024).toFixed(2)} GB` : `${stats.storageMB} MB`;
+                const limitDisplay = limits.storageMB <= 0 ? '∞' : limitGb ? `${(limits.storageMB / 1024)} GB` : `${limits.storageMB} MB`;
+                const pct = limits.storageMB <= 0 ? 0 : Math.min(100, Math.round((stats.storageMB / limits.storageMB) * 100));
+                const isHigh = pct >= 90; const isMid = pct >= 70;
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[12px] font-medium text-fg-secondary">Storage Used</span>
+                      <span className={`text-[12px] font-semibold ${isHigh ? 'text-danger' : isMid ? 'text-warning' : 'text-fg'}`}>
+                        {limits.storageMB <= 0 ? '∞ unlimited' : `${usedDisplay} / ${limitDisplay}`}
+                      </span>
+                    </div>
+                    {limits.storageMB > 0 && (
+                      <div className="h-1.5 rounded-full bg-edge overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-500 ${isHigh ? 'bg-danger' : isMid ? 'bg-warning' : 'bg-primary'}`} style={{ width: `${pct}%` }} />
+                      </div>
+                    )}
+                    <p className="text-[11px] text-fg-muted mt-1">Text content + vector embeddings in Supabase</p>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         );
