@@ -7,8 +7,8 @@ import { ThemeToggle } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 
 const mainLinks = [
-  { label: 'Features', href: '#features' },
-  { label: 'Pricing', href: '#pricing' },
+  { label: 'Features', href: '/#features' },
+  { label: 'Pricing', href: '/#pricing' },
   { label: 'Blog', href: '/blog' },
 ];
 
@@ -90,7 +90,7 @@ export default function Navbar() {
         ? 'bg-bg/80 backdrop-blur-2xl border-b border-edge/50'
         : 'bg-transparent'
     }`}>
-      <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-300 mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
           <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center transition-all duration-300 group-hover:bg-primary/15 group-hover:border-primary/30">

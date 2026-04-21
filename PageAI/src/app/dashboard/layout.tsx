@@ -30,6 +30,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
 
   // Only redirect once auth has fully resolved — prevents race with OAuth callback
@@ -57,7 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-bg flex">
       {/* Sidebar - Desktop */}
-      <aside className="hidden lg:flex lg:w-[240px] flex-col fixed inset-y-0 left-0 bg-surface/50 border-r border-edge z-30">
+      <aside className={`hidden lg:flex flex-col fixed inset-y-0 left-0 bg-surface/50 border-r border-edge z-30 transition-all duration-300 ${sidebarOpen ? 'lg:w-60' : 'lg:w-0 overflow-hidden border-r-0'}`}>
         <div className="px-5 h-16 flex items-center border-b border-edge">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
@@ -119,7 +120,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40">
           <div className="absolute inset-0 bg-bg/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-[260px] bg-surface border-r border-edge p-4">
+          <div className="absolute left-0 top-0 bottom-0 w-65 bg-surface border-r border-edge p-4">
             <div className="flex items-center justify-between mb-6">
               <span className="text-[15px] font-semibold text-fg">PageAI</span>
               <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-md text-fg-muted hover:text-fg hover:bg-edge/50 transition-colors">
@@ -153,16 +154,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       {/* Main content */}
-      <div className="flex-1 lg:ml-[240px] flex flex-col min-h-screen">
+      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${sidebarOpen ? 'lg:ml-60' : 'lg:ml-0'}`}>
         <header className="h-14 flex items-center gap-4 px-6 border-b border-edge bg-bg/80 backdrop-blur-xl sticky top-0 z-20">
+          {/* Mobile open */}
           <button onClick={() => setMobileOpen(true)} className="lg:hidden p-1.5 rounded-md text-fg-muted hover:text-fg hover:bg-edge/50 transition-colors">
             <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/></svg>
+          </button>
+          {/* Desktop sidebar toggle */}
+          <button onClick={() => setSidebarOpen(v => !v)} className="hidden lg:flex p-1.5 rounded-md text-fg-muted hover:text-fg hover:bg-edge/50 transition-colors" aria-label="Toggle sidebar">
+            {sidebarOpen ? (
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" /></svg>
+            )}
           </button>
           <div className="flex-1" />
           <ThemeToggle />
         </header>
         <main className="flex-1 p-6">
-          <div className="max-w-[1100px]">{children}</div>
+          <div className="max-w-275">{children}</div>
         </main>
       </div>
     </div>
