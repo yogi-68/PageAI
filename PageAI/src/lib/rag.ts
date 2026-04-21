@@ -274,23 +274,20 @@ export async function executeRAG(
         };
     }
 
-    // 2. Rewrite query for better retrieval
-    const rewrittenQuery = await rewriteQuery(query);
+    // 2. Generate embedding (no query rewrite — saves ~400ms latency)
+    const queryEmbedding = await generateEmbedding(query);
 
-    // 3. Generate embedding
-    const queryEmbedding = await generateEmbedding(rewrittenQuery);
-
-    // 4. Hybrid search (vector + BM25)
+    // 3. Hybrid search (vector + BM25)
     const rawChunks = await hybridSearch(
         queryEmbedding,
-        rewrittenQuery,
+        query,
         config.userId,
         config.dataSourceIds,
         retrieveCount
     );
 
-    // 5. Re-rank to top K
-    const rankedChunks = reRankChunks(rawChunks, rewrittenQuery, topK);
+    // 4. Re-rank to top K
+    const rankedChunks = reRankChunks(rawChunks, query, topK);
 
     // 6. Estimate confidence
     const confidence = estimateConfidence(rankedChunks);
@@ -303,7 +300,7 @@ export async function executeRAG(
             sources: [],
             confidence,
             model: 'none',
-            queryRewrite: rewrittenQuery !== query ? rewrittenQuery : null,
+            queryRewrite: null,
             chunksRetrieved: 0,
             responseTimeMs: Date.now() - startTime,
             cached: false,
@@ -316,14 +313,14 @@ export async function executeRAG(
     // 9. Build context and generate answer
     const context = buildContext(rankedChunks);
 
-    const systemPrompt = config.systemPrompt || `You are a helpful AI assistant. Answer questions ONLY based on the provided context. Follow these rules strictly:
+    const systemPrompt = config.systemPrompt || `You are a helpful AI assistant for this product. Answer questions based on the provided knowledge base context.
 
-1. Answer based ONLY on the provided context. Do not use prior knowledge.
-2. If the context doesn't contain enough information, say so honestly.
-3. Cite your sources by mentioning the page title or URL when relevant.
-4. Be concise, professional, and helpful.
-5. If multiple sources provide information, synthesize them into a coherent answer.
-6. Never make up information that isn't in the context.`;
+Rules:
+1. Answer ONLY from the context provided below — never from prior training knowledge.
+2. If the context contains the answer, give it directly and confidently. Do NOT say "the context does not specify" if the information is present.
+3. If the context truly does not contain the answer, say: "I don't have information about that in my knowledge base."
+4. Be concise and helpful. Mention the source file or page title when it adds clarity.
+5. Never fabricate information.`;
 
     const response = await getOpenAI().chat.completions.create({
         model,
@@ -331,7 +328,7 @@ export async function executeRAG(
             { role: 'system', content: systemPrompt },
             {
                 role: 'user',
-                content: `Context from knowledge base:\n---\n${context}\n---\n\nQuestion: ${query}\n\nProvide a helpful, accurate answer based only on the context above. If relevant, mention which source the information comes from.`,
+                content: `Knowledge base context:\n---\n${context}\n---\n\nQuestion: ${query}`,
             },
         ],
         temperature: config.temperature ?? 0.2,
@@ -360,7 +357,7 @@ export async function executeRAG(
         sources,
         confidence,
         model,
-        queryRewrite: rewrittenQuery !== query ? rewrittenQuery : null,
+        queryRewrite: null,
         chunksRetrieved: rankedChunks.length,
         responseTimeMs: Date.now() - startTime,
         cached: false,
@@ -401,23 +398,20 @@ export function executeRAGStream(
             };
 
             try {
-                // 1. Rewrite query
-                const rewrittenQuery = await rewriteQuery(query);
+                // 1. Generate embedding (no query rewrite — saves ~400ms latency)
+                const queryEmbedding = await generateEmbedding(query);
 
-                // 2. Generate embedding
-                const queryEmbedding = await generateEmbedding(rewrittenQuery);
-
-                // 3. Hybrid search
+                // 2. Hybrid search
                 const rawChunks = await hybridSearch(
                     queryEmbedding,
-                    rewrittenQuery,
+                    query,
                     config.userId,
                     config.dataSourceIds,
                     retrieveCount
                 );
 
-                // 4. Re-rank
-                const rankedChunks = reRankChunks(rawChunks, rewrittenQuery, topK);
+                // 3. Re-rank
+                const rankedChunks = reRankChunks(rawChunks, query, topK);
 
                 // 5. Confidence + model selection
                 const confidence = estimateConfidence(rankedChunks);
@@ -431,10 +425,8 @@ export function executeRAGStream(
                         "Please make sure the website has been crawled and fully indexed, " +
                         "or try again in a few moments.";
                     send({ type: 'token', content: fallback });
-                    send({ type: 'done', sources: [], confidence: 0, model: 'none',
-                        queryRewrite: rewrittenQuery !== query ? rewrittenQuery : null });
-                    resolveMetadata({ sources: [], confidence: 0, model: 'none',
-                        queryRewrite: rewrittenQuery !== query ? rewrittenQuery : null,
+                    send({ type: 'done', sources: [], confidence: 0, model: 'none', queryRewrite: null });
+                    resolveMetadata({ sources: [], confidence: 0, model: 'none', queryRewrite: null,
                         chunksRetrieved: 0, responseTimeMs: Date.now() - startTime, cached: false });
                     return;
                 }
@@ -457,14 +449,14 @@ export function executeRAGStream(
                         relevance: Math.round(c.combined_score * 100) / 100,
                     }));
 
-                const systemPrompt = config.systemPrompt || `You are a helpful AI assistant. Answer questions ONLY based on the provided context. Follow these rules strictly:
+                const systemPrompt = config.systemPrompt || `You are a helpful AI assistant for this product. Answer questions based on the provided knowledge base context.
 
-1. Answer based ONLY on the provided context. Do not use prior knowledge.
-2. If the context doesn't contain enough information, say so honestly.
-3. Cite your sources by mentioning the page title or URL when relevant.
-4. Be concise, professional, and helpful.
-5. If multiple sources provide information, synthesize them into a coherent answer.
-6. Never make up information that isn't in the context.`;
+Rules:
+1. Answer ONLY from the context provided below — never from prior training knowledge.
+2. If the context contains the answer, give it directly and confidently. Do NOT say "the context does not specify" if the information is present.
+3. If the context truly does not contain the answer, say: "I don't have information about that in my knowledge base."
+4. Be concise and helpful. Mention the source file or page title when it adds clarity.
+5. Never fabricate information.`;
 
                 // 6. Stream OpenAI response token by token
                 let tokensSent = 0;
@@ -474,7 +466,7 @@ export function executeRAGStream(
                         { role: 'system', content: systemPrompt },
                         {
                             role: 'user',
-                            content: `Context from knowledge base:\n---\n${context}\n---\n\nQuestion: ${query}\n\nProvide a helpful, accurate answer based only on the context above.`,
+                            content: `Knowledge base context:\n---\n${context}\n---\n\nQuestion: ${query}`,
                         },
                     ],
                     temperature: config.temperature ?? 0.2,
@@ -503,14 +495,14 @@ export function executeRAGStream(
                     sources,
                     confidence,
                     model,
-                    queryRewrite: rewrittenQuery !== query ? rewrittenQuery : null,
+                    queryRewrite: null,
                 });
 
                 resolveMetadata({
                     sources,
                     confidence,
                     model,
-                    queryRewrite: rewrittenQuery !== query ? rewrittenQuery : null,
+                    queryRewrite: null,
                     chunksRetrieved: rankedChunks.length,
                     responseTimeMs: Date.now() - startTime,
                     cached: false,

@@ -190,6 +190,7 @@ export async function POST(request: NextRequest) {
                     chunk_index: chunk.chunkIndex,
                     token_count: chunk.tokenCount,
                     heading: chunk.heading,
+                    page_title: fileName,   // label so re-ranking and context-builder work
                     word_count: chunk.content.split(/\s+/).filter(Boolean).length,
                     metadata: chunk.metadata,
                 }));
