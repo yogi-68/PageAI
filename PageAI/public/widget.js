@@ -3,7 +3,7 @@
 (function () {
     "use strict";
 
-    const WIDGET_VERSION = "2.1.0";
+    const WIDGET_VERSION = "2.2.0";
 
     // Must capture script reference synchronously — document.currentScript is only valid now
     const scriptEl = document.currentScript || document.querySelector("script[data-bot-id]");
@@ -19,8 +19,11 @@
         color: scriptEl.getAttribute("data-color") || "#6366f1",
         position: scriptEl.getAttribute("data-position") || "right",
         name: scriptEl.getAttribute("data-name") || "AI Assistant",
-        welcome: scriptEl.getAttribute("data-welcome") || "Hi! 👋 Ask me anything about this website!",
-    };
+        welcome: scriptEl.getAttribute("data-welcome") || "Hi! 👋 Ask me anything about this website!",        suggestedQuestions: (function() {
+            const raw = scriptEl.getAttribute("data-suggested-questions") || "";
+            if (!raw.trim()) return [];
+            try { return JSON.parse(raw); } catch(_) { return raw.split("|").map(s => s.trim()).filter(Boolean); }
+        })()    };
 
     if (!config.botId) {
         console.error("[PageAI] Missing data-bot-id attribute");
@@ -190,6 +193,32 @@
       text-decoration: none;
     }
 
+    .pageai-suggestions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      margin-left: 32px;
+    }
+
+    .pageai-suggestion-chip {
+      font-size: 12px;
+      padding: 5px 11px;
+      border-radius: 99px;
+      background: transparent;
+      color: ${config.color};
+      border: 1px solid ${config.color};
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      text-align: left;
+      line-height: 1.4;
+    }
+
+    .pageai-suggestion-chip:hover {
+      background: ${config.color};
+      color: #fff;
+    }
+
     #pageai-input-area {
       padding: 12px;
       border-top: 1px solid rgba(255,255,255,0.06);
@@ -319,6 +348,7 @@
         chat.classList.toggle("open", isOpen);
         if (isOpen && messages.children.length === 0) {
             addMessage("bot", config.welcome);
+            if (config.suggestedQuestions.length > 0) showSuggestions(config.suggestedQuestions);
         }
     }
 
@@ -326,6 +356,8 @@
     closeBtn.addEventListener("click", toggle);
 
     function addMessage(role, text) {
+        // Remove any existing suggestion chips before appending a new message
+        removeSuggestions();
         const msg = document.createElement("div");
         msg.className = `pageai-msg ${role}`;
         msg.innerHTML = `
@@ -334,6 +366,31 @@
     `;
         messages.appendChild(msg);
         messages.scrollTop = messages.scrollHeight;
+    }
+
+    function showSuggestions(questions) {
+        removeSuggestions();
+        if (!questions || questions.length === 0) return;
+        const div = document.createElement("div");
+        div.className = "pageai-suggestions";
+        div.id = "pageai-suggestions";
+        questions.forEach(function(q) {
+            const btn = document.createElement("button");
+            btn.className = "pageai-suggestion-chip";
+            btn.textContent = q;
+            btn.addEventListener("click", function() {
+                input.value = q;
+                sendMessage();
+            });
+            div.appendChild(btn);
+        });
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function removeSuggestions() {
+        const el = document.getElementById("pageai-suggestions");
+        if (el) el.remove();
     }
 
     function showTyping() {
@@ -450,15 +507,19 @@
                 if (!botText) {
                     bubble.textContent = "I couldn't generate a response. Please try rephrasing your question.";
                 }
+
+                // Show follow-up suggestions after every bot reply
+                if (config.suggestedQuestions.length > 0) showSuggestions(config.suggestedQuestions);
             } else {
                 // Fallback: non-streaming JSON response
                 const data = await res.json();
                 if (data.success) {
                     conversationId = data.conversationId;
-                    addMessage("bot", data.answer, data.sources);
+                    addMessage("bot", data.answer);
                 } else {
                     addMessage("bot", "Sorry, I encountered an error. Please try again.");
                 }
+                if (config.suggestedQuestions.length > 0) showSuggestions(config.suggestedQuestions);
             }
         } catch (err) {
             removeTyping();

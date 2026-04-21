@@ -93,7 +93,8 @@ export async function POST(request: NextRequest) {
             if (typeof content !== 'string') {
                 return NextResponse.json({ error: 'content must be a string' }, { status: 400 });
             }
-            textContent = content;
+            // Strip UTF-8 BOM if present (common in CSV files exported from Excel/Google Sheets)
+            textContent = content.replace(/^\uFEFF/, '');
             if (!textContent.trim()) {
                 return NextResponse.json({ error: `"${fileName}" appears to be empty. Nothing to index.` }, { status: 422 });
             }
