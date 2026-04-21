@@ -16,8 +16,8 @@ function detectDocType(fileName: string): string {
     if (ext === 'md') return 'markdown';
     if (ext === 'csv') return 'sheet';
     if (ext === 'pdf') return 'pdf';
-    if (ext === 'docx') return 'docx';
-    if (ext === 'html' || ext === 'htm') return 'html';
+    if (ext === 'docx') return 'doc';       // DB allows 'doc', not 'docx'
+    if (ext === 'html' || ext === 'htm') return 'other'; // no 'html' in enum
     return 'other';
 }
 
