@@ -101,6 +101,36 @@ export async function POST(request: NextRequest) {
         }
 
         const admin = getAdminClient();
+
+        // ── Plan page-limit enforcement ───────────────────────────────────────
+        const PLAN_PAGE_LIMITS: Record<string, number> = {
+            free: 200, starter: 1000, growth: 10000, scale: 50000, enterprise: -1,
+        };
+        const { data: profileData } = await admin
+            .from('profiles')
+            .select('plan')
+            .eq('id', userId)
+            .single();
+        const plan = (profileData?.plan as string) || 'free';
+        const pageLimit = PLAN_PAGE_LIMITS[plan] ?? 200;
+        if (pageLimit > 0) {
+            const { count } = await admin
+                .from('documents')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userId);
+            if ((count || 0) >= pageLimit) {
+                const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
+                return NextResponse.json({
+                    error: `You've reached your ${pageLimit.toLocaleString()} document limit on the ${planName} plan. Upgrade to add more knowledge.`,
+                    planLimitReached: true,
+                    plan,
+                    pageLimit,
+                    currentCount: count,
+                }, { status: 403 });
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         const wordCount = textContent.split(/\s+/).filter(Boolean).length;
         const docType = detectDocType(fileName);
 

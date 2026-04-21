@@ -120,7 +120,8 @@ async function jinaFetch(pageUrl: string): Promise<{ title: string; text: string
 
 export async function POST(request: NextRequest) {
     try {
-        const { url, botId, websiteId, userId, maxPages = 50, allowedPaths = [], blockedPaths = [], mode = 'auto' } = await request.json();
+        const { url, botId, websiteId, userId, maxPages: _maxPages = 50, allowedPaths = [], blockedPaths = [], mode = 'auto' } = await request.json();
+        let maxPages: number = _maxPages;
         // mode: 'auto' = Cheerio with Jina AI SPA fallback
         //       'spa'  = force Jina AI Reader for all pages (JS-heavy sites)
         //       'static' = Cheerio only, no fallback
@@ -139,6 +140,40 @@ export async function POST(request: NextRequest) {
         }
 
         const admin = getAdminClient();
+
+        // ── Plan page-limit enforcement ───────────────────────────────────────
+        const PLAN_PAGE_LIMITS: Record<string, number> = {
+            free: 200, starter: 1000, growth: 10000, scale: 50000, enterprise: -1,
+        };
+        const { data: profileData } = await admin
+            .from('profiles')
+            .select('plan')
+            .eq('id', userId)
+            .single();
+        const userPlan = (profileData?.plan as string) || 'free';
+        const pageLimit = PLAN_PAGE_LIMITS[userPlan] ?? 200;
+        if (pageLimit > 0) {
+            const { count } = await admin
+                .from('documents')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userId);
+            const currentCount = count || 0;
+            if (currentCount >= pageLimit) {
+                const planName = userPlan.charAt(0).toUpperCase() + userPlan.slice(1);
+                return NextResponse.json({
+                    error: `You've reached your ${pageLimit.toLocaleString()} page limit on the ${planName} plan. Upgrade to crawl more pages.`,
+                    planLimitReached: true,
+                    plan: userPlan,
+                    pageLimit,
+                    currentCount,
+                }, { status: 403 });
+            }
+            // Cap maxPages so the crawl can't overshoot the plan limit
+            const remaining = pageLimit - currentCount;
+            if (maxPages > remaining) maxPages = remaining;
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         const baseUrl = url.replace(/\/$/, '');
 
         // 1. Create or get data source

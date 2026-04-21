@@ -142,6 +142,15 @@ export default function KnowledgePage() {
           body: JSON.stringify(body),
         });
         const data = await res.json();
+        if (res.status === 403 && data.planLimitReached) {
+          toast.error(`Plan limit reached: ${data.error}`, { duration: 6000 });
+          await refreshProfile();
+          break; // stop processing remaining files
+        }
+        if (res.status === 422) {
+          toast.error(`"${file.name}" — ${data.error || 'File could not be parsed. Check it is text-based (not a scanned image).'}`, { duration: 7000 });
+          continue;
+        }
         if (!res.ok || !data.success) throw new Error(data.error || 'Upload failed');
         const entry: UploadedFile = { name: file.name, dataSourceId: data.dataSourceId, wordCount: data.wordCount, status: data.status === 'syncing' ? 'syncing' : 'indexed' };
         setUploadedFiles(prev => [...prev, entry]);
@@ -198,6 +207,13 @@ export default function KnowledgePage() {
 
   if (loading) return <div className="flex items-center justify-center py-32"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
+  const planId = profile?.plan || 'free';
+  const planLimits = PLAN_LIMITS[planId] || PLAN_LIMITS.free;
+  const pagesUsed = stats.totalPages;
+  const pagesLimit = planLimits.pagesIndexed;
+  const isAtPageLimit = pagesLimit > 0 && pagesUsed >= pagesLimit;
+  const isNearPageLimit = pagesLimit > 0 && pagesUsed >= Math.floor(pagesLimit * 0.9) && !isAtPageLimit;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -207,15 +223,44 @@ export default function KnowledgePage() {
           <p className="text-[14px] text-fg-secondary mt-0.5">Crawled pages and uploaded files your bots use to answer questions</p>
         </div>
         <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploadingFile}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors disabled:opacity-50"
+          onClick={() => !isAtPageLimit && fileInputRef.current?.click()}
+          disabled={uploadingFile || isAtPageLimit}
+          title={isAtPageLimit ? `You've reached your ${pagesLimit.toLocaleString()} page limit. Upgrade your plan to add more.` : undefined}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors disabled:opacity-50 ${isAtPageLimit ? 'bg-edge/60 text-fg-muted cursor-not-allowed' : 'bg-primary text-white hover:bg-primary-hover'}`}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-          {uploadingFile ? 'Uploading…' : 'Upload Files'}
+          {isAtPageLimit ? 'Limit Reached' : uploadingFile ? 'Uploading…' : 'Upload Files'}
         </button>
         <input ref={fileInputRef} type="file" multiple accept=".pdf,.docx,.txt,.md,.csv,.html,.htm" className="hidden" onChange={handleFileSelect} />
       </div>
+
+      {/* Plan limit banners */}
+      {isAtPageLimit && (
+        <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl border border-danger/30 bg-danger/5">
+          <div className="flex items-center gap-2.5">
+            <svg className="w-4 h-4 text-danger shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+            <p className="text-[13px] text-danger font-medium">
+              You&apos;ve used all {pagesLimit.toLocaleString()} pages on your <span className="font-bold">{planLimits.name}</span> plan. Upload and crawling are disabled.
+            </p>
+          </div>
+          <Link href="/dashboard/billing" className="shrink-0 px-3 py-1.5 rounded-lg bg-danger text-white text-[12px] font-semibold hover:bg-danger/90 transition-colors">
+            Upgrade Plan
+          </Link>
+        </div>
+      )}
+      {isNearPageLimit && (
+        <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl border border-warning/30 bg-warning/5">
+          <div className="flex items-center gap-2.5">
+            <svg className="w-4 h-4 text-warning shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z"/></svg>
+            <p className="text-[13px] text-warning font-medium">
+              You&apos;re using <span className="font-bold">{pagesUsed.toLocaleString()} of {pagesLimit.toLocaleString()}</span> pages on your {planLimits.name} plan. Upgrade before you run out.
+            </p>
+          </div>
+          <Link href="/dashboard/billing" className="shrink-0 px-3 py-1.5 rounded-lg bg-warning text-[#1a1200] text-[12px] font-semibold hover:bg-warning/90 transition-colors">
+            Upgrade
+          </Link>
+        </div>
+      )}
 
       {/* Upload info */}
       <div className="p-4 rounded-xl border border-edge bg-surface/40 space-y-3">

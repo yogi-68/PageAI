@@ -58,6 +58,9 @@ export default function NewBotPage() {
             });
 
             const data = await res.json();
+            if (res.status === 403 && data.planLimitReached) {
+                throw new Error(data.error || "Plan page limit reached. Upgrade your plan to crawl more pages.");
+            }
             if (!res.ok || !data.success) {
                 throw new Error(data.error || "Crawl failed");
             }
