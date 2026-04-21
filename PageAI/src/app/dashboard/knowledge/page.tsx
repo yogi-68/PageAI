@@ -11,10 +11,10 @@ interface Website { id: string; url: string; pages: DocPage[]; dataSourceId: str
 interface UploadedFile { name: string; dataSourceId: string; wordCount: number; status: 'syncing' | 'indexed' | 'error'; docId?: string; }
 
 const PLAN_LIMITS: Record<string, { pagesIndexed: number; chatbots: number; messagesPerMonth: number; storageMB: number; name: string }> = {
-  free:       { name: 'Free',    pagesIndexed: 200,   chatbots: 1,  messagesPerMonth: 100,   storageMB: 25    },
-  starter:    { name: 'Starter', pagesIndexed: 1000,  chatbots: 1,  messagesPerMonth: 4000,  storageMB: 250   },
-  growth:     { name: 'Growth',  pagesIndexed: 10000, chatbots: 3,  messagesPerMonth: 10000, storageMB: 2048  },
-  scale:      { name: 'Scale',   pagesIndexed: 50000, chatbots: 10, messagesPerMonth: 40000, storageMB: 10240 },
+  free:       { name: 'Free',    pagesIndexed: 200,   chatbots: 1,  messagesPerMonth: 100,   storageMB: 5     },
+  starter:    { name: 'Starter', pagesIndexed: 1000,  chatbots: 1,  messagesPerMonth: 4000,  storageMB: 25    },
+  growth:     { name: 'Growth',  pagesIndexed: 10000, chatbots: 3,  messagesPerMonth: 10000, storageMB: 250   },
+  scale:      { name: 'Scale',   pagesIndexed: 50000, chatbots: 10, messagesPerMonth: 40000, storageMB: 2048  },
   enterprise: { name: 'Enterprise', pagesIndexed: -1, chatbots: -1, messagesPerMonth: -1,   storageMB: -1    },
 };
 
@@ -396,7 +396,7 @@ export default function KnowledgePage() {
                         <div className={`h-full rounded-full transition-all duration-500 ${isHigh ? 'bg-danger' : isMid ? 'bg-warning' : 'bg-primary'}`} style={{ width: `${pct}%` }} />
                       </div>
                     )}
-                    <p className="text-[11px] text-fg-muted mt-1">Text content + vector embeddings in Supabase</p>
+
                   </div>
                 );
               })()}

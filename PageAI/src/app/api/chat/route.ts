@@ -115,6 +115,18 @@ export async function POST(request: NextRequest) {
                 .single();
             if (ws?.data_source_id) resolvedDataSourceIds = [ws.data_source_id];
         }
+        // If still empty — no explicit sources AND no website — fall back to ALL of
+        // the owner's data sources so uploaded files are always searchable.
+        if (resolvedDataSourceIds.length === 0) {
+            const { data: allSources } = await admin
+                .from('data_sources')
+                .select('id')
+                .eq('user_id', bot.user_id)
+                .eq('status', 'indexed');
+            if (allSources && allSources.length > 0) {
+                resolvedDataSourceIds = allSources.map((s: { id: string }) => s.id);
+            }
+        }
 
         const ragConfig = {
             userId: bot.user_id,
