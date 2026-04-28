@@ -129,7 +129,7 @@ export default function AnalyticsPage() {
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e2540" />
               <XAxis dataKey="date" tick={{ fill: '#8892b0', fontSize: 11 }} axisLine={{ stroke: '#1e2540' }} tickLine={false} interval="preserveStartEnd" />
               <YAxis allowDecimals={false} tick={{ fill: '#8892b0', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ background: '#1a1f35', border: '1px solid #2a3155', borderRadius: 8, fontSize: 13, color: '#edf0f7' }} cursor={{ fill: 'rgba(79,109,245,0.06)' }} formatter={(v: number) => [v, 'Pages indexed']} />
+              <Tooltip contentStyle={{ background: '#1a1f35', border: '1px solid #2a3155', borderRadius: 8, fontSize: 13, color: '#edf0f7' }} cursor={{ fill: 'rgba(79,109,245,0.06)' }} formatter={(v: unknown) => [`${v} pages indexed`] as any} />
               <Bar dataKey="pages" fill="#4f6df5" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
