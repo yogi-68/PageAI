@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { Sk } from '@/components/ui/Skeleton';
 
 // Plans — features kept in sync with PLANS in lib/dodo.ts
 const plans = [
@@ -134,6 +135,26 @@ export default function BillingPage() {
     }
     setLoading(null);
   };
+
+  if (!profile) return (
+    <div className="space-y-6">
+      <div className="space-y-2"><Sk className="h-7 w-40" /><Sk className="h-4 w-72" /></div>
+      <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">
+        <div className="flex justify-between"><Sk className="h-5 w-32" /><Sk className="h-5 w-20 rounded-md" /></div>
+        <div className="space-y-3"><Sk className="h-2 w-full rounded-full" /><Sk className="h-2 w-full rounded-full" /></div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">
+            <Sk className="h-5 w-20" />
+            <Sk className="h-8 w-16" />
+            <div className="space-y-2">{[...Array(4)].map((_, j) => <Sk key={j} className="h-3 w-full" />)}</div>
+            <Sk className="h-9 w-full rounded-lg" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   const currentPlan = profile?.plan || 'free';
   const msgUsed = profile?.monthly_message_count || 0;

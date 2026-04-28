@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { Sk } from '@/components/ui/Skeleton';
 
 interface DayData { date: string; pages: number; }
 interface PageData { url: string; }
@@ -21,65 +22,60 @@ export default function AnalyticsPage() {
   const [chartData, setChartData] = useState<DayData[]>([]);
   const [topPages, setTopPages] = useState<PageData[]>([]);
   const [totals, setTotals] = useState({ messagesUsed: 0, messagesLimit: 0, knowledgePages: 0 });
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [chartLoading, setChartLoading] = useState(false);
+  const isFirstLoad = useRef(true);
 
   useEffect(() => {
     if (!user) return;
-    setLoading(true);
+    if (isFirstLoad.current) {
+      setPageLoading(true);
+    } else {
+      setChartLoading(true);
+    }
     (async () => {
       try {
         const startDate = new Date(Date.now() - range * 86400000).toISOString();
 
-        const [{ data: profile }, { count: docCount }, { data: docs }] = await Promise.all([
-          supabase
-            .from('profiles')
-            .select('monthly_message_count, monthly_message_limit')
-            .eq('id', user.id)
-            .single(),
-          supabase
-            .from('documents')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('status', 'indexed'),
-          supabase
-            .from('documents')
-            .select('created_at')
-            .eq('user_id', user.id)
-            .gte('created_at', startDate)
-            .order('created_at', { ascending: true }),
-        ]);
+        // Always fetch chart data
+        const { data: docs } = await supabase
+          .from('documents')
+          .select('created_at')
+          .eq('user_id', user.id)
+          .gte('created_at', startDate)
+          .order('created_at', { ascending: true });
 
-        setTotals({
-          messagesUsed: profile?.monthly_message_count || 0,
-          messagesLimit: profile?.monthly_message_limit || 0,
-          knowledgePages: docCount || 0,
-        });
+        // KPIs + top pages only on first load — no re-fetch on range change
+        if (isFirstLoad.current) {
+          const [{ data: profile }, { count: docCount }, { data: pages }] = await Promise.all([
+            supabase.from('profiles').select('monthly_message_count, monthly_message_limit').eq('id', user.id).single(),
+            supabase.from('documents').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('status', 'indexed'),
+            supabase.from('documents').select('url').eq('user_id', user.id).not('url', 'is', null).eq('status', 'indexed').limit(5),
+          ]);
+          setTotals({
+            messagesUsed: (profile as any)?.monthly_message_count || 0,
+            messagesLimit: (profile as any)?.monthly_message_limit || 0,
+            knowledgePages: docCount || 0,
+          });
+          setTopPages(((pages || []) as any[]).map((p: any) => ({ url: p.url || '' })));
+        }
 
-        // Build date buckets for the selected range
+        // Build date buckets for selected range
         const buckets: Record<string, number> = {};
         for (let i = range - 1; i >= 0; i--) {
           const d = new Date(Date.now() - i * 86400000);
           const key = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           buckets[key] = 0;
         }
-        // Count real indexed documents per day
         for (const doc of docs || []) {
-          const key = new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const key = new Date((doc as any).created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           if (key in buckets) buckets[key]++;
         }
         setChartData(Object.entries(buckets).map(([date, pages]) => ({ date, pages })));
-
-        // Top indexed pages
-        const { data: pages } = await supabase
-          .from('documents')
-          .select('url')
-          .eq('user_id', user.id)
-          .not('url', 'is', null)
-          .eq('status', 'indexed')
-          .limit(5);
-        setTopPages((pages || []).map(p => ({ url: p.url || '' })));
       } catch (e) { console.error(e); }
-      setLoading(false);
+      isFirstLoad.current = false;
+      setPageLoading(false);
+      setChartLoading(false);
     })();
   }, [user, range]);
 
@@ -89,8 +85,30 @@ export default function AnalyticsPage() {
     { label: 'Knowledge Pages', value: totals.knowledgePages.toLocaleString() },
   ];
 
-  if (loading) return <div className="flex items-center justify-center py-32"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
-
+  if (pageLoading) return (
+    <div className="space-y-6">
+      <div className="space-y-2"><Sk className="h-7 w-28" /><Sk className="h-4 w-72" /></div>
+      <div className="grid grid-cols-3 gap-3">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="p-4 rounded-xl border border-edge bg-surface/40 space-y-3">
+            <Sk className="h-3 w-32" /><Sk className="h-8 w-20" />
+          </div>
+        ))}
+      </div>
+      <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">
+        <div className="flex justify-between"><Sk className="h-5 w-40" /><Sk className="h-8 w-28 rounded-lg" /></div>
+        <Sk className="h-64 w-full" />
+      </div>
+      <div className="rounded-xl border border-edge bg-surface/40 overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-edge"><Sk className="h-4 w-20" /></div>
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="flex items-center gap-3 px-5 py-3 border-b border-edge last:border-0">
+            <Sk className="h-3 w-4" /><Sk className="h-3 w-64" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -99,7 +117,6 @@ export default function AnalyticsPage() {
         <p className="text-[14px] text-fg-secondary mt-0.5">Track message volume and knowledge base coverage</p>
       </div>
 
-      {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">
         {kpis.map(k => (
           <div key={k.label} className="p-4 rounded-xl border border-edge bg-surface/40">
@@ -109,7 +126,6 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      {/* Chart */}
       <div className="p-5 rounded-xl border border-edge bg-surface/40">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[15px] font-semibold text-fg">Pages Indexed Per Day</h2>
@@ -123,20 +139,26 @@ export default function AnalyticsPage() {
             ))}
           </select>
         </div>
-        <div style={{ height: 260, width: '100%', minWidth: 0 }}>
+        <div
+          style={{ height: 260, width: '100%', minWidth: 0 }}
+          className={chartLoading ? 'opacity-40 pointer-events-none transition-opacity' : 'transition-opacity'}
+        >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e2540" />
               <XAxis dataKey="date" tick={{ fill: '#8892b0', fontSize: 11 }} axisLine={{ stroke: '#1e2540' }} tickLine={false} interval="preserveStartEnd" />
               <YAxis allowDecimals={false} tick={{ fill: '#8892b0', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ background: '#1a1f35', border: '1px solid #2a3155', borderRadius: 8, fontSize: 13, color: '#edf0f7' }} cursor={{ fill: 'rgba(79,109,245,0.06)' }} formatter={(v: unknown) => [`${v} pages indexed`] as any} />
+              <Tooltip
+                contentStyle={{ background: '#1a1f35', border: '1px solid #2a3155', borderRadius: 8, fontSize: 13, color: '#edf0f7' }}
+                cursor={{ fill: 'rgba(79,109,245,0.06)' }}
+                formatter={(v: unknown) => [String(v) + ' pages indexed'] as any}
+              />
               <Bar dataKey="pages" fill="#4f6df5" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Top Pages */}
       <div className="rounded-xl border border-edge bg-surface/40 overflow-hidden">
         <div className="px-5 py-3.5 border-b border-edge">
           <h2 className="text-[15px] font-semibold text-fg">Top Pages</h2>
