@@ -5,11 +5,19 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-interface DayData { date: string; messages: number; }
+interface DayData { date: string; pages: number; }
 interface PageData { url: string; }
+
+const RANGE_OPTIONS = [
+  { label: 'Last 7 days',  days: 7  },
+  { label: 'Last 14 days', days: 14 },
+  { label: 'Last 30 days', days: 30 },
+  { label: 'Last 90 days', days: 90 },
+];
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
+  const [range, setRange] = useState(7);
   const [chartData, setChartData] = useState<DayData[]>([]);
   const [topPages, setTopPages] = useState<PageData[]>([]);
   const [totals, setTotals] = useState({ messagesUsed: 0, messagesLimit: 0, knowledgePages: 0 });
@@ -17,10 +25,12 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     if (!user) return;
+    setLoading(true);
     (async () => {
       try {
-        // Fetch profile usage + indexed document count in parallel
-        const [{ data: profile }, { count: docCount }] = await Promise.all([
+        const startDate = new Date(Date.now() - range * 86400000).toISOString();
+
+        const [{ data: profile }, { count: docCount }, { data: docs }] = await Promise.all([
           supabase
             .from('profiles')
             .select('monthly_message_count, monthly_message_limit')
@@ -31,6 +41,12 @@ export default function AnalyticsPage() {
             .select('id', { count: 'exact', head: true })
             .eq('user_id', user.id)
             .eq('status', 'indexed'),
+          supabase
+            .from('documents')
+            .select('created_at')
+            .eq('user_id', user.id)
+            .gte('created_at', startDate)
+            .order('created_at', { ascending: true }),
         ]);
 
         setTotals({
@@ -39,18 +55,19 @@ export default function AnalyticsPage() {
           knowledgePages: docCount || 0,
         });
 
-        // Build a flat 7-day chart from uniform distribution of monthly messages
-        // (no per-day data without conversation storage)
-        const avgPerDay = Math.round((profile?.monthly_message_count || 0) / 30);
-        const days: DayData[] = [];
-        for (let i = 6; i >= 0; i--) {
+        // Build date buckets for the selected range
+        const buckets: Record<string, number> = {};
+        for (let i = range - 1; i >= 0; i--) {
           const d = new Date(Date.now() - i * 86400000);
-          days.push({
-            date: d.toLocaleDateString('en-US', { weekday: 'short' }),
-            messages: avgPerDay,
-          });
+          const key = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          buckets[key] = 0;
         }
-        setChartData(days);
+        // Count real indexed documents per day
+        for (const doc of docs || []) {
+          const key = new Date(doc.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          if (key in buckets) buckets[key]++;
+        }
+        setChartData(Object.entries(buckets).map(([date, pages]) => ({ date, pages })));
 
         // Top indexed pages
         const { data: pages } = await supabase
@@ -64,7 +81,7 @@ export default function AnalyticsPage() {
       } catch (e) { console.error(e); }
       setLoading(false);
     })();
-  }, [user]);
+  }, [user, range]);
 
   const kpis = [
     { label: 'Messages Used (mo)', value: totals.messagesUsed.toLocaleString() },
@@ -94,15 +111,26 @@ export default function AnalyticsPage() {
 
       {/* Chart */}
       <div className="p-5 rounded-xl border border-edge bg-surface/40">
-        <h2 className="text-[15px] font-semibold text-fg mb-4">Daily Message Avg — Last 7 Days</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[15px] font-semibold text-fg">Pages Indexed Per Day</h2>
+          <select
+            value={range}
+            onChange={e => setRange(Number(e.target.value))}
+            className="text-[12px] bg-surface border border-edge text-fg-secondary rounded-lg px-2.5 py-1.5 outline-none cursor-pointer"
+          >
+            {RANGE_OPTIONS.map(o => (
+              <option key={o.days} value={o.days}>{o.label}</option>
+            ))}
+          </select>
+        </div>
         <div style={{ height: 260, width: '100%', minWidth: 0 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e2540" />
-              <XAxis dataKey="date" tick={{ fill: '#8892b0', fontSize: 12 }} axisLine={{ stroke: '#1e2540' }} tickLine={false} />
+              <XAxis dataKey="date" tick={{ fill: '#8892b0', fontSize: 11 }} axisLine={{ stroke: '#1e2540' }} tickLine={false} interval="preserveStartEnd" />
               <YAxis allowDecimals={false} tick={{ fill: '#8892b0', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ background: '#1a1f35', border: '1px solid #2a3155', borderRadius: 8, fontSize: 13, color: '#edf0f7' }} cursor={{ fill: 'rgba(79,109,245,0.06)' }} />
-              <Bar dataKey="messages" fill="#4f6df5" radius={[6, 6, 0, 0]} />
+              <Tooltip contentStyle={{ background: '#1a1f35', border: '1px solid #2a3155', borderRadius: 8, fontSize: 13, color: '#edf0f7' }} cursor={{ fill: 'rgba(79,109,245,0.06)' }} formatter={(v: number) => [v, 'Pages indexed']} />
+              <Bar dataKey="pages" fill="#4f6df5" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
