@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDodoClientForUser, isDevUser, getAddonProductIdForUser, MESSAGE_ADDONS, AddonId } from '@/lib/dodo';
+import { getDodoClientForUser, isDevUser, getAddonProductIdForUser, isMockMode, MESSAGE_ADDONS, AddonId } from '@/lib/dodo';
 import { getAdminClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { validateEnv } from '@/lib/env';
@@ -20,6 +20,13 @@ export async function POST(request: NextRequest) {
         const addon = MESSAGE_ADDONS[addonId as AddonId];
         if (!addon) {
             return NextResponse.json({ error: 'Invalid add-on ID' }, { status: 400 });
+        }
+
+        // ── Mock mode: skip Dodo entirely ──────────────────────────────────────
+        if (isMockMode()) {
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+            const mockUrl = `${appUrl}/api/billing/mock-complete?addonId=${addonId}&userId=${userId}`;
+            return NextResponse.json({ success: true, url: mockUrl });
         }
 
         const admin = getAdminClient();
@@ -44,7 +51,16 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const dodo = getDodoClientForUser(userTestMode);
+        let dodo;
+        try {
+            dodo = getDodoClientForUser(userTestMode);
+        } catch (clientErr: any) {
+            logger.error('billing', 'Dodo client init failed for addon', { error: clientErr.message });
+            return NextResponse.json(
+                { error: 'Payment provider not configured. Please contact support.' },
+                { status: 503 }
+            );
+        }
 
         // One-time payment for an add-on (not a subscription)
         const payment = await (dodo as any).payments.create({

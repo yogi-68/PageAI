@@ -107,7 +107,7 @@ export default function BillingPage() {
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-      else throw new Error(data.error || 'Failed');
+      else toast.error(data.error || 'Payment provider not available — please try again later.');
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -125,10 +125,9 @@ export default function BillingPage() {
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
-      } else if (res.status === 503) {
-        toast.error('Add-on payments are not configured yet — please contact support.');
       } else {
-        throw new Error(data.error || 'Failed to create checkout');
+        // 503 = not configured, 500 = API error — both show a user-friendly message
+        toast.error(data.error || 'Add-on payments are not available right now — please contact support.');
       }
     } catch (e: any) {
       toast.error(e.message);

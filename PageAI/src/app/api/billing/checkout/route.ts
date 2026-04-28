@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDodoClientForUser, isDevUser, getProductIdForUser, PLANS, PlanId, YEARLY_PRICES } from '@/lib/dodo';
+import { getDodoClientForUser, isDevUser, getProductIdForUser, isMockMode, PLANS, PlanId, YEARLY_PRICES } from '@/lib/dodo';
 import { getAdminClient } from '@/lib/supabase';
 import { validateEnv } from '@/lib/env';
 
@@ -24,6 +24,13 @@ export async function POST(request: NextRequest) {
         }
 
         const isAnnual = billing === 'annual';
+
+        // ── Mock mode: skip Dodo entirely ──────────────────────────────────────
+        if (isMockMode()) {
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+            const mockUrl = `${appUrl}/api/billing/mock-complete?planId=${planId}&userId=${userId}&billing=${billing}`;
+            return NextResponse.json({ success: true, url: mockUrl });
+        }
 
         // Fetch user profile first — email determines whether to use sandbox or live payments
         const admin = getAdminClient();
