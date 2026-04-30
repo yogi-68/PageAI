@@ -37,13 +37,13 @@ coverage/
 
 # Prisma generated
 # (keep schema.prisma but not the generated client)
-PageAI/node_modules/
+PageCortex/node_modules/
 admin/node_modules/
-PageAI/.next/
+PageCortex/.next/
 admin/.next/
-PageAI/tsconfig.tsbuildinfo
+PageCortex/tsconfig.tsbuildinfo
 admin/tsconfig.tsbuildinfo
-PageAI/next-env.d.ts
+PageCortex/next-env.d.ts
 admin/next-env.d.ts
 
 .vercel

@@ -1,6 +1,9 @@
 ﻿{
   "name": "pagecortex-monorepo",
   "private": true,
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "cd PageCortex && npm run dev",
     "build": "cd PageCortex && npm run build",
