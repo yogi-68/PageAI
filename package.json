@@ -1,9 +1,9 @@
-{
-  "name": "pageai-monorepo",
+﻿{
+  "name": "pagecortex-monorepo",
   "private": true,
   "scripts": {
-    "dev": "cd PageAI && npm run dev",
-    "build": "cd PageAI && npm run build",
+    "dev": "cd PageCortex && npm run dev",
+    "build": "cd PageCortex && npm run build",
     "dev:admin": "cd admin && npm run dev",
     "build:admin": "cd admin && npm run build"
   }

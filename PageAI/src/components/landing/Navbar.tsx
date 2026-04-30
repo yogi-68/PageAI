@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -101,7 +101,7 @@ export default function Navbar() {
               <circle cx="11" cy="6.5" r="0.75" className="fill-white dark:fill-[#edf0f7]" />
             </svg>
           </div>
-          <span className="text-[17px] font-semibold text-fg tracking-tight">PageAI</span>
+          <span className="text-[17px] font-semibold text-fg tracking-tight">PageCortex</span>
         </Link>
 
         {/* Desktop Navigation */}

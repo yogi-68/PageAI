@@ -577,7 +577,7 @@ export default function NewBotPage() {
                                                     <svg viewBox="0 0 24 24" width="10" height="10" fill="white"><path d="M2 12L22 2l-10 20-2-8-8-2z"/></svg>
                                                 </div>
                                             </div>
-                                            <p className="text-[8px] text-fg-muted/60 text-center mt-1.5">Powered by PageAI</p>
+                                            <p className="text-[8px] text-fg-muted/60 text-center mt-1.5">Powered by PageCortex</p>
                                         </div>
                                     </div>
                                     {/* Launcher button */}
@@ -611,7 +611,7 @@ export default function NewBotPage() {
                                 <span className="text-[12px] font-medium text-fg-secondary">Embed Code</span>
                                 <button
                                     onClick={async () => {
-                                        const code = `<script\n  src="${process.env.NEXT_PUBLIC_APP_URL || 'https://pageai-tau.vercel.app'}/widget.js"\n  data-bot-id="${botId}"\n  data-color="${primaryColor}"\n  data-position="${position}"\n  async\n><\/script>`;
+                                        const code = `<script\n  src="${process.env.NEXT_PUBLIC_APP_URL || 'https://pagecortex.vercel.app'}/widget.js"\n  data-bot-id="${botId}"\n  data-color="${primaryColor}"\n  data-position="${position}"\n  async\n><\/script>`;
                                         try { await navigator.clipboard.writeText(code); } catch { const el = document.createElement('textarea'); el.value = code; el.style.position = 'fixed'; el.style.opacity = '0'; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); }
                                     }}
                                     className="px-3 py-1 rounded-md bg-primary/10 text-primary text-[12px] font-medium hover:bg-primary/20 transition-colors"
@@ -621,7 +621,7 @@ export default function NewBotPage() {
                             </div>
                             <pre className="p-4 text-[13px] text-fg/80 font-mono overflow-x-auto">
 {`<script
-  src="https://pageai-tau.vercel.app/widget.js"
+  src="https://pagecortex.vercel.app/widget.js"
   data-bot-id="${botId || 'bot_xxxxx'}"
   data-color="${primaryColor}"
   data-position="${position}"

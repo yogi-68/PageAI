@@ -18,7 +18,7 @@ interface Stats {
 }
 
 const QUICK_LINKS = [
-  { label: 'Main App',           url: process.env.NEXT_PUBLIC_MAIN_APP_URL || 'https://pageai-tau.vercel.app', icon: '◈' },
+  { label: 'Main App',           url: process.env.NEXT_PUBLIC_MAIN_APP_URL || 'https://pagecortex.vercel.app', icon: '◈' },
   { label: 'Supabase Dashboard', url: 'https://supabase.com/dashboard',                                        icon: '◉' },
   { label: 'Dodo Payments',      url: 'https://dashboard.dodopayments.com',                                    icon: '◆' },
   { label: 'Vercel Dashboard',   url: 'https://vercel.com/dashboard',                                         icon: '▣' },
@@ -194,7 +194,7 @@ export default function SettingsPage() {
           {[
             'ADMIN_EMAILS — update this Vercel env var to add or remove admin access (comma-separated).',
             'SUPABASE_SERVICE_ROLE_KEY — server-only secret, never exposed to the browser. Rotate in Supabase if compromised.',
-            'This admin app shares the same Supabase database as the main PageAI app but is deployed separately.',
+            'This admin app shares the same Supabase database as the main PageCortex app but is deployed separately.',
             'All admin API routes bypass Row Level Security via the service role — keep this app access-controlled.',
           ].map((note, i) => (
             <li key={i} className="flex items-start gap-2 text-[13px]" style={{ color: 'var(--fg-secondary)' }}>

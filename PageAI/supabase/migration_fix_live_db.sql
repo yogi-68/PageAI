@@ -1,5 +1,5 @@
--- ============================================================
--- PageAI Live DB Migration — Run this in Supabase SQL Editor
+﻿-- ============================================================
+-- PageCortex Live DB Migration — Run this in Supabase SQL Editor
 -- Idempotent: safe to run multiple times on any DB state
 -- ============================================================
 

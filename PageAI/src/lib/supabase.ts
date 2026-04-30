@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+﻿import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Lazy-initialized browser Supabase client (safe for Vercel build)
 let _supabase: SupabaseClient | null = null;
@@ -9,7 +9,7 @@ export function getSupabase(): SupabaseClient {
         const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
         if (!url || !key) {
             throw new Error(
-                '[PageAI] Missing Supabase environment variables. ' +
+                '[PageCortex] Missing Supabase environment variables. ' +
                 'Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY ' +
                 'to your Vercel project → Settings → Environment Variables, then redeploy.'
             );
@@ -34,7 +34,7 @@ export function getAdminClient() {
         const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
         if (!url || !key) {
             throw new Error(
-                '[PageAI] Missing Supabase admin environment variables. ' +
+                '[PageCortex] Missing Supabase admin environment variables. ' +
                 'Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY ' +
                 'to your Vercel project → Settings → Environment Variables, then redeploy.'
             );

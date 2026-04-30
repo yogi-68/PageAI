@@ -18,7 +18,7 @@ const logos = ['Stripe', 'Vercel', 'Notion', 'Linear', 'Figma'];
 const demoResponses: Record<string, string> = {
   'what plans do you offer': 'We offer 4 plans: **Free** ($0), **Starter** ($29/mo), **Growth** ($69/mo), and **Scale** ($199/mo). All paid plans include a 7-day free trial!',
   'how does it work': 'It\'s simple! 1) Add your website URL or connect a data source 2) We crawl & index your content with semantic chunking 3) Deploy your AI chatbot with one line of code. Takes under 2 minutes!',
-  'what is pageai': 'PageAI is an AI-powered chatbot platform that trains on your website content using advanced RAG with hybrid search. It answers customer questions with 95%+ accuracy and source citations — 24/7. Supports 95+ languages!',
+  'what is PageCortex': 'PageCortex is an AI-powered chatbot platform that trains on your website content using advanced RAG with hybrid search. It answers customer questions with 95%+ accuracy and source citations — 24/7. Supports 95+ languages!',
   'pricing': 'Start free forever! Starter: $29/mo (4K msgs), Growth: $69/mo (10K msgs), Scale: $199/mo (40K msgs). All paid plans have a 7-day free trial. Cancel anytime.',
   'features': 'Key features include: hybrid vector + BM25 search, GPT-4.1 powered answers, streaming responses, data source connectors (Notion, Google Drive, etc.), 95+ languages, real-time analytics, and easy embed widget.',
 };
@@ -30,7 +30,7 @@ function findBestResponse(query: string): string {
       return response;
     }
   }
-  return 'Great question! PageAI helps businesses deploy AI chatbots trained on their website content. Try asking about plans, features, or how it works!';
+  return 'Great question! PageCortex helps businesses deploy AI chatbots trained on their website content. Try asking about plans, features, or how it works!';
 }
 
 const fadeUp = {
@@ -172,7 +172,7 @@ export default function HeroSection() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-[13px] font-medium text-fg">PageAI Assistant</p>
+                      <p className="text-[13px] font-medium text-fg">PageCortex Assistant</p>
                       <p className="text-[11px] text-success flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />
                         Online

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
+import { Sk } from '@/components/ui/Skeleton';
 
 interface DocPage { id: string; url: string; title: string; website_id: string; created_at: string; }
 interface Website { id: string; url: string; pages: DocPage[]; dataSourceId: string | null; chunkCount: number; status: string; }
@@ -284,7 +285,31 @@ export default function KnowledgePage() {
     w.pages.some(p => p.url.toLowerCase().includes(search.toLowerCase()) || p.title?.toLowerCase().includes(search.toLowerCase()))
   );
 
-  if (loading) return <div className="flex items-center justify-center py-32"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return (
+    <div className="space-y-6">
+      <div className="space-y-2"><Sk className="h-7 w-44" /><Sk className="h-4 w-64" /></div>
+      <div className="grid grid-cols-3 gap-3">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="p-4 rounded-xl border border-edge bg-surface/40 space-y-3">
+            <Sk className="h-3 w-24" /><Sk className="h-7 w-12" />
+          </div>
+        ))}
+      </div>
+      <div className="space-y-3">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="p-5 rounded-xl border border-edge bg-surface/40 space-y-3">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2"><Sk className="h-5 w-56" /><Sk className="h-3 w-32" /></div>
+              <Sk className="h-6 w-16 rounded-md" />
+            </div>
+            <div className="flex items-center gap-2 pt-3 border-t border-edge">
+              <Sk className="h-7 w-20 rounded-lg" /><Sk className="h-7 w-20 rounded-lg" /><Sk className="h-7 w-16 rounded-lg" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   const planId = profile?.plan || 'free';
   const planLimits = PLAN_LIMITS[planId] || PLAN_LIMITS.free;

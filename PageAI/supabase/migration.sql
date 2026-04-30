@@ -1,5 +1,5 @@
--- ============================================================
--- PageAI Migration — Safe to run on partially-created databases
+﻿-- ============================================================
+-- PageCortex Migration — Safe to run on partially-created databases
 -- Idempotent: all operations use IF NOT EXISTS / IF EXISTS / CREATE OR REPLACE
 -- ============================================================
 

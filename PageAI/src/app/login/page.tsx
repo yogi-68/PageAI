@@ -39,7 +39,7 @@ export default function LoginPage() {
             <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H7l-3 3V11H4a2 2 0 01-2-2V4z" fill="#4f6df5"/></svg>
             </div>
-            <span className="text-[17px] font-semibold text-fg">PageAI</span>
+            <span className="text-[17px] font-semibold text-fg">PageCortex</span>
           </Link>
           <h1 className="text-[28px] font-bold text-fg tracking-[-0.03em] mb-2">Welcome back</h1>
           <p className="text-[14px] text-fg-secondary">Sign in to your account to continue</p>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
 import { TrendingUp, Zap, CheckCircle2, ArrowRight } from 'lucide-react';
@@ -44,7 +44,7 @@ export default function SolutionSection() {
             <br className="hidden sm:block" /> Automatically.
           </h2>
           <p className="text-[16px] text-fg-secondary max-w-[520px] mx-auto leading-relaxed">
-            PageAI trains a custom chatbot on your website content, so it answers every question accurately — without any effort from your team.
+            PageCortex trains a custom chatbot on your website content, so it answers every question accurately — without any effort from your team.
           </p>
         </motion.div>
 

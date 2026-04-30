@@ -1,5 +1,5 @@
-// PageAI Embeddable Widget Script
-// Usage: <script src="https://pageai-tau.vercel.app/widget.js" data-bot-id="bot_xxx" async />
+﻿// PageCortex Embeddable Widget Script
+// Usage: <script src="https://pagecortex.vercel.app/widget.js" data-bot-id="bot_xxx" async />
 (function () {
     "use strict";
 
@@ -11,7 +11,7 @@
 
     const scriptSrc = scriptEl.src || "";
     const scriptOrigin = scriptSrc ? new URL(scriptSrc).origin : "";
-    const API_BASE = window.PAGEAI_API || scriptOrigin || "https://pageai-tau.vercel.app";
+    const API_BASE = window.PAGECORTEX_API || scriptOrigin || "https://pagecortex.vercel.app";
 
     // Get config from script tag attributes
     const config = {
@@ -26,7 +26,7 @@
         })()    };
 
     if (!config.botId) {
-        console.error("[PageAI] Missing data-bot-id attribute");
+        console.error("[PageCortex] Missing data-bot-id attribute");
         return;
     }
 
@@ -34,7 +34,7 @@
     function initWidget() {
     const style = document.createElement("style");
     style.textContent = `
-    #pageai-widget-container {
+    #pagecortex-widget-container {
       position: fixed;
       bottom: 20px;
       ${config.position}: 20px;
@@ -42,7 +42,7 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
-    #pageai-trigger {
+    #pagecortex-trigger {
       width: 60px;
       height: 60px;
       border-radius: 50%;
@@ -56,18 +56,18 @@
       transition: transform 0.3s, box-shadow 0.3s;
     }
 
-    #pageai-trigger:hover {
+    #pagecortex-trigger:hover {
       transform: scale(1.05);
       box-shadow: 0 6px 30px rgba(0,0,0,0.4);
     }
 
-    #pageai-trigger svg {
+    #pagecortex-trigger svg {
       width: 28px;
       height: 28px;
       fill: white;
     }
 
-    #pageai-chat {
+    #pagecortex-chat {
       display: none;
       width: 380px;
       max-height: 560px;
@@ -80,17 +80,17 @@
       margin-bottom: 12px;
     }
 
-    #pageai-chat.open {
+    #pagecortex-chat.open {
       display: flex;
-      animation: pageai-slide-up 0.3s ease-out;
+      animation: pagecortex-slide-up 0.3s ease-out;
     }
 
-    @keyframes pageai-slide-up {
+    @keyframes pagecortex-slide-up {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    #pageai-header {
+    #pagecortex-header {
       padding: 16px;
       background: ${config.color};
       display: flex;
@@ -98,7 +98,7 @@
       gap: 12px;
     }
 
-    #pageai-avatar {
+    #pagecortex-avatar {
       width: 36px;
       height: 36px;
       border-radius: 50%;
@@ -108,20 +108,20 @@
       justify-content: center;
     }
 
-    #pageai-header-text h3 {
+    #pagecortex-header-text h3 {
       color: white;
       font-size: 15px;
       font-weight: 600;
       margin: 0;
     }
 
-    #pageai-header-text p {
+    #pagecortex-header-text p {
       color: rgba(255,255,255,0.7);
       font-size: 12px;
       margin: 0;
     }
 
-    #pageai-close {
+    #pagecortex-close {
       margin-left: auto;
       background: rgba(255,255,255,0.15);
       border: none;
@@ -136,7 +136,7 @@
       font-size: 16px;
     }
 
-    #pageai-messages {
+    #pagecortex-messages {
       flex: 1;
       overflow-y: auto;
       padding: 16px;
@@ -144,18 +144,18 @@
       max-height: 380px;
     }
 
-    .pageai-msg {
+    .pagecortex-msg {
       margin-bottom: 12px;
       display: flex;
       gap: 8px;
       align-items: flex-start;
     }
 
-    .pageai-msg.user {
+    .pagecortex-msg.user {
       justify-content: flex-end;
     }
 
-    .pageai-msg-bubble {
+    .pagecortex-msg-bubble {
       max-width: 80%;
       padding: 10px 14px;
       border-radius: 14px;
@@ -163,19 +163,19 @@
       line-height: 1.5;
     }
 
-    .pageai-msg.bot .pageai-msg-bubble {
+    .pagecortex-msg.bot .pagecortex-msg-bubble {
       background: #22223a;
       color: #e0e0ea;
       border-top-left-radius: 4px;
     }
 
-    .pageai-msg.user .pageai-msg-bubble {
+    .pagecortex-msg.user .pagecortex-msg-bubble {
       background: ${config.color};
       color: white;
       border-top-right-radius: 4px;
     }
 
-    .pageai-sources {
+    .pagecortex-sources {
       display: flex;
       gap: 6px;
       flex-wrap: wrap;
@@ -183,7 +183,7 @@
       margin-left: 32px;
     }
 
-    .pageai-source-tag {
+    .pagecortex-source-tag {
       font-size: 11px;
       padding: 2px 8px;
       border-radius: 99px;
@@ -193,7 +193,7 @@
       text-decoration: none;
     }
 
-    .pageai-suggestions {
+    .pagecortex-suggestions {
       display: flex;
       gap: 6px;
       flex-wrap: wrap;
@@ -201,7 +201,7 @@
       margin-left: 32px;
     }
 
-    .pageai-suggestion-chip {
+    .pagecortex-suggestion-chip {
       font-size: 12px;
       padding: 5px 11px;
       border-radius: 99px;
@@ -214,19 +214,19 @@
       line-height: 1.4;
     }
 
-    .pageai-suggestion-chip:hover {
+    .pagecortex-suggestion-chip:hover {
       background: ${config.color};
       color: #fff;
     }
 
-    #pageai-input-area {
+    #pagecortex-input-area {
       padding: 12px;
       border-top: 1px solid rgba(255,255,255,0.06);
       display: flex;
       gap: 8px;
     }
 
-    #pageai-input {
+    #pagecortex-input {
       flex: 1;
       padding: 10px 14px;
       border-radius: 12px;
@@ -237,11 +237,11 @@
       outline: none;
     }
 
-    #pageai-input:focus {
+    #pagecortex-input:focus {
       border-color: ${config.color};
     }
 
-    #pageai-send {
+    #pagecortex-send {
       width: 40px;
       height: 40px;
       border-radius: 12px;
@@ -254,41 +254,41 @@
       justify-content: center;
     }
 
-    #pageai-send:disabled {
+    #pagecortex-send:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
 
-    #pageai-branding {
+    #pagecortex-branding {
       text-align: center;
       padding: 8px;
       font-size: 11px;
       color: rgba(255,255,255,0.3);
     }
 
-    #pageai-branding a {
+    #pagecortex-branding a {
       color: rgba(255,255,255,0.5);
       text-decoration: none;
     }
 
-    .pageai-typing {
+    .pagecortex-typing {
       display: flex;
       gap: 4px;
       padding: 10px 14px;
     }
 
-    .pageai-typing span {
+    .pagecortex-typing span {
       width: 6px;
       height: 6px;
       border-radius: 50%;
       background: #6b6b80;
-      animation: pageai-typing 1.4s infinite;
+      animation: pagecortex-typing 1.4s infinite;
     }
 
-    .pageai-typing span:nth-child(2) { animation-delay: 0.2s; }
-    .pageai-typing span:nth-child(3) { animation-delay: 0.4s; }
+    .pagecortex-typing span:nth-child(2) { animation-delay: 0.2s; }
+    .pagecortex-typing span:nth-child(3) { animation-delay: 0.4s; }
 
-    @keyframes pageai-typing {
+    @keyframes pagecortex-typing {
       0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
       30% { opacity: 1; transform: translateY(-4px); }
     }
@@ -297,34 +297,34 @@
 
     // Build widget HTML
     const container = document.createElement("div");
-    container.id = "pageai-widget-container";
+    container.id = "pagecortex-widget-container";
     container.innerHTML = `
-    <div id="pageai-chat">
-      <div id="pageai-header">
-        <div id="pageai-avatar">
+    <div id="pagecortex-chat">
+      <div id="pagecortex-header">
+        <div id="pagecortex-avatar">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2">
             <path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/>
             <path d="M9 22h6M12 17v5"/>
           </svg>
         </div>
-        <div id="pageai-header-text">
+        <div id="pagecortex-header-text">
           <h3>${config.name}</h3>
-          <p>Powered by PageAI</p>
+          <p>Powered by PageCortex</p>
         </div>
-        <button id="pageai-close">&times;</button>
+        <button id="pagecortex-close">&times;</button>
       </div>
-      <div id="pageai-messages"></div>
-      <div id="pageai-input-area">
-        <input id="pageai-input" type="text" placeholder="Ask anything about this site..." />
-        <button id="pageai-send">
+      <div id="pagecortex-messages"></div>
+      <div id="pagecortex-input-area">
+        <input id="pagecortex-input" type="text" placeholder="Ask anything about this site..." />
+        <button id="pagecortex-send">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
           </svg>
         </button>
       </div>
-      <div id="pageai-branding">Powered by <a href="https://pageai.io" target="_blank">PageAI</a></div>
+      <div id="pagecortex-branding">Powered by <a href="https://pagecortex.io" target="_blank">PageCortex</a></div>
     </div>
-    <button id="pageai-trigger">
+    <button id="pagecortex-trigger">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="white" stroke="none"/>
       </svg>
@@ -333,12 +333,12 @@
     document.body.appendChild(container);
 
     // Widget logic
-    const chat = document.getElementById("pageai-chat");
-    const trigger = document.getElementById("pageai-trigger");
-    const closeBtn = document.getElementById("pageai-close");
-    const messages = document.getElementById("pageai-messages");
-    const input = document.getElementById("pageai-input");
-    const sendBtn = document.getElementById("pageai-send");
+    const chat = document.getElementById("pagecortex-chat");
+    const trigger = document.getElementById("pagecortex-trigger");
+    const closeBtn = document.getElementById("pagecortex-close");
+    const messages = document.getElementById("pagecortex-messages");
+    const input = document.getElementById("pagecortex-input");
+    const sendBtn = document.getElementById("pagecortex-send");
 
     let isOpen = false;
     let conversationId = null;
@@ -358,10 +358,10 @@
         // Remove any existing suggestion chips before appending a new message
         removeSuggestions();
         const msg = document.createElement("div");
-        msg.className = `pageai-msg ${role}`;
+        msg.className = `pagecortex-msg ${role}`;
         msg.innerHTML = `
       ${role === "bot" ? '<div style="width:24px;height:24px;border-radius:50%;background:' + config.color + ';flex-shrink:0;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/></svg></div>' : ""}
-      <div class="pageai-msg-bubble">${text}</div>
+      <div class="pagecortex-msg-bubble">${text}</div>
     `;
         messages.appendChild(msg);
         messages.scrollTop = messages.scrollHeight;
@@ -371,11 +371,11 @@
         removeSuggestions();
         if (!questions || questions.length === 0) return;
         const div = document.createElement("div");
-        div.className = "pageai-suggestions";
-        div.id = "pageai-suggestions";
+        div.className = "pagecortex-suggestions";
+        div.id = "pagecortex-suggestions";
         questions.forEach(function(q) {
             const btn = document.createElement("button");
-            btn.className = "pageai-suggestion-chip";
+            btn.className = "pagecortex-suggestion-chip";
             btn.textContent = q;
             btn.addEventListener("click", function() {
                 input.value = q;
@@ -388,24 +388,24 @@
     }
 
     function removeSuggestions() {
-        const el = document.getElementById("pageai-suggestions");
+        const el = document.getElementById("pagecortex-suggestions");
         if (el) el.remove();
     }
 
     function showTyping() {
         const typing = document.createElement("div");
-        typing.className = "pageai-msg bot";
-        typing.id = "pageai-typing";
+        typing.className = "pagecortex-msg bot";
+        typing.id = "pagecortex-typing";
         typing.innerHTML = `
       <div style="width:24px;height:24px;border-radius:50%;background:${config.color};flex-shrink:0;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/></svg></div>
-      <div class="pageai-typing"><span></span><span></span><span></span></div>
+      <div class="pagecortex-typing"><span></span><span></span><span></span></div>
     `;
         messages.appendChild(typing);
         messages.scrollTop = messages.scrollHeight;
     }
 
     function removeTyping() {
-        const el = document.getElementById("pageai-typing");
+        const el = document.getElementById("pagecortex-typing");
         if (el) el.remove();
     }
 
@@ -461,13 +461,13 @@
 
                 // Create bot message bubble for streaming
                 const msg = document.createElement("div");
-                msg.className = "pageai-msg bot";
+                msg.className = "pagecortex-msg bot";
                 msg.innerHTML = `
                   <div style="width:24px;height:24px;border-radius:50%;background:${config.color};flex-shrink:0;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/></svg></div>
-                  <div class="pageai-msg-bubble"></div>
+                  <div class="pagecortex-msg-bubble"></div>
                 `;
                 messages.appendChild(msg);
-                const bubble = msg.querySelector(".pageai-msg-bubble");
+                const bubble = msg.querySelector(".pagecortex-msg-bubble");
 
                 let buffer = "";
                 while (true) {
@@ -533,7 +533,7 @@
         if (e.key === "Enter") sendMessage();
     });
 
-    console.log(`[PageAI] Widget v${WIDGET_VERSION} loaded for bot ${config.botId}`);
+    console.log(`[PageCortex] Widget v${WIDGET_VERSION} loaded for bot ${config.botId}`);
     } // end initWidget
 
     // Schedule initialization after page becomes idle — avoids blocking first paint

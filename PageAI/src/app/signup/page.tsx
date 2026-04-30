@@ -48,7 +48,7 @@ export default function SignupPage() {
             <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H7l-3 3V11H4a2 2 0 01-2-2V4z" fill="#4f6df5"/></svg>
             </div>
-            <span className="text-[17px] font-semibold text-fg">PageAI</span>
+            <span className="text-[17px] font-semibold text-fg">PageCortex</span>
           </Link>
           <h2 className="text-[26px] font-bold text-fg tracking-[-0.03em] leading-[1.2] mb-4">Start converting visitors into customers today</h2>
           <p className="text-[14.5px] text-fg-secondary leading-relaxed mb-8">Join thousands of businesses using AI-powered chat to automate support and drive growth.</p>
@@ -63,7 +63,7 @@ export default function SignupPage() {
         </div>
         <div className="p-5 rounded-xl border border-edge bg-bg/40">
           <blockquote className="text-[14px] text-fg-secondary leading-relaxed mb-3">
-            &ldquo;PageAI reduced our support tickets by 60% in the first month. The setup was incredibly simple.&rdquo;
+            &ldquo;PageCortex reduced our support tickets by 60% in the first month. The setup was incredibly simple.&rdquo;
           </blockquote>
           <p className="text-[13px] font-medium text-fg">Sarah Kim</p>
           <p className="text-[12px] text-fg-muted">VP of Support, TechFlow</p>
@@ -78,7 +78,7 @@ export default function SignupPage() {
               <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H7l-3 3V11H4a2 2 0 01-2-2V4z" fill="#4f6df5"/></svg>
               </div>
-              <span className="text-[17px] font-semibold text-fg">PageAI</span>
+              <span className="text-[17px] font-semibold text-fg">PageCortex</span>
             </Link>
           </div>
 

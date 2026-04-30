@@ -52,7 +52,7 @@ export default function LoginPage() {
             </svg>
           </div>
           <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="text-[18px] font-bold" style={{ color: 'var(--fg)' }}>PageAI</span>
+            <span className="text-[18px] font-bold" style={{ color: 'var(--fg)' }}>PageCortex</span>
             <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ background: 'rgba(79,109,245,0.12)', color: 'var(--primary)' }}>Admin</span>
           </div>
           <p className="text-[13px]" style={{ color: 'var(--fg-secondary)' }}>Restricted access — authorized administrators only</p>
@@ -71,7 +71,7 @@ export default function LoginPage() {
             <label className="block text-[12px] font-medium mb-1.5" style={{ color: 'var(--fg-secondary)' }}>Email address</label>
             <input
               type="email" value={email} onChange={e => setEmail(e.target.value)} required
-              placeholder="admin@pageai.com" autoComplete="email"
+              placeholder="admin@pagecortex.com" autoComplete="email"
               className="w-full px-3.5 py-2.5 rounded-lg text-[13px] outline-none transition-all"
               style={{ background: 'var(--bg)', border: '1px solid var(--edge)', color: 'var(--fg)' }}
               onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
@@ -110,7 +110,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-[11px] mt-5" style={{ color: 'var(--fg-muted)' }}>
-          PageAI Admin Panel · Access logs are recorded
+          PageCortex Admin Panel · Access logs are recorded
         </p>
       </div>
     </div>

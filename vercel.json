@@ -1,6 +1,6 @@
-{
-  "buildCommand": "cd PageAI && npm run build",
-  "outputDirectory": "PageAI/.next",
+﻿{
+  "buildCommand": "cd PageCortex && npm run build",
+  "outputDirectory": "PageCortex/.next",
   "framework": "nextjs",
-  "installCommand": "cd PageAI && npm install"
+  "installCommand": "cd PageCortex && npm install"
 }

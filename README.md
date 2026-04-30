@@ -1,4 +1,4 @@
-# PageAI — Monorepo
+﻿# PageCortex — Monorepo
 
 > AI-powered customer support chatbot platform built on Next.js, Supabase, and Dodo Payments.
 
@@ -7,7 +7,7 @@
 ## Repository Structure
 
 ```
-PageAI/          ← Main customer-facing app (Next.js 16, TypeScript, Tailwind)
+PageCortex/          ← Main customer-facing app (Next.js 16, TypeScript, Tailwind)
 admin/           ← Internal admin dashboard (Next.js 16, React 19)
 .gitignore       ← Root ignore file (covers both apps)
 README.md        ← This file
@@ -17,7 +17,7 @@ README.md        ← This file
 
 ## Apps
 
-### `PageAI/` — Main App
+### `PageCortex/` — Main App
 
 | Layer | Stack |
 |---|---|
@@ -38,7 +38,7 @@ Internal-only dashboard for managing users, bots, revenue, and subscriptions. Pr
 
 ```bash
 # 1. Install dependencies for main app
-cd PageAI
+cd PageCortex
 npm install
 
 # 2. Copy env file
@@ -46,8 +46,8 @@ cp .env.local.example .env.local
 # Fill in all values (see Environment Variables section below)
 
 # 3. Run migrations in Supabase SQL editor
-# Execute: PageAI/supabase/schema.sql
-# Then run any files in: PageAI/supabase/migrations/
+# Execute: PageCortex/supabase/schema.sql
+# Then run any files in: PageCortex/supabase/migrations/
 
 # 4. Start dev server
 npm run dev
@@ -64,7 +64,7 @@ npm run dev
 
 ## Environment Variables
 
-### `PageAI/.env.local`
+### `PageCortex/.env.local`
 
 ```env
 # ── Supabase ──────────────────────────────────────────────
@@ -77,8 +77,8 @@ DATABASE_URL=          # Transaction pooler (Prisma / pgbouncer)
 DIRECT_URL=            # Session pooler (migrations)
 
 # ── App ───────────────────────────────────────────────────
-NEXT_PUBLIC_APP_URL=https://pageai-tau.vercel.app
-NEXT_PUBLIC_APP_NAME=PageAI
+NEXT_PUBLIC_APP_URL=https://pagecortex.vercel.app
+NEXT_PUBLIC_APP_NAME=PageCortex
 ADMIN_EMAILS=your@email.com
 
 # ── OpenAI ────────────────────────────────────────────────
@@ -251,7 +251,7 @@ All events are idempotent via the `webhook_events` table (duplicate event IDs ar
 
 ## Database Schema
 
-Key tables in `PageAI/supabase/schema.sql`:
+Key tables in `PageCortex/supabase/schema.sql`:
 
 | Table | Purpose |
 |---|---|
@@ -268,8 +268,8 @@ Key tables in `PageAI/supabase/schema.sql`:
 
 ```bash
 # In Supabase SQL editor, run in order:
-1. PageAI/supabase/schema.sql                              ← Full schema
-2. PageAI/supabase/migrations/20260414_add_has_used_trial.sql  ← Trial column
+1. PageCortex/supabase/schema.sql                              ← Full schema
+2. PageCortex/supabase/migrations/20260414_add_has_used_trial.sql  ← Trial column
 ```
 
 ---
@@ -278,8 +278,8 @@ Key tables in `PageAI/supabase/schema.sql`:
 
 ### Vercel (Main App)
 
-1. Connect `PageAI/` as the Vercel project root
-2. Set all environment variables from `PageAI/.env.local`
+1. Connect `PageCortex/` as the Vercel project root
+2. Set all environment variables from `PageCortex/.env.local`
 3. Set `NEXT_PUBLIC_APP_URL` to your production domain
 4. Configure Dodo webhook to point at: `https://yourdomain.com/api/billing/webhook`
 
@@ -296,17 +296,17 @@ In Dodo Dashboard → Webhooks → Create endpoint:
 
 ### Widget Embed
 
-The embeddable chat widget lives at `PageAI/public/widget.js`. It's loaded by end-customers on their own sites:
+The embeddable chat widget lives at `PageCortex/public/widget.js`. It's loaded by end-customers on their own sites:
 
 ```html
-<script src="https://pageai-tau.vercel.app/widget.js" data-bot-id="YOUR_BOT_ID"></script>
+<script src="https://pagecortex.vercel.app/widget.js" data-bot-id="YOUR_BOT_ID"></script>
 ```
 
 ### Add a New Plan
 
 1. Create the product in Dodo Dashboard
 2. Add product ID to `.env.local` and Vercel env vars
-3. Add plan config to `PageAI/src/lib/dodo.ts` PLANS object
+3. Add plan config to `PageCortex/src/lib/dodo.ts` PLANS object
 4. Add to `PricingSection.tsx` plans array
 
 ### Add a New Add-on Pack
@@ -315,11 +315,11 @@ The embeddable chat widget lives at `PageAI/public/widget.js`. It's loaded by en
 2. Add product ID to `.env.local` as `DODO_ADDON_XXXX`
 3. Add to `MESSAGE_ADDONS` in `dodo.ts`
 4. Update `PricingSection.tsx` addons array
-# PageAI — AI Chatbot Platform for Websites
+# PageCortex — AI Chatbot Platform for Websites
 
-**PageAI** is a production-ready SaaS platform that lets businesses create custom AI chatbots trained on their website content. Built with an advanced RAG (Retrieval-Augmented Generation) pipeline, GPT-4.1, and pgvector hybrid search, it delivers accurate, citation-backed answers with streaming responses — in real-time.
+**PageCortex** is a production-ready SaaS platform that lets businesses create custom AI chatbots trained on their website content. Built with an advanced RAG (Retrieval-Augmented Generation) pipeline, GPT-4.1, and pgvector hybrid search, it delivers accurate, citation-backed answers with streaming responses — in real-time.
 
-**Live:** [pageai-tau.vercel.app](https://pageai-tau.vercel.app)
+**Live:** [pagecortex.vercel.app](https://pagecortex.vercel.app)
 
 ---
 
@@ -464,8 +464,8 @@ src/
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/yogi-68/PageAI.git
-cd PageAI
+git clone https://github.com/yogi-68/PageCortex.git
+cd PageCortex
 npm install
 ```
 
@@ -483,7 +483,7 @@ Create `.env.local` (local dev) and add every variable to **Vercel → Project �
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API → anon/public key | Client + server |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → service_role key | **Server only** — never expose to client |
 | `OPENAI_API_KEY` | platform.openai.com → API Keys | Server only |
-| `NEXT_PUBLIC_APP_URL` | Your Vercel deployment URL, e.g. `https://pageai-tau.vercel.app` | No trailing slash |
+| `NEXT_PUBLIC_APP_URL` | Your Vercel deployment URL, e.g. `https://pagecortex.vercel.app` | No trailing slash |
 | `ADMIN_EMAILS` | Your own email(s), comma-separated | `you@example.com,other@example.com` |
 
 #### Dodo Payments
@@ -504,7 +504,7 @@ Create `.env.local` (local dev) and add every variable to **Vercel → Project �
 
 | Variable | Value | Notes |
 |---|---|---|
-| `ADMIN_HOSTNAME` | e.g. `admin.pageai.io` | Restricts `/admin/*` to that hostname only — makes admin invisible on the main URL |
+| `ADMIN_HOSTNAME` | e.g. `admin.pagecortex.io` | Restricts `/admin/*` to that hostname only — makes admin invisible on the main URL |
 
 ---
 
@@ -535,7 +535,7 @@ Create `.env.local` (local dev) and add every variable to **Vercel → Project �
 3. Go to **API Keys → Create new secret key** — copy the value immediately (shown once)
 4. Paste it as `OPENAI_API_KEY`
 
-> PageAI uses two models:
+> PageCortex uses two models:
 > - `gpt-4.1-mini` — default (fast, cheap, ~$0.40/M input tokens)
 > - `gpt-4.1` — complex queries via smart routing (~$2.00/M input tokens)
 > - `text-embedding-3-small` — embeddings (~$0.02/M tokens)
@@ -550,9 +550,9 @@ In Dodo dashboard → **Products → Create Product** × 3:
 
 | Product | Type | Price |
 |---|---|---|
-| PageAI Starter | Subscription | $29 / month |
-| PageAI Growth | Subscription | $69 / month |
-| PageAI Scale | Subscription | $199 / month |
+| PageCortex Starter | Subscription | $29 / month |
+| PageCortex Growth | Subscription | $69 / month |
+| PageCortex Scale | Subscription | $199 / month |
 
 Copy each **Product ID** to `DODO_PRODUCT_STARTER`, `DODO_PRODUCT_GROWTH`, `DODO_PRODUCT_SCALE`.
 
@@ -592,7 +592,7 @@ Visit [http://localhost:3000](http://localhost:3000)
 Access `/admin` — protected by `ADMIN_EMAILS` environment variable.
 
 ```
-ADMIN_EMAILS=you@example.com,admin@pageai.com
+ADMIN_EMAILS=you@example.com,admin@pagecortex.com
 ```
 
 ---

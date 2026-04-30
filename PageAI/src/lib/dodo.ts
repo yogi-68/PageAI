@@ -1,4 +1,4 @@
-import DodoPayments from 'dodopayments';
+﻿import DodoPayments from 'dodopayments';
 
 // ─── Test / Mock Modes ────────────────────────────────────
 // DODO_TEST_MODE=true   → Uses DODO_TEST_PAYMENTS_API_KEY (Dodo sandbox). Real API calls,
@@ -39,14 +39,14 @@ export function getDodoClientForUser(userTestMode: boolean): DodoPayments {
     if (userTestMode) {
         if (!_dodoClientTest) {
             const apiKey = process.env.DODO_TEST_PAYMENTS_API_KEY || process.env.DODO_PAYMENTS_API_KEY || '';
-            if (!apiKey) throw new Error('[PageAI] DODO_TEST_PAYMENTS_API_KEY not configured.');
+            if (!apiKey) throw new Error('[PageCortex] DODO_TEST_PAYMENTS_API_KEY not configured.');
             _dodoClientTest = new DodoPayments({ bearerToken: apiKey, environment: 'test_mode' });
         }
         return _dodoClientTest;
     } else {
         if (!_dodoClientLive) {
             const apiKey = process.env.DODO_PAYMENTS_API_KEY || '';
-            if (!apiKey) throw new Error('[PageAI] DODO_PAYMENTS_API_KEY not configured.');
+            if (!apiKey) throw new Error('[PageCortex] DODO_PAYMENTS_API_KEY not configured.');
             _dodoClientLive = new DodoPayments({ bearerToken: apiKey, environment: 'live_mode' });
         }
         return _dodoClientLive;
@@ -141,7 +141,7 @@ export const PLANS = {
     free: {
         id: 'free',
         name: 'Free',
-        description: 'Try PageAI with basic features',
+        description: 'Try PageCortex with basic features',
         price: 0,
         productId: null,
         trialDays: 0,
@@ -151,7 +151,7 @@ export const PLANS = {
             '200 pages indexed',
             'Fast AI responses',
             'Website source only',
-            'PageAI branding',
+            'PageCortex branding',
         ],
         limits: {
             chatbots: 1,

@@ -88,7 +88,7 @@ function SidebarContent({
               <path d="M3 5a2 2 0 012-2h10a2 2 0 012 2v7a2 2 0 01-2 2H8.5l-4 4V14H5a2 2 0 01-2-2V5z" fill="#4f6df5" />
             </svg>
           </div>
-          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg)' }}>PageAI</span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--fg)' }}>PageCortex</span>
           <span style={{
             fontSize: 9, fontWeight: 700, letterSpacing: '0.08em',
             textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4,

@@ -1,11 +1,11 @@
-import Navbar from '@/components/landing/Navbar';
+﻿import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Documentation — PageAI',
-  description: 'Complete guide to creating, configuring, and embedding AI chatbots with PageAI.',
+  title: 'Documentation — PageCortex',
+  description: 'Complete guide to creating, configuring, and embedding AI chatbots with PageCortex.',
 };
 
 const steps = [
@@ -14,7 +14,7 @@ const steps = [
     title: 'Create Your Account',
     description: 'Sign up for free — no credit card required. Your free plan includes 1 chatbot, 50 messages/month, and 100 pages indexed.',
     actions: [
-      'Visit pageai-tau.vercel.app and click "Get started free"',
+      'Visit pagecortex.vercel.app and click "Get started free"',
       'Enter your email and create a password',
       'Confirm your email and you\'re in',
     ],
@@ -23,11 +23,11 @@ const steps = [
   {
     number: '02',
     title: 'Add Your Website',
-    description: 'PageAI crawls your website and indexes its content so your chatbot can answer questions accurately.',
+    description: 'PageCortex crawls your website and indexes its content so your chatbot can answer questions accurately.',
     actions: [
       'Go to Dashboard → Websites',
       'Click "Add Website" and enter your domain (e.g. yourcompany.com)',
-      'PageAI will crawl and index up to 100 pages automatically',
+      'PageCortex will crawl and index up to 100 pages automatically',
       'Wait for the status to show "Indexed" — usually under 2 minutes',
     ],
     tip: 'You can add multiple URLs to focus on specific pages, or use a sitemap URL to bulk-import all pages at once.',
@@ -67,7 +67,7 @@ const steps = [
       'The chat widget appears automatically on all pages',
     ],
     code: `<script
-  src="https://pageai-tau.vercel.app/widget.js"
+  src="https://pagecortex.vercel.app/widget.js"
   data-bot-id="YOUR_BOT_ID"
   async
 ></script>`,
@@ -94,7 +94,7 @@ const faqs = [
   },
   {
     q: 'How does the chatbot know what\'s on my website?',
-    a: 'PageAI crawls your website, splits the text into chunks, and creates vector embeddings stored in our database. When a user asks a question, we find the most relevant chunks and pass them to the AI along with the question — this is called RAG (Retrieval-Augmented Generation).',
+    a: 'PageCortex crawls your website, splits the text into chunks, and creates vector embeddings stored in our database. When a user asks a question, we find the most relevant chunks and pass them to the AI along with the question — this is called RAG (Retrieval-Augmented Generation).',
   },
   {
     q: 'Can I update my website\'s content and re-index?',
@@ -102,7 +102,7 @@ const faqs = [
   },
   {
     q: 'Can I customise what the chatbot looks like?',
-    a: 'The widget supports a custom accent color and position. Full white-label (remove PageAI branding) is available on Starter plan and above.',
+    a: 'The widget supports a custom accent color and position. Full white-label (remove PageCortex branding) is available on Starter plan and above.',
   },
   {
     q: 'Is my data secure?',
@@ -192,7 +192,7 @@ export default function DocsPage() {
       <section className="px-6 pb-24 border-t border-edge">
         <div className="max-w-[760px] mx-auto pt-20">
           <h2 className="text-[30px] font-bold tracking-tight mb-2">Frequently Asked Questions</h2>
-          <p className="text-[16px] text-fg-secondary mb-10">Everything you need to know about using PageAI.</p>
+          <p className="text-[16px] text-fg-secondary mb-10">Everything you need to know about using PageCortex.</p>
           <div className="space-y-5">
             {faqs.map((faq, i) => (
               <div key={i} className="p-5 rounded-xl border border-edge bg-surface/30">

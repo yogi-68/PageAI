@@ -1,10 +1,10 @@
-import Navbar from '@/components/landing/Navbar';
+﻿import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Changelog — PageAI',
-  description: 'See what\'s new in PageAI — product updates, new features, and improvements.',
+  title: 'Changelog — PageCortex',
+  description: 'See what\'s new in PageCortex — product updates, new features, and improvements.',
 };
 
 const releases = [
@@ -42,7 +42,7 @@ const releases = [
     tag: 'Launch',
     tagColor: 'bg-success/10 text-success',
     changes: [
-      'Initial launch of PageAI',
+      'Initial launch of PageCortex',
       'Website crawler with automatic content indexing via Pinecone vector DB',
       'GPT-4.1 powered chatbot with RAG',
       'Embeddable widget (widget.js) — single script tag integration',
@@ -59,7 +59,7 @@ export default function ChangelogPage() {
       <section className="pt-32 pb-24 px-6">
         <div className="max-w-[760px] mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-[13px] font-medium mb-6">Changelog</div>
-          <h1 className="text-[42px] md:text-[52px] font-bold tracking-[-0.03em] leading-[1.1] mb-4">What&apos;s new in PageAI</h1>
+          <h1 className="text-[42px] md:text-[52px] font-bold tracking-[-0.03em] leading-[1.1] mb-4">What&apos;s new in PageCortex</h1>
           <p className="text-[17px] text-fg-secondary leading-relaxed mb-16">Product updates, new features, and improvements — shipped regularly.</p>
 
           <div className="space-y-12">

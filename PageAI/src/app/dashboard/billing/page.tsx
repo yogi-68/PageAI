@@ -9,8 +9,8 @@ import { Sk } from '@/components/ui/Skeleton';
 
 // Plans — features kept in sync with PLANS in lib/dodo.ts
 const plans = [
-  { id: 'free',       name: 'Free',       price: 0,   trial: false, features: ['1 Chatbot', '100 messages/month', '200 Pages indexed', 'Fast AI only', 'Basic analytics', 'Website connector', 'PageAI branding'] },
-  { id: 'starter',   name: 'Starter',    price: 29,  trial: true,  features: ['1 Chatbot', '4,000 messages/month', '1,000 Pages indexed', 'Smart AI routing', 'Website + File upload', 'Remove PageAI branding', 'Email support'] },
+  { id: 'free',       name: 'Free',       price: 0,   trial: false, features: ['1 Chatbot', '100 messages/month', '200 Pages indexed', 'Fast AI only', 'Basic analytics', 'Website connector', 'PageCortex branding'] },
+  { id: 'starter',   name: 'Starter',    price: 29,  trial: true,  features: ['1 Chatbot', '4,000 messages/month', '1,000 Pages indexed', 'Smart AI routing', 'Website + File upload', 'Remove PageCortex branding', 'Email support'] },
   { id: 'growth',    name: 'Growth',     price: 69,  popular: true, trial: true, features: ['3 Chatbots', '10,000 messages/month', '10,000 Pages indexed', 'Advanced AI + Smart routing', 'All data connectors', 'Advanced analytics', 'Priority support', 'Custom system prompts'] },
   { id: 'scale',     name: 'Scale',      price: 199, trial: false, features: ['10 Chatbots', '40,000 messages/month', '50,000 Pages indexed', 'All AI models', 'All data connectors', 'Dedicated support'] },
   { id: 'enterprise', name: 'Enterprise', price: -1, trial: false, features: ['Unlimited Chatbots', 'Unlimited messages', 'Unlimited pages', 'All AI tiers', 'All data connectors', 'Dedicated account manager', 'Custom integrations'] },
@@ -317,7 +317,7 @@ export default function BillingPage() {
                 ))}
               </ul>
               <button
-                onClick={() => isEnterprise ? window.open('mailto:support@pageai.com?subject=Enterprise%20Plan', '_blank') : handleUpgrade(plan.id)}
+                onClick={() => isEnterprise ? window.open('mailto:support@pagecortex.com?subject=Enterprise%20Plan', '_blank') : handleUpgrade(plan.id)}
                 disabled={isCurrent || loading === plan.id}
                 className={`w-full py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
                   isCurrent

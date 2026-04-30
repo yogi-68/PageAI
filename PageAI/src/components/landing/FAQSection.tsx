@@ -5,16 +5,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
 const faqs = [
-  { q: 'How does PageAI work?', a: 'PageAI crawls your website or connects to data sources (Notion, Google Drive, etc.), semantically chunks your content, and stores embeddings in a vector database. When a visitor asks a question, our hybrid search (vector + BM25) finds the best context, and GPT-4.1 generates an accurate, cited answer.' },
+  { q: 'How does PageCortex work?', a: 'PageCortex crawls your website or connects to data sources (Notion, Google Drive, etc.), semantically chunks your content, and stores embeddings in a vector database. When a visitor asks a question, our hybrid search (vector + BM25) finds the best context, and GPT-4.1 generates an accurate, cited answer.' },
   { q: 'Do I need coding skills?', a: "No. Enter your URL, wait for the crawl, customize appearance, and copy the embed code. It's a single script tag that works on any website." },
   { q: 'How accurate are the responses?', a: 'Our advanced RAG pipeline with query rewriting, hybrid search, and re-ranking achieves 95-98% accuracy. The chatbot only answers from your actual content — eliminating hallucinations.' },
-  { q: 'Can I customize the chatbot?', a: 'Yes — colors, position, welcome message, bot name, and avatar. Starter plans and above also remove PageAI branding.' },
+  { q: 'Can I customize the chatbot?', a: 'Yes — colors, position, welcome message, bot name, and avatar. Starter plans and above also remove PageCortex branding.' },
   { q: 'What data sources are supported?', a: 'Website crawling, sitemap import, and file uploads on all plans. Growth adds Notion and Google Drive. Scale adds Zendesk, Confluence, and GitBook. Enterprise supports custom API connectors.' },
   { q: 'How long does setup take?', a: 'Most users go from signup to a live chatbot in under 5 minutes. Crawling takes 30 seconds to 2 minutes depending on site size.' },
   { q: 'What AI models do you use?', a: 'All plans use GPT-4.1 Mini for fast, accurate responses. Growth and above get smart model routing — automatically using GPT-4.1 for complex queries while keeping costs low.' },
   { q: 'What happens at my message limit?', a: "You'll be notified at 80% usage. At the limit, you can enable automatic overage at $4 per 1,000 extra messages, or the bot shows a friendly message directing visitors to contact you. Upgrade anytime." },
   { q: 'Is there a free trial?', a: 'Yes! All paid plans include a 7-day free trial. No charge until the trial ends, and you can cancel anytime. Your free plan stays active even after canceling.' },
-  { q: 'What languages are supported?', a: 'PageAI supports 95+ languages out of the box. GPT-4.1 handles multilingual queries natively — your chatbot can answer in the same language the visitor uses, even if your content is in English.' },
+  { q: 'What languages are supported?', a: 'PageCortex supports 95+ languages out of the box. GPT-4.1 handles multilingual queries natively — your chatbot can answer in the same language the visitor uses, even if your content is in English.' },
 ];
 
 export default function FAQSection() {

@@ -37,7 +37,7 @@ export default function Footer() {
                   <path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H7l-3 3V11H4a2 2 0 01-2-2V4z" fill="#4f6df5" />
                 </svg>
               </div>
-              <span className="text-[16px] font-semibold text-fg tracking-tight">PageAI</span>
+              <span className="text-[16px] font-semibold text-fg tracking-tight">PageCortex</span>
             </Link>
             <p className="text-[13.5px] text-fg-secondary leading-relaxed max-w-[260px]">
               Turn any website into an intelligent AI chatbot. Powered by advanced RAG technology.
@@ -64,7 +64,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-14 pt-6 border-t border-edge flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-[12.5px] text-fg-muted">
-            &copy; {new Date().getFullYear()} PageAI. All rights reserved.
+            &copy; {new Date().getFullYear()} PageCortex. All rights reserved.
           </p>
           <p className="text-[12.5px] text-fg-muted">
             Built with Next.js, Supabase &amp; OpenAI

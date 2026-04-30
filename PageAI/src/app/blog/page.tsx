@@ -45,8 +45,8 @@ const posts = [
     slug: '#',
   },
   {
-    title: 'PageAI vs Traditional Chatbot Builders: A Comparison',
-    excerpt: 'We compare PageAI\'s RAG-powered approach with traditional rule-based and flow-based chatbot builders across key dimensions.',
+    title: 'PageCortex vs Traditional Chatbot Builders: A Comparison',
+    excerpt: 'We compare PageCortex\'s RAG-powered approach with traditional rule-based and flow-based chatbot builders across key dimensions.',
     date: '2024-12-15',
     readTime: '10 min',
     category: 'Comparison',

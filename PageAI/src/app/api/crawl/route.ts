@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 import { getAdminClient } from '@/lib/supabase';
 import { generateEmbedding, generateEmbeddings } from '@/lib/openai';
@@ -68,7 +68,7 @@ async function fetchPageContent(
     // ── Static / Auto: try Cheerio first ────────────────────────────────
     try {
         const res = await fetch(pageUrl, {
-            headers: { 'User-Agent': 'PageAI Bot/2.0 (+https://pageai.io)' },
+            headers: { 'User-Agent': 'PageCortex Bot/2.0 (+https://pagecortex.io)' },
             signal: AbortSignal.timeout(15000),
         });
         if (!res.ok) return null;
@@ -96,7 +96,7 @@ async function jinaFetch(pageUrl: string): Promise<{ title: string; text: string
         const jinaUrl = `https://r.jina.ai/${pageUrl}`;
         const res = await fetch(jinaUrl, {
             headers: {
-                'User-Agent': 'PageAI Bot/2.0',
+                'User-Agent': 'PageCortex Bot/2.0',
                 'X-Return-Format': 'markdown',
             },
             signal: AbortSignal.timeout(30000),

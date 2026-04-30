@@ -1,8 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
+import { Sk } from '@/components/ui/Skeleton';
 
 interface Stats {
   activeBots: number;
@@ -68,7 +69,34 @@ export default function DashboardPage() {
   const usagePercent = usage ? Math.min(100, Math.round((usage.monthly_message_count / Math.max(usage.monthly_message_limit, 1)) * 100)) : 0;
   const planInfo = PLAN_LABELS[usage?.plan || 'free'] || PLAN_LABELS.free;
 
-  if (loading) return <div className="flex items-center justify-center py-32"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-2"><Sk className="h-7 w-52" /><Sk className="h-4 w-64" /></div>
+        <Sk className="h-9 w-28 rounded-lg" />
+      </div>
+      <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-3">
+        <div className="flex justify-between items-center"><Sk className="h-5 w-24 rounded-lg" /><Sk className="h-4 w-48" /></div>
+        <Sk className="h-2 w-full rounded-full" />
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="p-4 rounded-xl border border-edge bg-surface/40 space-y-3">
+            <Sk className="h-3 w-24" /><Sk className="h-8 w-16" />
+          </div>
+        ))}
+      </div>
+      <div className="rounded-xl border border-edge bg-surface/40 overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-edge flex justify-between"><Sk className="h-4 w-20" /><Sk className="h-4 w-12" /></div>
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="px-5 py-3.5 flex items-center justify-between border-b border-edge last:border-0">
+            <div className="space-y-2"><Sk className="h-4 w-36" /><Sk className="h-3 w-24" /></div>
+            <Sk className="h-5 w-14 rounded-md" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -90,7 +118,7 @@ export default function DashboardPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
-              { step: '1', title: 'Connect your website', desc: 'Enter your site URL. PageAI crawls and indexes every page automatically.', href: '/dashboard/bots/new', cta: 'Start' },
+              { step: '1', title: 'Connect your website', desc: 'Enter your site URL. PageCortex crawls and indexes every page automatically.', href: '/dashboard/bots/new', cta: 'Start' },
               { step: '2', title: 'Create your bot', desc: 'Name it, pick a color, and choose your AI model. Takes 30 seconds.', href: '/dashboard/bots/new', cta: 'Create Bot' },
               { step: '3', title: 'Embed on your site', desc: 'Copy one <script> tag, paste before </body>. Your bot is live!', href: '/docs', cta: 'See how' },
             ].map(s => (
@@ -156,7 +184,7 @@ export default function DashboardPage() {
               <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/></svg>
             </div>
             <p className="text-[15px] font-semibold text-fg mb-1">Create your first bot</p>
-            <p className="text-[13px] text-fg-secondary mb-4 max-w-[320px] mx-auto">Connect your website, let PageAI crawl it, and deploy an AI assistant in minutes</p>
+            <p className="text-[13px] text-fg-secondary mb-4 max-w-[320px] mx-auto">Connect your website, let PageCortex crawl it, and deploy an AI assistant in minutes</p>
             <Link href="/dashboard/bots/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors">+ Create Bot</Link>
           </div>
         ) : (

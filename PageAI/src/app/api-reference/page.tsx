@@ -1,10 +1,10 @@
-import Navbar from '@/components/landing/Navbar';
+﻿import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'API Reference — PageAI',
-  description: 'REST API reference for PageAI — embed bots, stream chat responses, and query your bot programmatically.',
+  title: 'API Reference — PageCortex',
+  description: 'REST API reference for PageCortex — embed bots, stream chat responses, and query your bot programmatically.',
 };
 
 const endpoints = [
@@ -91,7 +91,7 @@ export default function ApiReferencePage() {
         <div className="max-w-[820px] mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-[13px] font-medium mb-6">API Reference</div>
           <h1 className="text-[42px] md:text-[52px] font-bold tracking-[-0.03em] leading-[1.1] mb-4">REST API</h1>
-          <p className="text-[17px] text-fg-secondary leading-relaxed mb-4">Base URL: <code className="text-primary bg-surface px-2 py-0.5 rounded-md text-[14px]">https://pageai-tau.vercel.app</code></p>
+          <p className="text-[17px] text-fg-secondary leading-relaxed mb-4">Base URL: <code className="text-primary bg-surface px-2 py-0.5 rounded-md text-[14px]">https://pagecortex.vercel.app</code></p>
           <p className="text-[15px] text-fg-secondary mb-12">All requests accept and return JSON. Authenticated endpoints require a valid Supabase session token in the <code className="text-fg text-[13px] bg-surface px-1.5 py-0.5 rounded">Authorization: Bearer {'<token>'}</code> header.</p>
 
           <div className="space-y-8">

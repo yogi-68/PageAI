@@ -1,11 +1,11 @@
-import Navbar from '@/components/landing/Navbar';
+﻿import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Careers — PageAI',
-  description: 'Join the PageAI team and help build the future of AI-powered customer support.',
+  title: 'Careers — PageCortex',
+  description: 'Join the PageCortex team and help build the future of AI-powered customer support.',
 };
 
 export default function CareersPage() {

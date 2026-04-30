@@ -88,7 +88,7 @@ const plans: Plan[] = [
         features: [
           { text: 'Website + SPA crawling' },
           { text: 'File uploads (PDF, DOCX, HTML, CSV, MD)', highlight: true },
-          { text: 'Remove PageAI branding' },
+          { text: 'Remove PageCortex branding' },
         ],
       },
       {
@@ -139,7 +139,7 @@ const plans: Plan[] = [
         label: 'Platform',
         features: [
           { text: 'API access', highlight: true },
-          { text: 'Remove PageAI branding' },
+          { text: 'Remove PageCortex branding' },
         ],
       },
       {
@@ -189,7 +189,7 @@ const plans: Plan[] = [
         label: 'Platform',
         features: [
           { text: 'API + Webhooks', highlight: true },
-          { text: 'Remove PageAI branding' },
+          { text: 'Remove PageCortex branding' },
         ],
       },
       {
@@ -376,10 +376,10 @@ export default function PricingSection() {
           transition={{ delay: 0.35, duration: 0.4 }}
           className="mt-8 mx-auto max-w-215 rounded-2xl border border-primary/20 bg-primary/3 px-6 py-5"
         >
-          <p className="text-center text-[13px] font-semibold text-fg mb-3">How PageAI compares at $69/month</p>
+          <p className="text-center text-[13px] font-semibold text-fg mb-3">How PageCortex compares at $69/month</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             {[
-              { name: 'PageAI Growth', msgs: '10,000', pages: '10,000', highlight: true },
+              { name: 'PageCortex Growth', msgs: '10,000', pages: '10,000', highlight: true },
               { name: 'Chatbase $120', msgs: '4,000', pages: '20 MB' },
               { name: 'Biel.ai $150', msgs: '10,000', pages: '3,000' },
               { name: 'OkayIQ $74', msgs: '5,000', pages: '1,000' },

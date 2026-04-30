@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { Sk } from '@/components/ui/Skeleton';
 
 interface Website {
   id: string;
@@ -40,8 +41,9 @@ export default function WebsitesPage() {
         body: JSON.stringify({ websiteId, url, userId: user?.id }),
       });
       if (!res.ok) throw new Error('Crawl failed');
-      toast.success('Re-crawl started');
-      setTimeout(fetchWebsites, 3000);
+      toast.success('Re-crawl started — pages will update in the background');
+      // Optimistically mark this website as crawling without reloading all websites
+      setWebsites(prev => prev.map(w => w.id === websiteId ? { ...w, status: 'crawling' } : w));
     } catch (e: any) { toast.error(e.message); }
     setCrawling(null);
   };
@@ -57,7 +59,26 @@ export default function WebsitesPage() {
     setDeleting(null);
   };
 
-  if (loading) return <div className="flex items-center justify-center py-32"><div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-2"><Sk className="h-7 w-28" /><Sk className="h-4 w-40" /></div>
+        <Sk className="h-9 w-28 rounded-lg" />
+      </div>
+      <div className="space-y-3">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="p-5 rounded-xl border border-edge bg-surface/40 space-y-3">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2"><div className="flex items-center gap-2"><Sk className="h-4 w-44" /><Sk className="h-5 w-14 rounded-md" /></div><Sk className="h-3 w-28" /></div>
+            </div>
+            <div className="flex items-center gap-2 pt-3 border-t border-edge">
+              <Sk className="h-7 w-16 rounded-lg" /><Sk className="h-7 w-20 rounded-lg" /><Sk className="h-7 w-16 rounded-lg" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -75,7 +96,7 @@ export default function WebsitesPage() {
             <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253M3 12a8.959 8.959 0 01.284-2.253"/></svg>
           </div>
           <h2 className="text-[17px] font-semibold text-fg mb-1">Add your first website</h2>
-          <p className="text-[13px] text-fg-secondary mb-2 max-w-[380px] mx-auto">PageAI crawls your website and indexes all its pages. Your bots then use this knowledge to answer visitor questions.</p>
+          <p className="text-[13px] text-fg-secondary mb-2 max-w-[380px] mx-auto">PageCortex crawls your website and indexes all its pages. Your bots then use this knowledge to answer visitor questions.</p>
           <p className="text-[12px] text-fg-muted mb-5">Tip: websites are added automatically when you create a new bot.</p>
           <Link href="/dashboard/bots/new" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors">+ Create Bot with Website</Link>
         </div>

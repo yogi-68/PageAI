@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 
@@ -22,7 +22,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Read saved preference or system preference
-    const saved = localStorage.getItem('pageai-theme') as Theme | null;
+    const saved = localStorage.getItem('pagecortex-theme') as Theme | null;
     if (saved === 'dark' || saved === 'light') {
       setThemeState(saved);
     } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -39,7 +39,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       root.classList.remove('dark');
     }
-    localStorage.setItem('pageai-theme', theme);
+    localStorage.setItem('pagecortex-theme', theme);
   }, [theme, mounted]);
 
   const toggleTheme = useCallback(() => {

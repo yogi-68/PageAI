@@ -1,5 +1,5 @@
--- ============================================
--- PageAI Database Schema (Supabase / PostgreSQL)
+﻿-- ============================================
+-- PageCortex Database Schema (Supabase / PostgreSQL)
 -- Production-Ready AI Chatbot Platform
 -- ============================================
 

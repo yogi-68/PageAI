@@ -4,12 +4,12 @@ import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
 
 const testimonials = [
-  { name: 'Sarah Chen', role: 'VP of Support, TechFlow', quote: 'PageAI cut our support ticket volume by 65% in the first month. The RAG technology means it actually gives accurate answers.', initials: 'SC' },
+  { name: 'Sarah Chen', role: 'VP of Support, TechFlow', quote: 'PageCortex cut our support ticket volume by 65% in the first month. The RAG technology means it actually gives accurate answers.', initials: 'SC' },
   { name: 'Marcus Johnson', role: 'Founder, ShopNova', quote: 'Setup took literally 3 minutes. I pasted my URL, waited for the crawl, and had a working chatbot on my store. Incredible.', initials: 'MJ' },
-  { name: 'Emily Rodriguez', role: 'Head of Product, DataSync', quote: 'We evaluated 8 platforms. PageAI won on accuracy, speed, and pricing. The analytics are incredibly useful for our team.', initials: 'ER' },
+  { name: 'Emily Rodriguez', role: 'Head of Product, DataSync', quote: 'We evaluated 8 platforms. PageCortex won on accuracy, speed, and pricing. The analytics are incredibly useful for our team.', initials: 'ER' },
   { name: 'Alex Kim', role: 'CTO, CloudBase', quote: 'The API is clean, the embed is lightweight, and the bot understands context. This is what AI support should look like.', initials: 'AK' },
-  { name: 'Priya Patel', role: 'Marketing Lead, GrowthHub', quote: 'Our bounce rate dropped 23% after adding PageAI. Visitors find answers instantly instead of leaving to search elsewhere.', initials: 'PP' },
-  { name: 'James Wilson', role: 'CEO, StartUp Labs', quote: 'Replaced our $2,000/month live chat team with PageAI for $39/month. Handles 90% of queries with better accuracy.', initials: 'JW' },
+  { name: 'Priya Patel', role: 'Marketing Lead, GrowthHub', quote: 'Our bounce rate dropped 23% after adding PageCortex. Visitors find answers instantly instead of leaving to search elsewhere.', initials: 'PP' },
+  { name: 'James Wilson', role: 'CEO, StartUp Labs', quote: 'Replaced our $2,000/month live chat team with PageCortex for $39/month. Handles 90% of queries with better accuracy.', initials: 'JW' },
 ];
 
 const avatarColors = [
@@ -38,7 +38,7 @@ export default function TestimonialsSection() {
             <br className="hidden sm:block" /> of businesses
           </h2>
           <p className="text-[16px] text-fg-secondary max-w-[480px] mx-auto leading-relaxed">
-            See what companies are saying about PageAI.
+            See what companies are saying about PageCortex.
           </p>
         </motion.div>
 

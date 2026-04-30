@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { Sk } from '@/components/ui/Skeleton';
 
 interface Bot {
   id: string;
@@ -188,14 +189,30 @@ export default function BotManagePage() {
   };
 
   if (loading) return (
-    <div className="flex items-center justify-center py-32">
-      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Sk className="h-7 w-7 rounded-lg" />
+          <div className="space-y-2"><div className="flex items-center gap-2"><Sk className="h-6 w-40" /><Sk className="h-5 w-20 rounded-md" /></div><Sk className="h-3 w-28" /></div>
+        </div>
+        <Sk className="h-8 w-24 rounded-lg" />
+      </div>
+      <div className="flex gap-1 border-b border-edge">
+        {[...Array(4)].map((_, i) => <Sk key={i} className="h-8 w-20 rounded-t-lg mb-[-1px]" />)}
+      </div>
+      <div className="space-y-4">
+        <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="space-y-2"><Sk className="h-3 w-24" /><Sk className="h-10 w-full rounded-lg" /></div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 
   if (!bot) return null;
 
-  const embedCode = `<script src="${typeof window !== 'undefined' ? window.location.origin : 'https://pageai-tau.vercel.app'}/widget.js" data-bot-id="${botId}"></script>`;
+  const embedCode = `<script src="${typeof window !== 'undefined' ? window.location.origin : 'https://pagecortex.vercel.app'}/widget.js" data-bot-id="${botId}"></script>`;
   const tabs: { key: Tab; label: string }[] = [
     { key: 'overview', label: 'Overview' },
     { key: 'settings', label: 'Settings' },
@@ -361,8 +378,8 @@ export default function BotManagePage() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[13px] font-medium text-fg">PageAI Branding</p>
-                <p className="text-[11px] text-fg-muted">Shows "Powered by PageAI" in the widget</p>
+                <p className="text-[13px] font-medium text-fg">PageCortex Branding</p>
+                <p className="text-[11px] text-fg-muted">Shows "Powered by PageCortex" in the widget</p>
               </div>
               <button onClick={() => setBrandingEnabled(!brandingEnabled)} className={`relative w-10 h-6 rounded-full transition-colors ${brandingEnabled ? 'bg-primary' : 'bg-edge'}`}>
                 <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${brandingEnabled ? 'translate-x-4' : ''}`} />
@@ -551,7 +568,7 @@ export default function BotManagePage() {
 
 // In your layout.tsx or _app.tsx:
 <Script
-  src="${typeof window !== 'undefined' ? window.location.origin : 'https://pageai-tau.vercel.app'}/widget.js"
+  src="${typeof window !== 'undefined' ? window.location.origin : 'https://pagecortex.vercel.app'}/widget.js"
   data-bot-id="${botId}"
   strategy="lazyOnload"
 />`}</pre>

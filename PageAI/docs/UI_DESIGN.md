@@ -1,4 +1,4 @@
-# PageAI — UI Design System v5.2
+﻿# PageCortex — UI Design System v5.2
 
 > Premium dark-mode design system built for business owners.  
 > Stack: Next.js 16 · Tailwind CSS v4 · Framer Motion · Lucide Icons

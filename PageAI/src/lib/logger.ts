@@ -1,4 +1,4 @@
-// ─── PageAI Structured Logger ─────────────────────────────
+﻿// ─── PageCortex Structured Logger ─────────────────────────────
 // JSON in production (compatible with Vercel Log Drains / Datadog).
 // Coloured console output in development.
 

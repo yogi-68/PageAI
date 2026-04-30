@@ -1,8 +1,8 @@
-# PageAI — AI Chatbot Platform for Websites
+﻿# PageCortex — AI Chatbot Platform for Websites
 
-**PageAI** is a production-ready SaaS platform that lets businesses create custom AI chatbots trained on their website content. It crawls your site, builds a semantic knowledge base, and serves accurate, citation-backed answers through an embeddable widget — in real-time.
+**PageCortex** is a production-ready SaaS platform that lets businesses create custom AI chatbots trained on their website content. It crawls your site, builds a semantic knowledge base, and serves accurate, citation-backed answers through an embeddable widget — in real-time.
 
-**Live:** [pageai-tau.vercel.app](https://pageai-tau.vercel.app)
+**Live:** [pagecortex.vercel.app](https://pagecortex.vercel.app)
 
 ---
 
@@ -10,7 +10,7 @@
 
 1. [Quick Demo](#quick-demo)
 2. [Who Is This For](#who-is-this-for)
-3. [Why PageAI](#why-pageai)
+3. [Why PageCortex](#why-PageCortex)
 4. [Screenshots](#screenshots)
 5. [How It Works](#how-it-works)
 6. [Web Scraping & Crawling](#web-scraping--crawling)
@@ -32,11 +32,11 @@
 
 ## Quick Demo
 
-- **Live site:** https://pageai-tau.vercel.app
-- **Demo bot:** https://pageai-tau.vercel.app/chat-preview/54ab9e2c-bb23-4e9c-9c92-4d80da4b4570
-- **Test question:** _"What does PageAI do?"_ or _"How do I embed the chatbot?"_
+- **Live site:** https://pagecortex.vercel.app
+- **Demo bot:** https://pagecortex.vercel.app/chat-preview/54ab9e2c-bb23-4e9c-9c92-4d80da4b4570
+- **Test question:** _"What does PageCortex do?"_ or _"How do I embed the chatbot?"_
 
-Sign up free — no credit card required. The demo bot is trained on the PageAI website itself.
+Sign up free — no credit card required. The demo bot is trained on the PageCortex website itself.
 
 ---
 
@@ -50,13 +50,13 @@ Sign up free — no credit card required. The demo bot is trained on the PageAI 
 | **Agencies** | White-label AI chatbots for clients — resell as a managed service |
 | **Internal tools teams** | Train a bot on internal wikis, SOPs, and runbooks for employee self-service |
 
-PageAI is **not** a general-purpose chatbot builder. It is specifically designed for websites and documentation — if your use case is "answer questions about my content", PageAI is the right tool.
+PageCortex is **not** a general-purpose chatbot builder. It is specifically designed for websites and documentation — if your use case is "answer questions about my content", PageCortex is the right tool.
 
 ---
 
-## Why PageAI
+## Why PageCortex
 
-| Feature | PageAI | Intercom | Custom GPT | Chatbase |
+| Feature | PageCortex | Intercom | Custom GPT | Chatbase |
 |---|---|---|---|---|
 | Trains on your website | ✅ Auto-crawl | ❌ Manual | ❌ Manual upload | ✅ Manual upload |
 | RAG with source citations | ✅ | ❌ | ❌ | Partial |
@@ -67,7 +67,7 @@ PageAI is **not** a general-purpose chatbot builder. It is specifically designed
 | Plan-based model enforcement | ✅ | N/A | N/A | ❌ |
 | Native webhook billing | ✅ Dodo Payments | ✅ Stripe | N/A | ✅ Stripe |
 
-**Bottom line:** PageAI auto-crawls and re-indexes your site, uses hybrid RAG with citations, and gives you full ownership of your deployment.
+**Bottom line:** PageCortex auto-crawls and re-indexes your site, uses hybrid RAG with citations, and gives you full ownership of your deployment.
 
 ---
 
@@ -113,7 +113,7 @@ Answer displayed in real-time to visitor
 
 ## Web Scraping & Crawling
 
-Web scraping is the **data input layer** for PageAI — it is how website content gets into the knowledge base.
+Web scraping is the **data input layer** for PageCortex — it is how website content gets into the knowledge base.
 
 ### What the crawler does
 
@@ -180,7 +180,7 @@ Uses Cheerio (not Puppeteer) for fast, lightweight HTML parsing. JavaScript-rend
 - **Configurable** via `data-` attributes: color, position, bot name, welcome message
 - **Streaming chat** — SSE-powered real-time answers inside the widget
 - **Source links** — Clickable page references displayed below bot answers
-- **Branding toggle** — "Powered by PageAI" shown/hidden based on plan
+- **Branding toggle** — "Powered by PageCortex" shown/hidden based on plan
 
 ### Customer Dashboard
 - **Overview** — Active bots, total conversations, resolution rate, plan badge, message usage bar with color alerts
@@ -376,7 +376,7 @@ The add-on pack pricing offers a volume discount (5K pack = $3.60/K, 10K = $3.00
 
 ## Limitations
 
-Be aware of what PageAI does **not** currently support:
+Be aware of what PageCortex does **not** currently support:
 
 - **JavaScript-heavy websites (SPAs)** — The crawler uses Cheerio (static HTML only). Sites built entirely with client-side React, Vue, or Angular may return minimal content. Puppeteer/Playwright support is planned for Phase 2.
 - **Large crawls take time** — Crawling 10,000+ pages can take several minutes. There is no background job UI; the crawl request is long-running.
@@ -512,8 +512,8 @@ supabase/
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/yogi-68/PageAI.git
-cd PageAI
+git clone https://github.com/yogi-68/PageCortex.git
+cd PageCortex
 npm install
 ```
 
@@ -531,7 +531,7 @@ Create `.env.local` (local dev) and add every variable to **Vercel → Project �
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API → anon/public key | Client + server |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → service_role key | **Server only** — never expose to client |
 | `OPENAI_API_KEY` | platform.openai.com → API Keys | Server only |
-| `NEXT_PUBLIC_APP_URL` | Your Vercel deployment URL, e.g. `https://pageai-tau.vercel.app` | No trailing slash |
+| `NEXT_PUBLIC_APP_URL` | Your Vercel deployment URL, e.g. `https://pagecortex.vercel.app` | No trailing slash |
 | `ADMIN_EMAILS` | Your own email(s), comma-separated | `you@example.com,other@example.com` |
 
 #### Dodo Payments
@@ -551,7 +551,7 @@ Create `.env.local` (local dev) and add every variable to **Vercel → Project �
 
 | Variable | Value | Notes |
 |---|---|---|
-| `ADMIN_HOSTNAME` | e.g. `admin.pageai.io` | Restricts `/admin/*` to a separate hostname |
+| `ADMIN_HOSTNAME` | e.g. `admin.pagecortex.io` | Restricts `/admin/*` to a separate hostname |
 
 ---
 
@@ -583,9 +583,9 @@ Create subscription products in Dodo → **Products**:
 
 | Product | Type | Price |
 |---|---|---|
-| PageAI Starter | Subscription | $29/mo |
-| PageAI Growth | Subscription | $69/mo |
-| PageAI Scale | Subscription | $199/mo |
+| PageCortex Starter | Subscription | $29/mo |
+| PageCortex Growth | Subscription | $69/mo |
+| PageCortex Scale | Subscription | $199/mo |
 | +1,000 Messages | One-time | $4 |
 | +5,000 Messages | One-time | $18 |
 | +10,000 Messages | One-time | $30 |
@@ -637,9 +637,9 @@ Post-deployment:
 
 | Channel | Details |
 |---|---|
-| **Email** | support@pageai.com |
-| **Bug reports** | [GitHub Issues](https://github.com/yogi-68/PageAI/issues) |
-| **Live site** | [pageai-tau.vercel.app](https://pageai-tau.vercel.app) |
+| **Email** | support@pagecortex.com |
+| **Bug reports** | [GitHub Issues](https://github.com/yogi-68/PageCortex/issues) |
+| **Live site** | [pagecortex.vercel.app](https://pagecortex.vercel.app) |
 
 For billing questions, use the in-app chat widget or email the above address. Enterprise inquiries can be sent to the same address with "Enterprise" in the subject line.
 

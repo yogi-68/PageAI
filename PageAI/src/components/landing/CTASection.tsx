@@ -24,7 +24,7 @@ export default function CTASection() {
               Ready to build your AI chatbot?
             </h2>
             <p className="text-[16px] text-fg-secondary max-w-[440px] mx-auto leading-relaxed mb-8">
-              Join 2,000+ businesses using PageAI to automate customer support.
+              Join 2,000+ businesses using PageCortex to automate customer support.
               Start free — no credit card required.
             </p>
             <div className="flex items-center justify-center gap-4 mb-6">

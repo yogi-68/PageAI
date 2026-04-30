@@ -1,12 +1,12 @@
-# PageAI Widget Integration Guide
+﻿# PageCortex Widget Integration Guide
 
-Embed a PageAI chatbot on any website in under 2 minutes.
+Embed a PageCortex chatbot on any website in under 2 minutes.
 
 ---
 
 ## Quick Start
 
-After creating a bot in the [PageAI Dashboard](https://pageai-tau.vercel.app/dashboard/bots), copy the **Bot ID** from the bot settings and use one of the methods below.
+After creating a bot in the [PageCortex Dashboard](https://pagecortex.vercel.app/dashboard/bots), copy the **Bot ID** from the bot settings and use one of the methods below.
 
 ---
 
@@ -16,7 +16,7 @@ Paste this before `</body>` on any HTML page:
 
 ```html
 <script
-  src="https://pageai-tau.vercel.app/widget.js"
+  src="https://pagecortex.vercel.app/widget.js"
   data-bot-id="YOUR_BOT_ID"
 ></script>
 ```
@@ -35,7 +35,7 @@ Paste this before `</body>` on any HTML page:
 
 ```html
 <script
-  src="https://pageai-tau.vercel.app/widget.js"
+  src="https://pagecortex.vercel.app/widget.js"
   data-bot-id="bot_abc123"
   data-color="#2563eb"
   data-position="right"
@@ -49,12 +49,12 @@ Paste this before `</body>` on any HTML page:
 ## 2. React / Next.js
 
 ```tsx
-// components/PageAIChat.tsx
+// components/PageCortexChat.tsx
 'use client';
 
 import { useEffect } from 'react';
 
-interface PageAIChatProps {
+interface PageCortexChatProps {
   botId: string;
   color?: string;
   position?: 'left' | 'right';
@@ -62,16 +62,16 @@ interface PageAIChatProps {
   welcome?: string;
 }
 
-export default function PageAIChat({
+export default function PageCortexChat({
   botId,
   color = '#6366f1',
   position = 'right',
   name = 'AI Assistant',
   welcome = 'Hi! 👋 Ask me anything!',
-}: PageAIChatProps) {
+}: PageCortexChatProps) {
   useEffect(() => {
     const script = document.createElement('script');
-    script.src = 'https://pageai-tau.vercel.app/widget.js';
+    script.src = 'https://pagecortex.vercel.app/widget.js';
     script.setAttribute('data-bot-id', botId);
     script.setAttribute('data-color', color);
     script.setAttribute('data-position', position);
@@ -81,7 +81,7 @@ export default function PageAIChat({
     document.body.appendChild(script);
     return () => {
       document.body.removeChild(script);
-      const widget = document.getElementById('pageai-widget-container');
+      const widget = document.getElementById('pagecortex-widget-container');
       if (widget) widget.remove();
     };
   }, [botId, color, position, name, welcome]);
@@ -93,13 +93,13 @@ export default function PageAIChat({
 **Usage:**
 
 ```tsx
-import PageAIChat from '@/components/PageAIChat';
+import PageCortexChat from '@/components/PageCortexChat';
 
 export default function Layout({ children }) {
   return (
     <>
       {children}
-      <PageAIChat botId="bot_abc123" color="#2563eb" />
+      <PageCortexChat botId="bot_abc123" color="#2563eb" />
     </>
   );
 }
@@ -110,7 +110,7 @@ export default function Layout({ children }) {
 ## 3. Vue.js
 
 ```vue
-<!-- PageAIChat.vue -->
+<!-- PageCortexChat.vue -->
 <template>
   <div></div>
 </template>
@@ -130,7 +130,7 @@ let script;
 
 onMounted(() => {
   script = document.createElement('script');
-  script.src = 'https://pageai-tau.vercel.app/widget.js';
+  script.src = 'https://pagecortex.vercel.app/widget.js';
   script.setAttribute('data-bot-id', props.botId);
   script.setAttribute('data-color', props.color);
   script.setAttribute('data-position', props.position);
@@ -142,7 +142,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (script) document.body.removeChild(script);
-  const widget = document.getElementById('pageai-widget-container');
+  const widget = document.getElementById('pagecortex-widget-container');
   if (widget) widget.remove();
 });
 </script>
@@ -153,14 +153,14 @@ onUnmounted(() => {
 ## 4. Angular
 
 ```typescript
-// pageai-chat.component.ts
+// pagecortex-chat.component.ts
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 
 @Component({
-  selector: 'app-pageai-chat',
+  selector: 'app-pagecortex-chat',
   template: '',
 })
-export class PageAIChatComponent implements OnInit, OnDestroy {
+export class PageCortexChatComponent implements OnInit, OnDestroy {
   @Input() botId!: string;
   @Input() color = '#6366f1';
   @Input() position = 'right';
@@ -171,7 +171,7 @@ export class PageAIChatComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.script = document.createElement('script');
-    this.script.src = 'https://pageai-tau.vercel.app/widget.js';
+    this.script.src = 'https://pagecortex.vercel.app/widget.js';
     this.script.setAttribute('data-bot-id', this.botId);
     this.script.setAttribute('data-color', this.color);
     this.script.setAttribute('data-position', this.position);
@@ -183,7 +183,7 @@ export class PageAIChatComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.script) document.body.removeChild(this.script);
-    const widget = document.getElementById('pageai-widget-container');
+    const widget = document.getElementById('pagecortex-widget-container');
     if (widget) widget.remove();
   }
 }
@@ -194,7 +194,7 @@ export class PageAIChatComponent implements OnInit, OnDestroy {
 ## 5. Svelte
 
 ```svelte
-<!-- PageAIChat.svelte -->
+<!-- PageCortexChat.svelte -->
 <script>
   import { onMount, onDestroy } from 'svelte';
 
@@ -208,7 +208,7 @@ export class PageAIChatComponent implements OnInit, OnDestroy {
 
   onMount(() => {
     script = document.createElement('script');
-    script.src = 'https://pageai-tau.vercel.app/widget.js';
+    script.src = 'https://pagecortex.vercel.app/widget.js';
     script.setAttribute('data-bot-id', botId);
     script.setAttribute('data-color', color);
     script.setAttribute('data-position', position);
@@ -220,7 +220,7 @@ export class PageAIChatComponent implements OnInit, OnDestroy {
 
   onDestroy(() => {
     if (script) document.body.removeChild(script);
-    const widget = document.getElementById('pageai-widget-container');
+    const widget = document.getElementById('pagecortex-widget-container');
     if (widget) widget.remove();
   });
 </script>
@@ -234,7 +234,7 @@ Add this to your theme's `footer.php` before `</body>`, or use a plugin like **I
 
 ```html
 <script
-  src="https://pageai-tau.vercel.app/widget.js"
+  src="https://pagecortex.vercel.app/widget.js"
   data-bot-id="YOUR_BOT_ID"
 ></script>
 ```
@@ -242,17 +242,17 @@ Add this to your theme's `footer.php` before `</body>`, or use a plugin like **I
 **Or** add via `functions.php`:
 
 ```php
-function pageai_enqueue_widget() {
+function pagecortex_enqueue_widget() {
     wp_enqueue_script(
-        'pageai-widget',
-        'https://pageai-tau.vercel.app/widget.js',
+        'PageCortex-widget',
+        'https://pagecortex.vercel.app/widget.js',
         array(),
         null,
         true
     );
-    wp_script_add_data('pageai-widget', 'data-bot-id', 'YOUR_BOT_ID');
+    wp_script_add_data('PageCortex-widget', 'data-bot-id', 'YOUR_BOT_ID');
 }
-add_action('wp_enqueue_scripts', 'pageai_enqueue_widget');
+add_action('wp_enqueue_scripts', 'pagecortex_enqueue_widget');
 ```
 
 ---
@@ -263,7 +263,7 @@ Go to **Online Store → Themes → Edit code → theme.liquid** and paste befor
 
 ```html
 <script
-  src="https://pageai-tau.vercel.app/widget.js"
+  src="https://pagecortex.vercel.app/widget.js"
   data-bot-id="YOUR_BOT_ID"
 ></script>
 ```
@@ -276,7 +276,7 @@ Go to **Site Settings → Custom Code → Footer Code** and paste:
 
 ```html
 <script
-  src="https://pageai-tau.vercel.app/widget.js"
+  src="https://pagecortex.vercel.app/widget.js"
   data-bot-id="YOUR_BOT_ID"
 ></script>
 ```
@@ -288,7 +288,7 @@ Go to **Site Settings → Custom Code → Footer Code** and paste:
 For custom integrations, call the chat API directly:
 
 ```bash
-curl -X POST https://pageai-tau.vercel.app/api/chat \
+curl -X POST https://pagecortex.vercel.app/api/chat \
   -H "Content-Type: application/json" \
   -d '{
     "query": "What is your return policy?",
@@ -328,7 +328,7 @@ data: [DONE]
 
 ## Watermark / Branding
 
-- **Free plan**: "Powered by PageAI" watermark is always shown.
+- **Free plan**: "Powered by PageCortex" watermark is always shown.
 - **Starter and above**: Watermark can be removed via bot settings in the dashboard (Custom branding feature).
 
 ---
@@ -359,5 +359,5 @@ If no domains are configured, the bot works on any domain.
 
 ## Need Help?
 
-- Dashboard: [pageai-tau.vercel.app/dashboard](https://pageai-tau.vercel.app/dashboard)
-- Email: support@pageai.com
+- Dashboard: [pagecortex.vercel.app/dashboard](https://pagecortex.vercel.app/dashboard)
+- Email: support@pagecortex.com

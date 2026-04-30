@@ -1,10 +1,10 @@
-import Navbar from '@/components/landing/Navbar';
+﻿import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Contact — PageAI',
-  description: 'Get in touch with the PageAI team. We\'re here to help.',
+  title: 'Contact — PageCortex',
+  description: 'Get in touch with the PageCortex team. We\'re here to help.',
 };
 
 export default function ContactPage() {
@@ -22,15 +22,15 @@ export default function ContactPage() {
               {
                 icon: '✉',
                 title: 'General & Sales',
-                detail: 'hello@pageai.io',
-                href: 'mailto:hello@pageai.io',
+                detail: 'hello@pagecortex.io',
+                href: 'mailto:hello@pagecortex.io',
                 desc: 'Questions about plans, pricing, or partnerships',
               },
               {
                 icon: '🛠',
                 title: 'Support',
-                detail: 'support@pageai.io',
-                href: 'mailto:support@pageai.io',
+                detail: 'support@pagecortex.io',
+                href: 'mailto:support@pagecortex.io',
                 desc: 'Technical issues, billing help, or account questions',
               },
             ].map(c => (

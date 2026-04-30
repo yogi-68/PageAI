@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -171,7 +171,7 @@ export default function ChatPreviewPage() {
               </svg>
             </button>
           </div>
-          <p className="text-center text-[10px] text-white/20 mt-2">Powered by PageAI</p>
+          <p className="text-center text-[10px] text-white/20 mt-2">Powered by PageCortex</p>
         </div>
       </div>
 
