@@ -1,4 +1,4 @@
-﻿import DodoPayments from 'dodopayments';
+import DodoPayments from 'dodopayments';
 
 // ─── Test / Mock Modes ────────────────────────────────────
 // DODO_TEST_MODE=true   → Uses DODO_TEST_PAYMENTS_API_KEY (Dodo sandbox). Real API calls,

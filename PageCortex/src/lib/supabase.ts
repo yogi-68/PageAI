@@ -1,4 +1,4 @@
-﻿import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Lazy-initialized browser Supabase client (safe for Vercel build)
 let _supabase: SupabaseClient | null = null;

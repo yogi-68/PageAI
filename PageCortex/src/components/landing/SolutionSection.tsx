@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { motion } from 'framer-motion';
 import { TrendingUp, Zap, CheckCircle2, ArrowRight } from 'lucide-react';

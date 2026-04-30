@@ -1,4 +1,4 @@
-﻿// PageCortex Embeddable Widget Script
+// PageCortex Embeddable Widget Script
 // Usage: <script src="https://pagecortex.vercel.app/widget.js" data-bot-id="bot_xxx" async />
 (function () {
     "use strict";
