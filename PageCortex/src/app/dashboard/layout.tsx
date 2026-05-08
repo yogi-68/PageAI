@@ -11,6 +11,7 @@ const nav = [
   { label: 'Overview', href: '/dashboard', icon: '◈' },
   { label: 'Websites', href: '/dashboard/websites', icon: '◎' },
   { label: 'Bots', href: '/dashboard/bots', icon: '✦' },
+  { label: 'Unanswered', href: '/dashboard/conversations', icon: '⚠' },
   { label: 'Knowledge', href: '/dashboard/knowledge', icon: '◇' },
   { label: 'Analytics', href: '/dashboard/analytics', icon: '▣' },
   { label: 'Billing', href: '/dashboard/billing', icon: '◆' },
@@ -32,6 +33,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [usage, setUsage] = useState<UsageInfo | null>(null);
+  const [unresolvedCount, setUnresolvedCount] = useState(0);
 
   // Only redirect once auth has fully resolved — prevents race with OAuth callback
   useEffect(() => { if (!loading && !user) router.push('/login'); }, [user, loading, router]);
@@ -42,6 +44,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!user) return;
     supabase.from('profiles').select('plan, monthly_message_count, monthly_message_limit, total_pages_indexed, max_pages_indexed').eq('id', user.id).single()
       .then(({ data }) => { if (data) setUsage(data as UsageInfo); });
+    // Fetch unanswered count for nav badge
+    fetch(`/api/dashboard/unanswered?userId=${user.id}&resolved=false&limit=1`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setUnresolvedCount(d.unresolvedCount || 0); })
+      .catch(() => {});
   }, [user, pathname]);
 
   if (loading) return (
@@ -75,7 +82,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 : 'text-fg-secondary hover:text-fg hover:bg-surface-elevated/50'
             }`}>
               <span className="text-[12px] w-4 text-center">{item.icon}</span>
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.label === 'Unanswered' && unresolvedCount > 0 && (
+                <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-warning text-[9px] font-bold text-white min-w-[16px] leading-none">
+                  {unresolvedCount}
+                </span>
+              )}
             </Link>
           ))}
         </nav>

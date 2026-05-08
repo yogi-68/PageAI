@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
         const [
             { data: bots, error: botsErr },
             { data: profile },
+            { count: unresolvedCount },
         ] = await Promise.all([
             admin
                 .from('bots')
@@ -25,6 +26,11 @@ export async function GET(request: NextRequest) {
                 .select('plan, monthly_message_count, monthly_message_limit')
                 .eq('id', userId)
                 .single(),
+            admin
+                .from('unanswered_questions')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', userId)
+                .eq('is_resolved', false),
         ]);
 
         if (botsErr) throw botsErr;
@@ -33,6 +39,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             stats: {
                 activeBots: botList.filter((b: any) => b.is_active).length,
+                unresolvedQuestions: unresolvedCount || 0,
             },
             bots: botList,
             usage: profile || { plan: 'free', monthly_message_count: 0, monthly_message_limit: 50 },

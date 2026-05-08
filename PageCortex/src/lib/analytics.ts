@@ -13,6 +13,7 @@ export type AnalyticsEvent =
     | 'chat.completed'
     | 'chat.failed'
     | 'chat.cached'
+    | 'chat.unanswered'
     | 'bot.created'
     | 'bot.deleted'
     | 'crawl.started'

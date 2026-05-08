@@ -189,7 +189,17 @@ export async function POST(request: NextRequest) {
             model: result.model,
             cached: result.cached || false,
             responseTimeMs: result.responseTimeMs,
+            unanswered: result.unanswered || false,
         }, bot.user_id);
+
+        // Track unanswered questions separately for dashboard notifications
+        if (result.unanswered) {
+            trackEvent('chat.unanswered', {
+                botId,
+                query: query.substring(0, 200),
+                confidence: result.confidence,
+            }, bot.user_id);
+        }
 
         return NextResponse.json({
             success: true,
@@ -200,6 +210,7 @@ export async function POST(request: NextRequest) {
             cached: result.cached,
             responseTimeMs: result.responseTimeMs,
             suggestions: result.suggestions || [],
+            unanswered: result.unanswered || false,
         }, { headers: corsHeaders(origin) });
 
     } catch (error: any) {

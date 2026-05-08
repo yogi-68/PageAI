@@ -7,6 +7,7 @@ import { Sk } from '@/components/ui/Skeleton';
 
 interface Stats {
   activeBots: number;
+  unresolvedQuestions: number;
 }
 
 interface Usage {
@@ -46,6 +47,7 @@ export default function DashboardPage() {
           const d = await res.json();
           setStats({
             activeBots: d.stats?.activeBots || 0,
+            unresolvedQuestions: d.stats?.unresolvedQuestions || 0,
           });
           setUsage({
             plan: d.usage?.plan || 'free',
@@ -156,17 +158,52 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Unanswered Questions Alert — only shown when there are unresolved questions */}
+      {(stats?.unresolvedQuestions || 0) > 0 && (
+        <div className="p-4 rounded-xl border border-warning/30 bg-warning/5 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-warning/15 flex items-center justify-center shrink-0 mt-0.5">
+            <svg className="w-5 h-5 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-0.5">
+              <p className="text-[14px] font-semibold text-fg">
+                {stats.unresolvedQuestions} unanswered question{stats.unresolvedQuestions !== 1 ? 's' : ''}
+              </p>
+              <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-warning text-[10px] font-bold text-white min-w-[18px]">
+                {stats.unresolvedQuestions}
+              </span>
+            </div>
+            <p className="text-[12px] text-fg-secondary mb-2">
+              Visitors asked questions your bot couldn&apos;t answer. Review them to improve your knowledge base.
+            </p>
+            <Link
+              href="/dashboard/conversations"
+              className="inline-flex items-center gap-1 text-[12px] text-warning font-medium hover:text-fg transition-colors"
+            >
+              Review questions →
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: 'Active Bots', value: stats?.activeBots || 0 },
           { label: 'Messages Used', value: (usage?.monthly_message_count || 0).toLocaleString() },
-          { label: 'Messages Left', value: Math.max(0, (usage?.monthly_message_limit || 0) - (usage?.monthly_message_count || 0)).toLocaleString() },
+          { label: 'Unanswered', value: stats?.unresolvedQuestions || 0, highlight: (stats?.unresolvedQuestions || 0) > 0 },
           { label: 'Plan', value: (usage?.plan || 'free').charAt(0).toUpperCase() + (usage?.plan || 'free').slice(1) },
         ].map(k => (
-          <div key={k.label} className="p-4 rounded-xl border border-edge bg-surface/40 hover:border-edge-light transition-all duration-200">
-            <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">{k.label}</span>
-            <p className="text-[24px] font-bold text-fg mt-1">{k.value}</p>
+          <div key={k.label} className={`p-4 rounded-xl border bg-surface/40 hover:border-edge-light transition-all duration-200 ${'highlight' in k && k.highlight ? 'border-warning/30' : 'border-edge'}`}>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">{k.label}</span>
+              {'highlight' in k && k.highlight && (
+                <span className="w-2 h-2 rounded-full bg-warning animate-pulse" />
+              )}
+            </div>
+            <p className={`text-[24px] font-bold mt-1 ${'highlight' in k && k.highlight ? 'text-warning' : 'text-fg'}`}>{k.value}</p>
           </div>
         ))}
       </div>

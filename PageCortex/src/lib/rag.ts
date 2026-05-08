@@ -3,6 +3,12 @@
  *
  * Flow: Query → Rewrite → Hybrid Search (Vector + BM25) → Re-rank → Top K → LLM → Answer
  * Target: 95-98% answer accuracy with source citations
+ *
+ * Key design decisions:
+ * - Confidence threshold uses OR logic: low confidence OR no chunks → fallback
+ * - Post-answer evasive detection catches when LLM gives generic answers
+ * - Unanswered questions are tracked in DB for dashboard notifications
+ * - Low-confidence answers are never cached
  */
 
 import { getOpenAI, generateEmbedding } from './openai';
@@ -35,6 +41,7 @@ export interface RAGResult {
     responseTimeMs: number;
     cached: boolean;
     suggestions?: string[];
+    unanswered?: boolean;
 }
 
 export interface RAGConfig {
@@ -289,18 +296,26 @@ export async function executeRAG(
     // 6. Estimate confidence
     const confidence = estimateConfidence(rankedChunks);
 
-    // 7. Check confidence threshold
+    // 7. Check confidence threshold — use OR logic:
+    //    If confidence is below threshold OR no chunks found, return fallback.
+    //    The old AND logic almost never triggered because it required BOTH conditions.
     const threshold = config.confidenceThreshold || 0.65;
-    if (confidence < threshold && rankedChunks.length === 0) {
+    if (confidence < threshold || rankedChunks.length === 0) {
+        // Track as unanswered question
+        await trackUnansweredQuestion(
+            botId, config.userId, query, confidence,
+            rankedChunks.length === 0 ? 'no_chunks' : 'low_confidence'
+        );
         return {
-            answer: config.fallbackMessage || "I don't have enough information to answer that question. Could you try rephrasing or ask something else?",
+            answer: config.fallbackMessage || "I don't have specific information about that in my knowledge base. The site owner has been notified and will update the information soon.",
             sources: [],
             confidence,
             model: 'none',
             queryRewrite: null,
-            chunksRetrieved: 0,
+            chunksRetrieved: rankedChunks.length,
             responseTimeMs: Date.now() - startTime,
             cached: false,
+            unanswered: true,
         };
     }
 
@@ -310,14 +325,16 @@ export async function executeRAG(
     // 9. Build context and generate answer
     const context = buildContext(rankedChunks);
 
-    const systemPrompt = config.systemPrompt || `You are a helpful AI assistant for this product. Answer questions based on the provided knowledge base context.
+    const systemPrompt = config.systemPrompt || `You are a helpful AI assistant. Answer questions ONLY from the provided knowledge base context.
 
-Rules:
-1. Answer ONLY from the context provided below — never from prior training knowledge.
-2. If the context contains the answer, give it directly and confidently.
-3. If the context truly does not contain the answer, say: "I don't have information about that in my knowledge base."
-4. Be concise and helpful. Do NOT mention source files, document names, or URLs in your answer.
-5. Never fabricate information.`;
+CRITICAL RULES — follow these EXACTLY:
+1. Answer STRICTLY from the context provided below. Never use prior training data or general knowledge.
+2. If the context contains the answer, provide it clearly with specific details (prices, features, plan names, etc.).
+3. If the context does NOT contain the specific information asked about, respond EXACTLY with: "I don't have information about that in my knowledge base. The site owner has been notified."
+4. If the user asks about something specific (e.g. a $55 plan) and the context only mentions different values (e.g. $29, $69, $199), do NOT say the information exists — instead clearly state what IS available and note that what they asked about is not listed.
+5. NEVER make up, guess, or approximate information. If you're unsure, say so.
+6. Be specific and precise. Include exact numbers, plan names, and details from the context.
+7. Do NOT mention source files, document names, or URLs in your answer.`;
 
     const response = await getOpenAI().chat.completions.create({
         model,
@@ -334,7 +351,15 @@ Rules:
 
     const answer = response.choices[0]?.message?.content?.trim() || '';
 
-    // 10. Build source citations (deduplicated)
+    // 10. Post-answer evasive detection
+    //     Detect when the LLM gives a generic/evasive answer despite having context
+    const isEvasive = detectEvasiveAnswer(answer);
+    if (isEvasive) {
+        // Track as unanswered — the KB doesn't have the specific info
+        await trackUnansweredQuestion(botId, config.userId, query, confidence, 'evasive_answer');
+    }
+
+    // 11. Build source citations (deduplicated)
     const seenUrls = new Set<string>();
     const sources = rankedChunks
         .filter((c) => {
@@ -358,10 +383,13 @@ Rules:
         chunksRetrieved: rankedChunks.length,
         responseTimeMs: Date.now() - startTime,
         cached: false,
+        unanswered: isEvasive,
     };
 
-    // 11. Cache the result
-    await setCache(botId, cacheKey, query, result);
+    // 12. Cache the result — but NEVER cache evasive/low-confidence answers
+    if (!isEvasive && confidence >= threshold) {
+        await setCache(botId, cacheKey, query, result);
+    }
 
     return result;
 }
@@ -412,19 +440,22 @@ export function executeRAGStream(
 
                 // 5. Confidence + model selection
                 const confidence = estimateConfidence(rankedChunks);
+                const threshold = config.confidenceThreshold || 0.65;
 
-                // Short-circuit: no knowledge base data — send fallback rather than calling OpenAI
-                if (rankedChunks.length === 0) {
-                    // Use a specific message that hints the KB may not be indexed yet,
-                    // rather than the generic "I don't have enough information" fallback.
+                // Short-circuit: low confidence OR no chunks — send fallback
+                // Uses the same OR logic as the non-streaming path
+                if (rankedChunks.length === 0 || confidence < threshold) {
+                    const reason = rankedChunks.length === 0 ? 'no_chunks' : 'low_confidence';
+                    // Track unanswered question for dashboard notifications
+                    await trackUnansweredQuestion(botId, config.userId, query, confidence, reason);
+
                     const fallback = config.fallbackMessage ||
-                        "I don't have any indexed content to answer from yet. " +
-                        "Please make sure the website has been crawled and fully indexed, " +
-                        "or try again in a few moments.";
+                        "I don't have specific information about that in my knowledge base. " +
+                        "The site owner has been notified and will update the information soon.";
                     send({ type: 'token', content: fallback });
-                    send({ type: 'done', sources: [], confidence: 0, model: 'none', queryRewrite: null });
-                    resolveMetadata({ sources: [], confidence: 0, model: 'none', queryRewrite: null,
-                        chunksRetrieved: 0, responseTimeMs: Date.now() - startTime, cached: false });
+                    send({ type: 'done', sources: [], confidence, model: 'none', queryRewrite: null, unanswered: true });
+                    resolveMetadata({ sources: [], confidence, model: 'none', queryRewrite: null,
+                        chunksRetrieved: rankedChunks.length, responseTimeMs: Date.now() - startTime, cached: false, unanswered: true });
                     return;
                 }
 
@@ -446,14 +477,16 @@ export function executeRAGStream(
                         relevance: Math.round(c.combined_score * 100) / 100,
                     }));
 
-                const systemPrompt = config.systemPrompt || `You are a helpful AI assistant for this product. Answer questions based on the provided knowledge base context.
+                const systemPrompt = config.systemPrompt || `You are a helpful AI assistant. Answer questions ONLY from the provided knowledge base context.
 
-Rules:
-1. Answer ONLY from the context provided below — never from prior training knowledge.
-2. If the context contains the answer, give it directly and confidently.
-3. If the context truly does not contain the answer, say: "I don't have information about that in my knowledge base."
-4. Be concise and helpful. Do NOT mention source files, document names, or URLs in your answer.
-5. Never fabricate information.`;
+CRITICAL RULES — follow these EXACTLY:
+1. Answer STRICTLY from the context provided below. Never use prior training data or general knowledge.
+2. If the context contains the answer, provide it clearly with specific details (prices, features, plan names, etc.).
+3. If the context does NOT contain the specific information asked about, respond EXACTLY with: "I don't have information about that in my knowledge base. The site owner has been notified."
+4. If the user asks about something specific (e.g. a $55 plan) and the context only mentions different values (e.g. $29, $69, $199), do NOT say the information exists — instead clearly state what IS available and note that what they asked about is not listed.
+5. NEVER make up, guess, or approximate information. If you're unsure, say so.
+6. Be specific and precise. Include exact numbers, plan names, and details from the context.
+7. Do NOT mention source files, document names, or URLs in your answer.`;
 
                 // 6. Stream OpenAI response token by token
                 let tokensSent = 0;
@@ -554,4 +587,51 @@ Rules:
     });
 
     return { stream, metadata };
+}
+
+// ─── Post-Answer Evasive Detection ────────────────────────
+// Catches when the LLM gives a generic/vague answer instead of
+// admitting it doesn't have the information.
+function detectEvasiveAnswer(answer: string): boolean {
+    const lower = answer.toLowerCase();
+    const evasivePatterns = [
+        "i don't have information about that",
+        "i don't have enough information",
+        "i don't have specific information",
+        "not mentioned in",
+        "not available in my knowledge",
+        "i cannot find",
+        "i couldn't find",
+        "the site owner has been notified",
+        "try rephrasing",
+        "contact our support team",
+        "i'm not able to provide",
+        "information is not available",
+        "not covered in the available",
+    ];
+    return evasivePatterns.some(p => lower.includes(p));
+}
+
+// ─── Track Unanswered Questions ───────────────────────────
+// Stores questions the bot couldn't answer for dashboard review.
+async function trackUnansweredQuestion(
+    botId: string,
+    userId: string,
+    question: string,
+    confidence: number,
+    reason: 'low_confidence' | 'no_chunks' | 'fallback_triggered' | 'evasive_answer'
+): Promise<void> {
+    try {
+        const admin = getAdminClient();
+        await admin.from('unanswered_questions').insert({
+            bot_id: botId,
+            user_id: userId,
+            question: question.substring(0, 1000),
+            confidence,
+            reason,
+        });
+    } catch (err) {
+        // Non-critical — never fail the chat response
+        console.error('[rag] Failed to track unanswered question:', err);
+    }
 }
