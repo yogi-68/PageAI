@@ -3,8 +3,21 @@ import Footer from '@/components/landing/Footer';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Changelog — PageCortex',
-  description: 'See what\'s new in PageCortex — product updates, new features, and improvements.',
+  title: 'Changelog — Product Updates & New Features',
+  description: "Track the latest PageCortex product updates, new features, and improvements. We ship weekly — see what's new.",
+  alternates: { canonical: 'https://pagecortex.com/changelog' },
+  openGraph: {
+    title: 'PageCortex Changelog — Product Updates & New Features',
+    description: 'The latest PageCortex product updates, new features, and improvements.',
+    url: 'https://pagecortex.com/changelog',
+    type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'PageCortex Changelog' }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'PageCortex Changelog',
+    description: 'Latest product updates and new features.',
+  },
 };
 
 const releases = [

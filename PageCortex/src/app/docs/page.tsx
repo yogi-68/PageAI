@@ -4,8 +4,22 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Documentation — PageCortex',
-  description: 'Complete guide to creating, configuring, and embedding AI chatbots with PageCortex.',
+  title: 'Documentation — How to Set Up & Embed Your AI Chatbot',
+  description: 'Step-by-step guide to creating, configuring, and embedding an AI chatbot with PageCortex. From account setup to going live on your website in under 5 minutes.',
+  alternates: { canonical: 'https://pagecortex.com/docs' },
+  openGraph: {
+    title: 'PageCortex Documentation — AI Chatbot Setup Guide',
+    description: 'Complete step-by-step guide to setting up and embedding your AI chatbot with PageCortex.',
+    url: 'https://pagecortex.com/docs',
+    type: 'article',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'PageCortex Documentation' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PageCortex Docs — AI Chatbot Setup Guide',
+    description: 'Step-by-step guide to setting up and embedding your AI chatbot.',
+    images: ['/og-image.png'],
+  },
 };
 
 const steps = [

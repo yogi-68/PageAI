@@ -5,32 +5,51 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 
-const stats = [
-  { value: '2,000+', label: 'Websites Powered' },
-  { value: '10M+', label: 'Questions Answered' },
-  { value: '<2s', label: 'Avg Response Time' },
-  { value: '4.9/5', label: 'User Rating' },
+const highlights = [
+  { value: 'GPT-4.1', label: 'AI Model' },
+  { value: '< 5 min', label: 'Setup Time' },
+  { value: '95+', label: 'Languages Supported' },
+  { value: 'Free', label: 'Forever Plan' },
 ];
 
-const logos = ['Stripe', 'Vercel', 'Notion', 'Linear', 'Figma'];
+const poweredBy = ['OpenAI', 'Supabase', 'Vercel', 'Next.js'];
 
 // Demo conversation pairs
-const demoResponses: Record<string, string> = {
-  'what plans do you offer': 'We offer 4 plans: **Free** ($0), **Starter** ($29/mo), **Growth** ($69/mo), and **Scale** ($199/mo). All paid plans include a 7-day free trial!',
-  'how does it work': 'It\'s simple! 1) Add your website URL or connect a data source 2) We crawl & index your content with semantic chunking 3) Deploy your AI chatbot with one line of code. Takes under 2 minutes!',
-  'what is PageCortex': 'PageCortex is an AI-powered chatbot platform that trains on your website content using advanced RAG with hybrid search. It answers customer questions with 95%+ accuracy and source citations — 24/7. Supports 95+ languages!',
-  'pricing': 'Start free forever! Starter: $29/mo (4K msgs), Growth: $69/mo (10K msgs), Scale: $199/mo (40K msgs). All paid plans have a 7-day free trial. Cancel anytime.',
-  'features': 'Key features include: hybrid vector + BM25 search, GPT-4.1 powered answers, streaming responses, data source connectors (Notion, Google Drive, etc.), 95+ languages, real-time analytics, and easy embed widget.',
-};
+const demoResponses: Array<{ keywords: string[]; response: string }> = [
+  {
+    keywords: ['plan', 'pricing', 'price', 'cost', 'how much', 'subscription'],
+    response: "We have a free plan to get started, and paid plans from $29/mo. Every paid plan comes with a 7-day free trial — no credit card required upfront.",
+  },
+  {
+    keywords: ['how does it work', 'how it works', 'setup', 'get started', 'install', 'embed'],
+    response: "You paste your website URL, we crawl and index your content, then you drop one line of code onto your site. Your chatbot is live in under 2 minutes.",
+  },
+  {
+    keywords: ['what is pagecortex', 'what is page cortex', 'pagecortex', 'about'],
+    response: "PageCortex lets you build an AI chatbot trained on your own website content. It reads your pages, docs, or help center — and answers customer questions accurately, 24/7.",
+  },
+  {
+    keywords: ['feature', 'capability', 'support', 'language', 'integration', 'connector'],
+    response: "Key highlights: GPT-4.1 powered answers, hybrid semantic search, streaming responses, 95+ language support, Notion/Google Drive connectors, real-time analytics, and a no-code embed widget.",
+  },
+  {
+    keywords: ['accurate', 'accuracy', 'wrong', 'hallucin', 'reliable', 'trust'],
+    response: "PageCortex only answers from your actual content and cites the source page for every response. If it doesn't know, it says so — no making things up.",
+  },
+  {
+    keywords: ['trial', 'free', 'try'],
+    response: "Yes! There's a free plan with no time limit. Paid plans also include a 7-day trial so you can test everything before committing.",
+  },
+];
 
 function findBestResponse(query: string): string {
   const q = query.toLowerCase().trim();
-  for (const [key, response] of Object.entries(demoResponses)) {
-    if (q.includes(key) || key.split(' ').some(word => q.includes(word))) {
+  for (const { keywords, response } of demoResponses) {
+    if (keywords.some(k => q.includes(k))) {
       return response;
     }
   }
-  return 'Great question! PageCortex helps businesses deploy AI chatbots trained on their website content. Try asking about plans, features, or how it works!';
+  return "Good question! PageCortex builds AI chatbots trained on your website. Try asking about pricing, how it works, or what features are included.";
 }
 
 const fadeUp = {
@@ -82,7 +101,7 @@ export default function HeroSection() {
         >
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-edge bg-surface/60 backdrop-blur-sm text-[12.5px] text-fg-secondary">
             <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-            Trusted by 2,000+ businesses worldwide
+            Free forever plan — No credit card required
           </div>
         </motion.div>
 
@@ -233,12 +252,12 @@ export default function HeroSection() {
           </div>
         </motion.div>
 
-        {/* Stats */}
+        {/* Honest Product Highlights */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible" custom={5}
           className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-[800px] mx-auto mb-16"
         >
-          {stats.map((s) => (
+          {highlights.map((s) => (
             <div key={s.label} className="text-center">
               <p className="text-[28px] font-bold tracking-[-0.02em] text-fg">{s.value}</p>
               <p className="text-[13px] text-fg-muted mt-0.5">{s.label}</p>
@@ -246,14 +265,14 @@ export default function HeroSection() {
           ))}
         </motion.div>
 
-        {/* Trust Logos */}
+        {/* Powered By */}
         <motion.div
           variants={fadeUp} initial="hidden" animate="visible" custom={6}
           className="text-center"
         >
-          <p className="text-[12.5px] uppercase tracking-[0.1em] text-fg-muted mb-6">Trusted by teams at</p>
+          <p className="text-[12.5px] uppercase tracking-[0.1em] text-fg-muted mb-6">Powered by</p>
           <div className="flex items-center justify-center gap-10 flex-wrap">
-            {logos.map((l) => (
+            {poweredBy.map((l) => (
               <span key={l} className="text-[15px] font-medium text-fg-muted/60 tracking-wide">{l}</span>
             ))}
           </div>

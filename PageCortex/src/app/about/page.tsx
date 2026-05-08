@@ -3,8 +3,22 @@ import Footer from '@/components/landing/Footer';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'About — PageCortex',
-  description: 'Learn about PageCortex — the platform that lets any business deploy AI chatbots trained on their website in minutes.',
+  title: 'About PageCortex — AI Chatbot Company, Mission & Story',
+  description: 'PageCortex is on a mission to make AI-powered customer support accessible to every business. Learn about our team, RAG technology, and the story behind the platform.',
+  alternates: { canonical: 'https://pagecortex.com/about' },
+  openGraph: {
+    title: 'About PageCortex — AI Chatbot Company, Mission & Story',
+    description: "Learn how PageCortex is making AI-powered chatbots accessible to every business — our RAG technology, mission, and team.",
+    url: 'https://pagecortex.com/about',
+    type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'About PageCortex' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'About PageCortex — AI Chatbot Company',
+    description: 'Our mission, technology, and the team building the future of AI-powered customer support.',
+    images: ['/og-image.png'],
+  },
 };
 
 export default function AboutPage() {
@@ -18,9 +32,9 @@ export default function AboutPage() {
           <p className="text-[18px] text-fg-secondary leading-relaxed mb-8">PageCortex makes it simple for any business to deploy intelligent AI chatbots — trained on their own website, answering real customer questions in real time, with no coding required.</p>
           <div className="grid sm:grid-cols-3 gap-5 mt-12">
             {[
-              { label: 'Founded', value: '2024' },
-              { label: 'Bots deployed', value: '1,000+' },
-              { label: 'Messages answered', value: '500K+' },
+              { label: 'Founded', value: '2025' },
+              { label: 'AI Model', value: 'GPT-4.1' },
+              { label: 'Setup Time', value: '< 5 min' },
             ].map(s => (
               <div key={s.label} className="p-5 rounded-xl border border-edge bg-surface/40">
                 <p className="text-[28px] font-bold text-fg">{s.value}</p>

@@ -1,6 +1,26 @@
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import Link from 'next/link';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Blog — AI Chatbot Tips, Guides & Updates',
+  description: 'Explore the PageCortex blog for in-depth guides on AI chatbots, RAG technology, customer support automation, and best practices for deploying chatbots on your website.',
+  alternates: { canonical: 'https://pagecortex.com/blog' },
+  openGraph: {
+    title: 'PageCortex Blog — AI Chatbot Tips, Guides & Updates',
+    description: 'In-depth guides on AI chatbots, RAG technology, and customer support automation.',
+    url: 'https://pagecortex.com/blog',
+    type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'PageCortex Blog' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PageCortex Blog — AI Chatbot Guides & Updates',
+    description: 'Guides on AI chatbots, RAG technology, and customer support automation.',
+    images: ['/og-image.png'],
+  },
+};
 
 const posts = [
   {

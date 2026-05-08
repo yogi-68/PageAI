@@ -4,8 +4,21 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Careers — PageCortex',
-  description: 'Join the PageCortex team and help build the future of AI-powered customer support.',
+  title: 'Careers at PageCortex — Join Our AI Startup',
+  description: "Join PageCortex and help build the future of AI-powered customer support. We're a small, ambitious team shipping fast on hard AI problems.",
+  alternates: { canonical: 'https://pagecortex.com/careers' },
+  openGraph: {
+    title: 'Careers at PageCortex — Join Our AI Team',
+    description: 'Help build the future of AI-powered customer support at PageCortex.',
+    url: 'https://pagecortex.com/careers',
+    type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Careers at PageCortex' }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Careers at PageCortex',
+    description: 'Help build the future of AI-powered customer support.',
+  },
 };
 
 export default function CareersPage() {

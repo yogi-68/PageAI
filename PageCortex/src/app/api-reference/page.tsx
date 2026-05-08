@@ -3,8 +3,22 @@ import Footer from '@/components/landing/Footer';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'API Reference — PageCortex',
-  description: 'REST API reference for PageCortex — embed bots, stream chat responses, and query your bot programmatically.',
+  title: 'API Reference — REST API for AI Chatbot Integration',
+  description: 'PageCortex REST API reference. Embed bots, stream AI chat responses, and query your chatbot programmatically. Full endpoint documentation with code examples.',
+  alternates: { canonical: 'https://pagecortex.com/api-reference' },
+  openGraph: {
+    title: 'PageCortex API Reference — AI Chatbot REST API',
+    description: 'Full REST API documentation for integrating PageCortex AI chatbots into your app.',
+    url: 'https://pagecortex.com/api-reference',
+    type: 'article',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'PageCortex API Reference' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PageCortex API Reference',
+    description: 'Full REST API documentation for PageCortex AI chatbot integration.',
+    images: ['/og-image.png'],
+  },
 };
 
 const endpoints = [

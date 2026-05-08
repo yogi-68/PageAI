@@ -3,8 +3,21 @@ import Footer from '@/components/landing/Footer';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Contact — PageCortex',
-  description: 'Get in touch with the PageCortex team. We\'re here to help.',
+  title: 'Contact PageCortex — Sales, Support & Partnerships',
+  description: "Get in touch with the PageCortex team for sales inquiries, technical support, or partnership opportunities. We typically respond within a few hours.",
+  alternates: { canonical: 'https://pagecortex.com/contact' },
+  openGraph: {
+    title: 'Contact PageCortex — Sales, Support & Partnerships',
+    description: 'Reach the PageCortex team for sales, support, or partnership questions.',
+    url: 'https://pagecortex.com/contact',
+    type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Contact PageCortex' }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Contact PageCortex',
+    description: 'Reach our team for sales, support, or partnerships.',
+  },
 };
 
 export default function ContactPage() {
