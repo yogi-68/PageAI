@@ -33,7 +33,7 @@ interface Website {
   last_crawled_at: string | null;
 }
 
-type Tab = 'overview' | 'settings' | 'embed' | 'knowledge';
+type Tab = 'overview' | 'settings' | 'embed' | 'integrations' | 'knowledge';
 
 export default function BotManagePage() {
   const { user } = useAuth();
@@ -50,6 +50,7 @@ export default function BotManagePage() {
   const [deleting, setDeleting] = useState(false);
   const [recrawling, setRecrawling] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Editable settings state
   const [name, setName] = useState('');
@@ -171,10 +172,9 @@ export default function BotManagePage() {
   };
 
   const copyEmbed = async () => {
-    const code = `<script src="${window.location.origin}/widget.js" data-bot-id="${botId}"><\/script>`;
+    const code = `<script src="https://www.pagecortex.com/widget.js" data-bot-id="${botId}"><\/script>`;
     try {
       await navigator.clipboard.writeText(code);
-      toast.success('Embed code copied!');
     } catch {
       const el = document.createElement('textarea');
       el.value = code;
@@ -184,8 +184,10 @@ export default function BotManagePage() {
       el.select();
       document.execCommand('copy');
       document.body.removeChild(el);
-      toast.success('Embed code copied!');
     }
+    setCopied(true);
+    toast.success('Embed code copied!');
+    setTimeout(() => setCopied(false), 2000);
   };
 
   if (loading) return (
@@ -212,12 +214,13 @@ export default function BotManagePage() {
 
   if (!bot) return null;
 
-  const embedCode = `<script src="${typeof window !== 'undefined' ? window.location.origin : 'https://pagecortex.vercel.app'}/widget.js" data-bot-id="${botId}"></script>`;
+  const embedCode = `<script src="https://www.pagecortex.com/widget.js" data-bot-id="${botId}"></script>`;
   const tabs: { key: Tab; label: string }[] = [
     { key: 'overview', label: 'Overview' },
     { key: 'settings', label: 'Settings' },
     { key: 'knowledge', label: 'Knowledge' },
     { key: 'embed', label: 'Embed' },
+    { key: 'integrations', label: 'Integrations' },
   ];
 
   return (
@@ -235,15 +238,19 @@ export default function BotManagePage() {
                 {bot.is_active ? 'active' : 'paused'} · click to {bot.is_active ? 'pause' : 'activate'}
               </button>
             </div>
-            <p className="text-[12px] text-fg-muted mt-0.5">Created {new Date(bot.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p className="text-[12px] text-fg-muted mt-0.5">AI-powered chatbot</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => window.open(`/chat-preview/${botId}`, '_blank')} className="px-3 py-1.5 rounded-lg border border-edge text-[12px] text-fg-secondary hover:text-fg hover:border-edge-light transition-all">
             Preview
           </button>
-          <button onClick={copyEmbed} className="px-3 py-1.5 rounded-lg bg-primary text-white text-[12px] font-medium hover:bg-primary-hover transition-all">
-            Copy Embed
+          <button onClick={copyEmbed} className="px-3 py-1.5 rounded-lg bg-primary text-white text-[12px] font-medium hover:bg-primary-hover transition-all flex items-center gap-1.5">
+            {copied ? (
+              <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Copied!</>
+            ) : (
+              'Copy Embed'
+            )}
           </button>
         </div>
       </div>
@@ -521,7 +528,7 @@ export default function BotManagePage() {
 
       {/* ── Embed Tab ── */}
       {tab === 'embed' && (
-        <div className="space-y-4 max-w-160">
+        <div className="space-y-4">
           <div className="p-4 rounded-xl border border-primary/20 bg-primary/3">
             <p className="text-[12px] text-fg-secondary">
               Copy the script tag below and paste it into your website's HTML — just before the closing <code className="text-[11px] bg-primary/10 text-primary px-1 rounded">&lt;/body&gt;</code> tag. The chat widget will appear automatically.
@@ -532,16 +539,68 @@ export default function BotManagePage() {
           <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-[13px] font-semibold text-fg">Script Tag</h3>
-              <button onClick={copyEmbed} className="px-3 py-1 rounded-lg bg-primary text-white text-[11px] font-medium hover:bg-primary-hover transition-all">
-                Copy
+              <button onClick={copyEmbed} className="px-3 py-1 rounded-lg bg-primary text-white text-[11px] font-medium hover:bg-primary-hover transition-all flex items-center gap-1.5">
+                {copied ? (
+                  <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg> Copied!</>
+                ) : (
+                  'Copy'
+                )}
               </button>
             </div>
             <pre className="text-[12px] font-mono text-fg-secondary bg-bg/60 border border-edge rounded-lg p-4 overflow-x-auto whitespace-pre-wrap break-all">{embedCode}</pre>
           </div>
 
-          {/* Platform-specific guides */}
-          <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-5">
-            <h3 className="text-[14px] font-semibold text-fg">Platform Integration Guides</h3>
+          {/* For React/Next.js */}
+          <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-3">
+            <h3 className="text-[13px] font-semibold text-fg">Using React or Next.js?</h3>
+            <p className="text-[12px] text-fg-muted">Add the script using Next.js Script component in your root layout:</p>
+            <pre className="text-[11px] font-mono text-fg-secondary bg-bg/60 border border-edge rounded-lg p-4 overflow-x-auto whitespace-pre">{`import Script from 'next/script'
+
+// In your layout.tsx or _app.tsx:
+<Script
+  src="https://www.pagecortex.com/widget.js"
+  data-bot-id="${botId}"
+  strategy="lazyOnload"
+/>`}</pre>
+          </div>
+
+          {/* Vue / Nuxt */}
+          <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-3">
+            <h3 className="text-[13px] font-semibold text-fg">Using Vue or Nuxt?</h3>
+            <p className="text-[12px] text-fg-muted">Add the script in your nuxt.config.ts:</p>
+            <pre className="text-[11px] font-mono text-fg-secondary bg-bg/60 border border-edge rounded-lg p-4 overflow-x-auto whitespace-pre">{`// nuxt.config.ts
+export default defineNuxtConfig({
+  app: {
+    head: {
+      script: [{
+        src: 'https://www.pagecortex.com/widget.js',
+        'data-bot-id': '${botId}',
+        async: true
+      }]
+    }
+  }
+})`}</pre>
+          </div>
+
+          {/* Google Tag Manager */}
+          <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-3">
+            <h3 className="text-[13px] font-semibold text-fg">Using Google Tag Manager?</h3>
+            <p className="text-[12px] text-fg-muted">Create a Custom HTML tag:</p>
+            <ol className="text-[12px] text-fg-secondary space-y-1 list-decimal pl-5">
+              <li>Go to <strong>Tags → New → Custom HTML</strong></li>
+              <li>Paste the embed code</li>
+              <li>Set trigger to <strong>All Pages - Page View</strong></li>
+              <li>Save and publish your container</li>
+            </ol>
+          </div>
+        </div>
+      )}
+
+      {/* ── Integrations Tab ── */}
+      {tab === 'integrations' && (
+        <div className="space-y-4">
+          <h3 className="text-[16px] font-semibold text-fg">Platform Integration Guides</h3>
+          <p className="text-[13px] text-fg-secondary">Step-by-step instructions for adding PageCortex to your favorite platform.</p>
 
             {/* WordPress */}
             <div className="p-4 rounded-lg border border-edge bg-bg/30 space-y-2">
@@ -651,51 +710,6 @@ export default function BotManagePage() {
                 <li>Save and upload the file</li>
               </ol>
             </div>
-          </div>
-
-          {/* For React/Next.js */}
-          <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-3">
-            <h3 className="text-[13px] font-semibold text-fg">Using React or Next.js?</h3>
-            <p className="text-[12px] text-fg-muted">Add the script using Next.js Script component in your root layout:</p>
-            <pre className="text-[11px] font-mono text-fg-secondary bg-bg/60 border border-edge rounded-lg p-4 overflow-x-auto whitespace-pre">{`import Script from 'next/script'
-
-// In your layout.tsx or _app.tsx:
-<Script
-  src="${typeof window !== 'undefined' ? window.location.origin : 'https://www.pagecortex.com'}/widget.js"
-  data-bot-id="${botId}"
-  strategy="lazyOnload"
-/>`}</pre>
-          </div>
-
-          {/* Vue / Nuxt */}
-          <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-3">
-            <h3 className="text-[13px] font-semibold text-fg">Using Vue or Nuxt?</h3>
-            <p className="text-[12px] text-fg-muted">Add the script in your App.vue or nuxt.config.ts:</p>
-            <pre className="text-[11px] font-mono text-fg-secondary bg-bg/60 border border-edge rounded-lg p-4 overflow-x-auto whitespace-pre">{`// nuxt.config.ts
-export default defineNuxtConfig({
-  app: {
-    head: {
-      script: [{
-        src: '${typeof window !== 'undefined' ? window.location.origin : 'https://www.pagecortex.com'}/widget.js',
-        'data-bot-id': '${botId}',
-        async: true
-      }]
-    }
-  }
-})`}</pre>
-          </div>
-
-          {/* Google Tag Manager */}
-          <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-3">
-            <h3 className="text-[13px] font-semibold text-fg">Using Google Tag Manager?</h3>
-            <p className="text-[12px] text-fg-muted">Create a Custom HTML tag:</p>
-            <ol className="text-[12px] text-fg-secondary space-y-1 list-decimal pl-5">
-              <li>Go to <strong>Tags → New → Custom HTML</strong></li>
-              <li>Paste the embed code</li>
-              <li>Set trigger to <strong>All Pages - Page View</strong></li>
-              <li>Save and publish your container</li>
-            </ol>
-          </div>
         </div>
       )}
     </div>

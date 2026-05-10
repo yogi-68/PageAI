@@ -35,15 +35,15 @@ export default function ContactPage() {
               {
                 icon: '✉',
                 title: 'General & Sales',
-                detail: 'hello@pagecortex.io',
-                href: 'mailto:hello@pagecortex.io',
+                detail: 'yogeshwar0402@gmail.com',
+                href: 'mailto:yogeshwar0402@gmail.com',
                 desc: 'Questions about plans, pricing, or partnerships',
               },
               {
                 icon: '🛠',
                 title: 'Support',
-                detail: 'support@pagecortex.io',
-                href: 'mailto:support@pagecortex.io',
+                detail: 'yogeshwar0402@gmail.com',
+                href: 'mailto:yogeshwar0402@gmail.com',
                 desc: 'Technical issues, billing help, or account questions',
               },
             ].map(c => (

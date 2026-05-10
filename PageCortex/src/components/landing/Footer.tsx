@@ -14,12 +14,12 @@ const footerLinks = {
   ],
   Resources: [
     { label: 'Documentation', href: '/docs' },
-    { label: 'API Reference', href: '/api-reference' },
-    { label: 'Changelog', href: '/changelog' },
+    { label: 'Blog', href: '/blog' },
+    { label: 'Contact', href: '/contact' },
   ],
   Legal: [
-    { label: 'Privacy Policy', href: '/docs' },
-    { label: 'Terms of Service', href: '/docs' },
+    { label: 'Privacy Policy', href: '/privacy' },
+    { label: 'Terms of Service', href: '/terms' },
   ],
 };
 

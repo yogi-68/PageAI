@@ -296,25 +296,20 @@ export async function executeRAG(
     // 6. Estimate confidence
     const confidence = estimateConfidence(rankedChunks);
 
-    // 7. Only short-circuit if there are truly NO relevant chunks.
-    //    The confidence threshold is intentionally LOW (0.25) — we let OpenAI
-    //    attempt an answer with whatever context is available, then use post-answer
-    //    evasive detection (step 10) to catch cases where the KB lacks the info.
-    //    The previous threshold of 0.65 was blocking virtually ALL queries.
-    const threshold = config.confidenceThreshold || 0.25;
-    if (rankedChunks.length === 0 || confidence < threshold) {
-        // Track as unanswered question
-        await trackUnansweredQuestion(
-            botId, config.userId, query, confidence,
-            rankedChunks.length === 0 ? 'no_chunks' : 'low_confidence'
-        );
+    // 7. ONLY short-circuit if there are literally NO chunks at all.
+    //    Never block based on confidence score — always let OpenAI attempt
+    //    an answer with whatever context is available. The LLM is smart enough
+    //    to say "I'm not sure" when the context doesn't help.
+    //    This prevents the old bug where every query got a fallback.
+    if (rankedChunks.length === 0) {
+        await trackUnansweredQuestion(botId, config.userId, query, confidence, 'no_chunks');
         return {
-            answer: config.fallbackMessage || "I don't have specific information about that in my knowledge base. The site owner has been notified and will update the information soon.",
+            answer: config.fallbackMessage || "I don't have enough context to answer that yet, but I'd love to help! Could you try rephrasing your question, or would you like me to connect you with our team?",
             sources: [],
             confidence,
             model: 'none',
             queryRewrite: null,
-            chunksRetrieved: rankedChunks.length,
+            chunksRetrieved: 0,
             responseTimeMs: Date.now() - startTime,
             cached: false,
             unanswered: true,
@@ -327,16 +322,17 @@ export async function executeRAG(
     // 9. Build context and generate answer
     const context = buildContext(rankedChunks);
 
-    const systemPrompt = config.systemPrompt || `You are a helpful AI assistant. Answer questions ONLY from the provided knowledge base context.
+    const systemPrompt = config.systemPrompt || `You are a friendly, professional AI assistant for this website — similar to how Intercom works. Your job is to help visitors find answers quickly and guide them toward the right action.
 
-CRITICAL RULES — follow these EXACTLY:
-1. Answer STRICTLY from the context provided below. Never use prior training data or general knowledge.
-2. If the context contains the answer, provide it clearly with specific details (prices, features, plan names, etc.).
-3. If the context does NOT contain the specific information asked about, respond EXACTLY with: "I don't have information about that in my knowledge base. The site owner has been notified."
-4. If the user asks about something specific (e.g. a $55 plan) and the context only mentions different values (e.g. $29, $69, $199), do NOT say the information exists — instead clearly state what IS available and note that what they asked about is not listed.
-5. NEVER make up, guess, or approximate information. If you're unsure, say so.
-6. Be specific and precise. Include exact numbers, plan names, and details from the context.
-7. Do NOT mention source files, document names, or URLs in your answer.`;
+RULES:
+1. Answer based on the provided context. Be warm, concise, and helpful — like a knowledgeable team member, not a robot.
+2. If the context contains the answer, provide it clearly with specific details. Use short paragraphs and bullet points for readability.
+3. If the context does NOT fully answer the question, share what you DO know from the context and then say something like: "For more details on this, I'd suggest reaching out to our team — they'd be happy to help!"
+4. NEVER make up information. If you don't have the data, be honest about it.
+5. If someone asks about specific pricing or plans not in the context, share what plans ARE available and note you don't see the specific one they asked about.
+6. Keep responses concise (2-4 sentences when possible). Don't write essays.
+7. Be conversational — use "we" and "our" when referring to the company.
+8. End responses with a helpful follow-up when appropriate, like "Would you like to know more about X?" or "Is there anything else I can help with?"`;
 
     const response = await getOpenAI().chat.completions.create({
         model,
@@ -389,7 +385,7 @@ CRITICAL RULES — follow these EXACTLY:
     };
 
     // 12. Cache the result — but NEVER cache evasive/low-confidence answers
-    if (!isEvasive && confidence >= threshold) {
+    if (!isEvasive && confidence >= 0.2) {
         await setCache(botId, cacheKey, query, result);
     }
 
@@ -442,20 +438,18 @@ export function executeRAGStream(
 
                 // 5. Confidence + model selection
                 const confidence = estimateConfidence(rankedChunks);
-                const threshold = config.confidenceThreshold || 0.25;
 
-                // Short-circuit: only if truly no relevant chunks
-                if (rankedChunks.length === 0 || confidence < threshold) {
-                    const reason = rankedChunks.length === 0 ? 'no_chunks' : 'low_confidence';
-                    await trackUnansweredQuestion(botId, config.userId, query, confidence, reason);
+                // Only short-circuit if literally NO chunks found
+                if (rankedChunks.length === 0) {
+                    await trackUnansweredQuestion(botId, config.userId, query, confidence, 'no_chunks');
 
                     const fallback = config.fallbackMessage ||
-                        "I don't have specific information about that in my knowledge base. " +
-                        "The site owner has been notified and will update the information soon.";
+                        "I don't have enough context to answer that yet, but I'd love to help! " +
+                        "Could you try rephrasing your question, or would you like me to connect you with our team?";
                     send({ type: 'token', content: fallback });
                     send({ type: 'done', sources: [], confidence, model: 'none', queryRewrite: null, unanswered: true });
                     resolveMetadata({ sources: [], confidence, model: 'none', queryRewrite: null,
-                        chunksRetrieved: rankedChunks.length, responseTimeMs: Date.now() - startTime, cached: false, unanswered: true });
+                        chunksRetrieved: 0, responseTimeMs: Date.now() - startTime, cached: false, unanswered: true });
                     return;
                 }
 

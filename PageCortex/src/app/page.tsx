@@ -4,7 +4,7 @@ import HeroSection from "@/components/landing/HeroSection";
 import ProblemSection from "@/components/landing/ProblemSection";
 import SolutionSection from "@/components/landing/SolutionSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
-import ProductDemoSection from "@/components/landing/ProductDemoSection";
+
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import PricingSection from "@/components/landing/PricingSection";
@@ -13,8 +13,8 @@ import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/landing/Footer";
 
 export const metadata: Metadata = {
-  title: 'PageCortex — AI Pre-Sales Assistant | Convert Visitors into Trials',
-  description: 'AI assistant that converts website visitors into free trials and qualified demos. Answer pricing questions instantly, overcome buyer objections, and qualify leads — all automatically. Free forever plan available.',
+  title: 'PageCortex — AI Sales Assistant for Websites | Convert Visitors to Customers',
+  description: 'Turn your website into a 24/7 sales machine. Train an AI assistant on your content to answer buyer questions, overcome objections, and convert visitors into free trials — set up in minutes.',
   alternates: { canonical: 'https://pagecortex.com' },
   openGraph: {
     title: 'PageCortex — AI Pre-Sales Assistant | Convert Visitors into Trials',
@@ -39,7 +39,7 @@ export default function Home() {
       <ProblemSection />
       <SolutionSection />
       <FeaturesSection />
-      <ProductDemoSection />
+
       <HowItWorksSection />
       <TestimonialsSection />
       <PricingSection />

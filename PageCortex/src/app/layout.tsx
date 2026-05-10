@@ -12,10 +12,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'PageCortex — AI Pre-Sales Assistant | Convert Visitors into Customers',
+    default: 'PageCortex — AI Sales Assistant for Websites | Convert Visitors to Customers',
     template: '%s | PageCortex',
   },
-  description: 'AI pre-sales assistant that converts website visitors into free trials and qualified demos. Answer buyer objections instantly, qualify leads automatically, and increase trial conversions — no coding required.',
+  description: 'Turn your website into a 24/7 sales machine. PageCortex trains an AI assistant on your content to answer buyer questions, overcome objections, and convert visitors into free trials — set up in minutes, no coding required.',
   keywords: [
     'ai pre-sales assistant',
     'ai chatbot for conversions',
@@ -73,7 +73,7 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, 'max-video-preview': -1, 'max-image-preview': 'large', 'max-snippet': -1 },
   },
-  icons: { icon: '/favicon.ico', apple: '/apple-touch-icon.png' },
+  icons: { icon: '/logo.png', shortcut: '/logo.png', apple: '/logo.png' },
   verification: {
     google: 'ZMpMVrAX3p4Wjm4vhZzl_4dBQlXb56-sEvHLO9fyzd0',
   },
