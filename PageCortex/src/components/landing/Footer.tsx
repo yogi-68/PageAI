@@ -1,26 +1,25 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 const footerLinks = {
   Product: [
-    { label: 'Features', href: '#features' },
-    { label: 'Pricing', href: '#pricing' },
-    { label: 'How It Works', href: '#how-it-works' },
+    { label: 'Features', href: '/#features' },
+    { label: 'Pricing', href: '/#pricing' },
+    { label: 'How It Works', href: '/#how-it-works' },
     { label: 'Blog', href: '/blog' },
   ],
   Company: [
-    { label: 'About', href: '#' },
-    { label: 'Careers', href: '#' },
-    { label: 'Contact', href: '#' },
+    { label: 'About', href: '/about' },
+    { label: 'Contact', href: '/contact' },
   ],
   Resources: [
-    { label: 'Documentation', href: '#' },
-    { label: 'API Reference', href: '#' },
-    { label: 'Changelog', href: '#' },
+    { label: 'Documentation', href: '/docs' },
+    { label: 'API Reference', href: '/api-reference' },
+    { label: 'Changelog', href: '/changelog' },
   ],
   Legal: [
-    { label: 'Privacy', href: '#' },
-    { label: 'Terms', href: '#' },
-    { label: 'Cookies', href: '#' },
+    { label: 'Privacy Policy', href: '/docs' },
+    { label: 'Terms of Service', href: '/docs' },
   ],
 };
 
@@ -32,15 +31,11 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2">
             <Link href="/" className="flex items-center gap-2.5 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                  <path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H7l-3 3V11H4a2 2 0 01-2-2V4z" fill="#4f6df5" />
-                </svg>
-              </div>
+              <Image src="/logo.png" alt="PageCortex" width={28} height={28} className="rounded-lg" />
               <span className="text-[16px] font-semibold text-fg tracking-tight">PageCortex</span>
             </Link>
             <p className="text-[13.5px] text-fg-secondary leading-relaxed max-w-[260px]">
-              Turn any website into an intelligent AI chatbot. Powered by advanced RAG technology.
+              AI pre-sales assistant that converts website visitors into trials and demos. Powered by advanced RAG technology.
             </p>
           </div>
 

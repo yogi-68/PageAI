@@ -197,9 +197,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* PageCortex support widget */}
         <script
           src="https://www.pagecortex.com/widget.js"
-          data-bot-id="54ab9e2c-bb23-4e9c-9c92-4d80da4b4570"
-          data-color="#f59e0b"
-          data-position="left"
+          data-bot-id="e8225726-00c5-412e-b0ec-fa1a9f72cd28"
+          data-color="#6366f1"
+          data-position="right"
           async
         />
       </body>

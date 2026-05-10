@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { ThemeToggle } from '@/lib/theme';
@@ -68,9 +69,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className={`hidden lg:flex flex-col fixed inset-y-0 left-0 bg-surface/50 border-r border-edge z-30 transition-all duration-300 ${sidebarOpen ? 'lg:w-60' : 'lg:w-0 overflow-hidden border-r-0'}`}>
         <div className="px-5 h-16 flex items-center border-b border-edge">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H7l-3 3V11H4a2 2 0 01-2-2V4z" fill="#4f6df5"/></svg>
-            </div>
+            <Image src="/logo.png" alt="PageCortex" width={28} height={28} className="rounded-lg" />
             <span className="text-[15px] font-semibold text-fg">PageCortex</span>
           </Link>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeToggle } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
@@ -20,7 +21,6 @@ const resourceLinks = [
 
 const companyLinks = [
   { label: 'About', href: '/about' },
-  { label: 'Careers', href: '/careers' },
   { label: 'Contact', href: '/contact' },
 ];
 
@@ -93,14 +93,7 @@ export default function Navbar() {
       <div className="max-w-300 mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center transition-all duration-300 group-hover:bg-primary/15 group-hover:border-primary/30">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H7l-3 3V11H4a2 2 0 01-2-2V4z" className="fill-primary" />
-              <circle cx="6" cy="6.5" r="0.75" className="fill-white dark:fill-[#edf0f7]" />
-              <circle cx="8.5" cy="6.5" r="0.75" className="fill-white dark:fill-[#edf0f7]" />
-              <circle cx="11" cy="6.5" r="0.75" className="fill-white dark:fill-[#edf0f7]" />
-            </svg>
-          </div>
+          <Image src="/logo.png" alt="PageCortex" width={32} height={32} className="rounded-lg" />
           <span className="text-[17px] font-semibold text-fg tracking-tight">PageCortex</span>
         </Link>
 

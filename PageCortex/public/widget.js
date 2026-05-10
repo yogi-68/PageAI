@@ -1,5 +1,5 @@
 // PageCortex Embeddable Widget Script
-// Usage: <script src="https://pagecortex.vercel.app/widget.js" data-bot-id="bot_xxx" async />
+// Usage: <script src="https://www.pagecortex.com/widget.js" data-bot-id="bot_xxx" async />
 (function () {
     "use strict";
 
@@ -11,7 +11,7 @@
 
     const scriptSrc = scriptEl.src || "";
     const scriptOrigin = scriptSrc ? new URL(scriptSrc).origin : "";
-    const API_BASE = window.PAGECORTEX_API || scriptOrigin || "https://pagecortex.vercel.app";
+    const API_BASE = window.PAGECORTEX_API || scriptOrigin || "https://www.pagecortex.com";
 
     // Get config from script tag attributes
     const config = {
@@ -288,9 +288,27 @@
     .pagecortex-typing span:nth-child(2) { animation-delay: 0.2s; }
     .pagecortex-typing span:nth-child(3) { animation-delay: 0.4s; }
 
+
     @keyframes pagecortex-typing {
       0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
       30% { opacity: 1; transform: translateY(-4px); }
+    }
+
+    .pagecortex-cursor {
+      display: inline;
+      color: ${config.color};
+      font-weight: 400;
+      animation: pagecortex-blink 0.8s infinite;
+      margin-left: 1px;
+    }
+
+    @keyframes pagecortex-blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .pagecortex-stream-text {
+      white-space: pre-wrap;
     }
   `;
     document.head.appendChild(style);
@@ -459,17 +477,41 @@
                 let botText = "";
                 let sources = [];
 
-                // Create bot message bubble for streaming
+                // Create bot message bubble for streaming with cursor
                 const msg = document.createElement("div");
                 msg.className = "pagecortex-msg bot";
                 msg.innerHTML = `
                   <div style="width:24px;height:24px;border-radius:50%;background:${config.color};flex-shrink:0;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="white" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/></svg></div>
-                  <div class="pagecortex-msg-bubble"></div>
+                  <div class="pagecortex-msg-bubble"><span class="pagecortex-stream-text"></span><span class="pagecortex-cursor">▎</span></div>
                 `;
                 messages.appendChild(msg);
-                const bubble = msg.querySelector(".pagecortex-msg-bubble");
+                const textEl = msg.querySelector(".pagecortex-stream-text");
+                const cursorEl = msg.querySelector(".pagecortex-cursor");
 
                 let buffer = "";
+                // Token queue for smooth rendering
+                let tokenQueue = [];
+                let rendering = false;
+
+                async function renderTokens() {
+                    if (rendering) return;
+                    rendering = true;
+                    while (tokenQueue.length > 0) {
+                        const token = tokenQueue.shift();
+                        // Split token into chars and render with tiny delays for typing feel
+                        for (let i = 0; i < token.length; i++) {
+                            botText += token[i];
+                            textEl.textContent = botText;
+                            messages.scrollTop = messages.scrollHeight;
+                            // Small delay between characters — gives ChatGPT typing feel
+                            if (token.length > 1 && i < token.length - 1) {
+                                await new Promise(r => setTimeout(r, 12));
+                            }
+                        }
+                    }
+                    rendering = false;
+                }
+
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
@@ -485,14 +527,14 @@
                             try {
                                 const parsed = JSON.parse(data);
                                 if (parsed.type === 'token' && parsed.content) {
-                                    botText += parsed.content;
-                                    bubble.textContent = botText;
+                                    tokenQueue.push(parsed.content);
+                                    renderTokens();
                                 } else if (parsed.type === 'done') {
                                     if (parsed.suggestions && parsed.suggestions.length > 0) {
                                         showSuggestions(parsed.suggestions);
                                     }
                                 } else if (parsed.type === 'error') {
-                                    bubble.textContent = "Sorry, I encountered an error. Please try again.";
+                                    textEl.textContent = "Sorry, I encountered an error. Please try again.";
                                 } else if (parsed.conversationId) {
                                     conversationId = parsed.conversationId;
                                 }
@@ -501,12 +543,19 @@
                             }
                         }
                     }
-                    messages.scrollTop = messages.scrollHeight;
                 }
+
+                // Wait for remaining tokens to finish rendering
+                while (tokenQueue.length > 0 || rendering) {
+                    await new Promise(r => setTimeout(r, 50));
+                }
+
+                // Remove cursor when done
+                if (cursorEl) cursorEl.remove();
 
                 // Guard: stream ended with empty bubble — show fallback
                 if (!botText) {
-                    bubble.textContent = "I couldn't generate a response. Please try rephrasing your question.";
+                    textEl.textContent = "I couldn't generate a response. Please try rephrasing your question.";
                 }
             } else {
                 // Fallback: non-streaming JSON response

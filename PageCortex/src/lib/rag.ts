@@ -296,11 +296,13 @@ export async function executeRAG(
     // 6. Estimate confidence
     const confidence = estimateConfidence(rankedChunks);
 
-    // 7. Check confidence threshold — use OR logic:
-    //    If confidence is below threshold OR no chunks found, return fallback.
-    //    The old AND logic almost never triggered because it required BOTH conditions.
-    const threshold = config.confidenceThreshold || 0.65;
-    if (confidence < threshold || rankedChunks.length === 0) {
+    // 7. Only short-circuit if there are truly NO relevant chunks.
+    //    The confidence threshold is intentionally LOW (0.25) — we let OpenAI
+    //    attempt an answer with whatever context is available, then use post-answer
+    //    evasive detection (step 10) to catch cases where the KB lacks the info.
+    //    The previous threshold of 0.65 was blocking virtually ALL queries.
+    const threshold = config.confidenceThreshold || 0.25;
+    if (rankedChunks.length === 0 || confidence < threshold) {
         // Track as unanswered question
         await trackUnansweredQuestion(
             botId, config.userId, query, confidence,
@@ -440,13 +442,11 @@ export function executeRAGStream(
 
                 // 5. Confidence + model selection
                 const confidence = estimateConfidence(rankedChunks);
-                const threshold = config.confidenceThreshold || 0.65;
+                const threshold = config.confidenceThreshold || 0.25;
 
-                // Short-circuit: low confidence OR no chunks — send fallback
-                // Uses the same OR logic as the non-streaming path
+                // Short-circuit: only if truly no relevant chunks
                 if (rankedChunks.length === 0 || confidence < threshold) {
                     const reason = rankedChunks.length === 0 ? 'no_chunks' : 'low_confidence';
-                    // Track unanswered question for dashboard notifications
                     await trackUnansweredQuestion(botId, config.userId, query, confidence, reason);
 
                     const fallback = config.fallbackMessage ||

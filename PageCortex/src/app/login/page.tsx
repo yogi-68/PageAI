@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 
@@ -36,9 +37,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[400px]">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-8 group">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H7l-3 3V11H4a2 2 0 01-2-2V4z" fill="#4f6df5"/></svg>
-            </div>
+            <Image src="/logo.png" alt="PageCortex" width={32} height={32} className="rounded-lg" />
             <span className="text-[17px] font-semibold text-fg">PageCortex</span>
           </Link>
           <h1 className="text-[28px] font-bold text-fg tracking-[-0.03em] mb-2">Welcome back</h1>
