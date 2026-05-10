@@ -227,7 +227,7 @@ export default function PricingSection() {
             Simple, transparent pricing
           </h2>
           <p className="text-[16px] text-fg-secondary max-w-125 mx-auto leading-relaxed">
-            More messages, more pages, lower cost than every major competitor. Start free, no card required.
+            More conversations, more pages, better ROI than any competitor. Start free, upgrade when you see results.
           </p>
         </motion.div>
 
@@ -406,14 +406,16 @@ export default function PricingSection() {
           <div className="text-center mb-8">
             <p className="text-[13px] font-medium uppercase tracking-widest text-primary mb-2">Add-ons</p>
             <h3 className="text-[clamp(1.25rem,2.5vw,1.75rem)] font-bold tracking-[-0.02em]">
-              Need more messages?
+              Supercharge your plan
             </h3>
             <p className="text-[14px] text-fg-secondary mt-2">
-              Top up anytime. Valid for 12 months, no expiry stress.
+              Scale exactly what you need — messages, pages, bots, or support level.
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-4 max-w-175 mx-auto">
+          {/* Message add-ons */}
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-fg-muted mb-3 text-center">Extra Conversations</p>
+          <div className="grid sm:grid-cols-3 gap-4 max-w-175 mx-auto mb-8">
             {addons.map((addon) => (
               <div
                 key={addon.messages}
@@ -443,8 +445,38 @@ export default function PricingSection() {
               </div>
             ))}
           </div>
+
+          {/* Additional add-ons */}
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-fg-muted mb-3 text-center">Platform Add-ons</p>
+          <div className="grid sm:grid-cols-3 gap-4 max-w-175 mx-auto">
+            {[
+              { name: 'Extra Pages', price: 9, unit: '/mo', desc: 'Add 2,000 more indexed pages', icon: '📄' },
+              { name: 'Extra Bots', price: 12, unit: '/mo', desc: 'Add 3 more chatbots to your plan', icon: '🤖' },
+              { name: 'Priority Support', price: 29, unit: '/mo', desc: 'Dedicated support + 1hr response SLA', icon: '⚡' },
+            ].map((addon) => (
+              <div
+                key={addon.name}
+                className="p-5 rounded-2xl border border-edge bg-surface/40 hover:bg-surface/70 hover:border-edge-light flex flex-col items-center text-center transition-all duration-300"
+              >
+                <div className="text-[24px] mb-2">{addon.icon}</div>
+                <div className="text-[15px] font-semibold text-fg">{addon.name}</div>
+                <div className="flex items-baseline gap-0.5 mt-2">
+                  <span className="text-[24px] font-bold text-fg tracking-[-0.02em]">${addon.price}</span>
+                  <span className="text-[12px] text-fg-muted">{addon.unit}</span>
+                </div>
+                <div className="text-[12px] text-fg-secondary mt-1">{addon.desc}</div>
+                <Link
+                  href="/dashboard/billing"
+                  className="mt-4 w-full text-center text-[13px] font-medium py-2 rounded-lg bg-edge/50 hover:bg-edge-light text-fg transition-colors duration-200"
+                >
+                  Add to plan
+                </Link>
+              </div>
+            ))}
+          </div>
+
           <p className="text-center text-[12px] text-fg-muted mt-6">
-            Add-ons stack on top of your plan monthly limit. Unused messages roll over within validity period.
+            Add-ons stack on top of your plan limits. Message packs valid for 12 months with rollover.
           </p>
         </motion.div>
       </div>

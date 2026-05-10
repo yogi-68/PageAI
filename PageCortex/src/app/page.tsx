@@ -13,20 +13,20 @@ import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/landing/Footer";
 
 export const metadata: Metadata = {
-  title: 'PageCortex — AI Chatbot Builder | Train on Your Website in Minutes',
-  description: 'Build and embed a custom AI chatbot trained on your website in under 5 minutes. PageCortex uses RAG + GPT-4.1 for accurate, source-cited answers — no coding required. Free forever plan available.',
+  title: 'PageCortex — AI Pre-Sales Assistant | Convert Visitors into Trials',
+  description: 'AI assistant that converts website visitors into free trials and qualified demos. Answer pricing questions instantly, overcome buyer objections, and qualify leads — all automatically. Free forever plan available.',
   alternates: { canonical: 'https://pagecortex.com' },
   openGraph: {
-    title: 'PageCortex — AI Chatbot Builder | Train on Your Website in Minutes',
-    description: 'Build and embed a custom AI chatbot trained on your website in under 5 minutes. RAG-powered, source-cited answers. Free plan available.',
+    title: 'PageCortex — AI Pre-Sales Assistant | Convert Visitors into Trials',
+    description: 'AI assistant that converts website visitors into trials and demos. Answer buyer objections instantly, qualify leads automatically.',
     url: 'https://pagecortex.com',
     type: 'website',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'PageCortex — AI Chatbot Builder' }],
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'PageCortex — AI Pre-Sales Assistant' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PageCortex — AI Chatbot Builder | Train on Your Website in Minutes',
-    description: 'Build a custom AI chatbot trained on your website in under 5 minutes. No coding required.',
+    title: 'PageCortex — AI Pre-Sales Assistant | Convert Visitors into Trials',
+    description: 'Convert more website visitors into trials and demos. AI that answers buyer objections instantly.',
     images: ['/og-image.png'],
   },
 };

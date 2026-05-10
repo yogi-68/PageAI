@@ -539,24 +539,117 @@ export default function BotManagePage() {
             <pre className="text-[12px] font-mono text-fg-secondary bg-bg/60 border border-edge rounded-lg p-4 overflow-x-auto whitespace-pre-wrap break-all">{embedCode}</pre>
           </div>
 
-          {/* Step by step */}
-          <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">
-            <h3 className="text-[13px] font-semibold text-fg">How to Add to Your Website</h3>
-            <div className="space-y-3">
-              {[
-                { step: '1', title: 'Open your HTML file', desc: 'Open the HTML file for the page where you want the chat widget.' },
-                { step: '2', title: 'Find the </body> tag', desc: 'Scroll to the bottom of your HTML file and locate the closing </body> tag.' },
-                { step: '3', title: 'Paste the script tag', desc: 'Paste the script tag above immediately before </body>. Save the file.' },
-                { step: '4', title: 'That\'s it!', desc: 'The chat widget will appear in the bottom corner of your page. Click Preview above to test it.' },
-              ].map(s => (
-                <div key={s.step} className="flex gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{s.step}</div>
-                  <div>
-                    <p className="text-[13px] font-medium text-fg">{s.title}</p>
-                    <p className="text-[12px] text-fg-muted mt-0.5">{s.desc}</p>
-                  </div>
-                </div>
-              ))}
+          {/* Platform-specific guides */}
+          <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-5">
+            <h3 className="text-[14px] font-semibold text-fg">Platform Integration Guides</h3>
+
+            {/* WordPress */}
+            <div className="p-4 rounded-lg border border-edge bg-bg/30 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[16px]">📝</span>
+                <h4 className="text-[13px] font-semibold text-fg">WordPress</h4>
+              </div>
+              <ol className="text-[12px] text-fg-secondary space-y-1 list-decimal pl-5">
+                <li>Go to <strong>Appearance → Theme File Editor</strong> (or use a plugin like <em>Insert Headers and Footers</em>)</li>
+                <li>Open <code className="text-[11px] bg-primary/10 text-primary px-1 rounded">footer.php</code> or the plugin's footer scripts area</li>
+                <li>Paste the embed code just before <code className="text-[11px] bg-primary/10 text-primary px-1 rounded">&lt;/body&gt;</code></li>
+                <li>Click <strong>Update File</strong> / Save</li>
+              </ol>
+              <p className="text-[11px] text-fg-muted mt-1">💡 Using a page builder like Elementor? Add a Custom HTML widget to your footer template.</p>
+            </div>
+
+            {/* Wix */}
+            <div className="p-4 rounded-lg border border-edge bg-bg/30 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[16px]">🌐</span>
+                <h4 className="text-[13px] font-semibold text-fg">Wix</h4>
+              </div>
+              <ol className="text-[12px] text-fg-secondary space-y-1 list-decimal pl-5">
+                <li>Go to <strong>Settings → Custom Code</strong> (or <strong>Dashboard → Settings → Advanced → Custom Code</strong>)</li>
+                <li>Click <strong>+ Add Custom Code</strong></li>
+                <li>Paste the embed code, set placement to <strong>Body - End</strong></li>
+                <li>Choose <strong>All Pages</strong> and click <strong>Apply</strong></li>
+              </ol>
+            </div>
+
+            {/* Shopify */}
+            <div className="p-4 rounded-lg border border-edge bg-bg/30 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[16px]">🛒</span>
+                <h4 className="text-[13px] font-semibold text-fg">Shopify</h4>
+              </div>
+              <ol className="text-[12px] text-fg-secondary space-y-1 list-decimal pl-5">
+                <li>Go to <strong>Online Store → Themes → Actions → Edit Code</strong></li>
+                <li>Open <code className="text-[11px] bg-primary/10 text-primary px-1 rounded">theme.liquid</code></li>
+                <li>Paste the embed code just before the <code className="text-[11px] bg-primary/10 text-primary px-1 rounded">&lt;/body&gt;</code> tag</li>
+                <li>Click <strong>Save</strong></li>
+              </ol>
+            </div>
+
+            {/* Squarespace */}
+            <div className="p-4 rounded-lg border border-edge bg-bg/30 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[16px]">◻️</span>
+                <h4 className="text-[13px] font-semibold text-fg">Squarespace</h4>
+              </div>
+              <ol className="text-[12px] text-fg-secondary space-y-1 list-decimal pl-5">
+                <li>Go to <strong>Settings → Developer Tools → Code Injection</strong></li>
+                <li>Paste the embed code into the <strong>Footer</strong> section</li>
+                <li>Click <strong>Save</strong></li>
+              </ol>
+            </div>
+
+            {/* Webflow */}
+            <div className="p-4 rounded-lg border border-edge bg-bg/30 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[16px]">🎨</span>
+                <h4 className="text-[13px] font-semibold text-fg">Webflow</h4>
+              </div>
+              <ol className="text-[12px] text-fg-secondary space-y-1 list-decimal pl-5">
+                <li>Go to <strong>Project Settings → Custom Code</strong></li>
+                <li>Paste the embed code into the <strong>Footer Code</strong> section</li>
+                <li>Click <strong>Save</strong> and <strong>Publish</strong></li>
+              </ol>
+            </div>
+
+            {/* Framer */}
+            <div className="p-4 rounded-lg border border-edge bg-bg/30 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[16px]">🖼️</span>
+                <h4 className="text-[13px] font-semibold text-fg">Framer</h4>
+              </div>
+              <ol className="text-[12px] text-fg-secondary space-y-1 list-decimal pl-5">
+                <li>Go to <strong>Site Settings → General → Custom Code</strong></li>
+                <li>Paste the embed code in the <strong>End of &lt;body&gt; tag</strong> section</li>
+                <li>Click <strong>Save</strong> and re-publish</li>
+              </ol>
+            </div>
+
+            {/* Ghost */}
+            <div className="p-4 rounded-lg border border-edge bg-bg/30 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[16px]">👻</span>
+                <h4 className="text-[13px] font-semibold text-fg">Ghost</h4>
+              </div>
+              <ol className="text-[12px] text-fg-secondary space-y-1 list-decimal pl-5">
+                <li>Go to <strong>Settings → Code Injection</strong></li>
+                <li>Paste the embed code in the <strong>Site Footer</strong> section</li>
+                <li>Click <strong>Save</strong></li>
+              </ol>
+            </div>
+
+            {/* HTML / Static site */}
+            <div className="p-4 rounded-lg border border-edge bg-bg/30 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[16px]">📄</span>
+                <h4 className="text-[13px] font-semibold text-fg">HTML / Static Website</h4>
+              </div>
+              <ol className="text-[12px] text-fg-secondary space-y-1 list-decimal pl-5">
+                <li>Open your HTML file in a code editor</li>
+                <li>Find the closing <code className="text-[11px] bg-primary/10 text-primary px-1 rounded">&lt;/body&gt;</code> tag</li>
+                <li>Paste the embed code immediately before it</li>
+                <li>Save and upload the file</li>
+              </ol>
             </div>
           </div>
 
@@ -568,10 +661,40 @@ export default function BotManagePage() {
 
 // In your layout.tsx or _app.tsx:
 <Script
-  src="${typeof window !== 'undefined' ? window.location.origin : 'https://pagecortex.vercel.app'}/widget.js"
+  src="${typeof window !== 'undefined' ? window.location.origin : 'https://www.pagecortex.com'}/widget.js"
   data-bot-id="${botId}"
   strategy="lazyOnload"
 />`}</pre>
+          </div>
+
+          {/* Vue / Nuxt */}
+          <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-3">
+            <h3 className="text-[13px] font-semibold text-fg">Using Vue or Nuxt?</h3>
+            <p className="text-[12px] text-fg-muted">Add the script in your App.vue or nuxt.config.ts:</p>
+            <pre className="text-[11px] font-mono text-fg-secondary bg-bg/60 border border-edge rounded-lg p-4 overflow-x-auto whitespace-pre">{`// nuxt.config.ts
+export default defineNuxtConfig({
+  app: {
+    head: {
+      script: [{
+        src: '${typeof window !== 'undefined' ? window.location.origin : 'https://www.pagecortex.com'}/widget.js',
+        'data-bot-id': '${botId}',
+        async: true
+      }]
+    }
+  }
+})`}</pre>
+          </div>
+
+          {/* Google Tag Manager */}
+          <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-3">
+            <h3 className="text-[13px] font-semibold text-fg">Using Google Tag Manager?</h3>
+            <p className="text-[12px] text-fg-muted">Create a Custom HTML tag:</p>
+            <ol className="text-[12px] text-fg-secondary space-y-1 list-decimal pl-5">
+              <li>Go to <strong>Tags → New → Custom HTML</strong></li>
+              <li>Paste the embed code</li>
+              <li>Set trigger to <strong>All Pages - Page View</strong></li>
+              <li>Save and publish your container</li>
+            </ol>
           </div>
         </div>
       )}

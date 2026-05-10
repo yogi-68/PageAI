@@ -4,15 +4,15 @@ import { motion } from 'framer-motion';
 import { Brain, Globe, MessageSquare, Zap, Code2, Palette, BarChart3, Shield, Database } from 'lucide-react';
 
 const features = [
-  { icon: Brain, title: 'Advanced RAG Pipeline', desc: 'Query rewriting, hybrid search, re-ranking, and confidence scoring for 95-98% answer accuracy.' },
-  { icon: Globe, title: 'Multi-Source Connectors', desc: 'Ingest from websites, Notion, Google Drive, Zendesk, Confluence, file uploads, and custom APIs.' },
-  { icon: MessageSquare, title: 'Streaming Responses', desc: 'Real-time token streaming via SSE for instant, natural-feeling conversations.' },
-  { icon: Zap, title: 'Smart Model Routing', desc: 'Automatically routes to GPT-4.1 for complex queries and GPT-4.1 Mini for simple ones — fast & cost-effective.' },
-  { icon: Code2, title: 'One-Line Embed', desc: 'Copy one script tag. Works with React, WordPress, Shopify, and any website.' },
-  { icon: Palette, title: 'Brand Matching', desc: 'Custom colors, welcome messages, personality, and positioning to match your brand.' },
-  { icon: BarChart3, title: 'Analytics Dashboard', desc: 'Understand visitor behavior with conversation insights, confidence metrics, and trending questions.' },
-  { icon: Shield, title: 'Enterprise Security', desc: 'Domain verification, rate limiting, data isolation, and full encryption at rest and in transit.' },
-  { icon: Database, title: 'Hybrid Search', desc: 'Combines vector similarity (pgvector) with BM25 full-text search for superior retrieval quality.' },
+  { icon: Brain, title: 'Advanced RAG Pipeline', desc: 'Query rewriting, hybrid search, re-ranking, and confidence scoring for 95-98% answer accuracy — so your bot never guesses.' },
+  { icon: Globe, title: 'Multi-Source Knowledge', desc: 'Ingest from websites, Notion, Google Drive, file uploads, and custom APIs. Train on your entire product knowledge.' },
+  { icon: MessageSquare, title: 'Human Handoff', desc: 'When AI confidence is low, automatically redirect to your team via email, contact form, or demo booking link. Never lose a lead.' },
+  { icon: Zap, title: 'Smart Model Routing', desc: 'Routes simple questions to fast AI and complex buyer objections to GPT-4.1 — instant responses without overspending.' },
+  { icon: Code2, title: 'Works Everywhere', desc: 'One script tag. WordPress, Wix, Shopify, Webflow, Squarespace, React, Vue — any website platform.' },
+  { icon: Palette, title: 'Brand Matching', desc: 'Custom colors, welcome messages, personality, and positioning. Looks native to your brand, not like a generic widget.' },
+  { icon: BarChart3, title: 'Conversion Analytics', desc: 'Track visitor → conversation → signup funnels. See what questions buyers ask most and which go unanswered.' },
+  { icon: Shield, title: 'Confidence-Based Fallback', desc: 'Low-confidence answers trigger contact forms, demo booking, or human escalation — building trust instead of frustrating visitors.' },
+  { icon: Database, title: 'Unanswered Question Alerts', desc: "Dashboard notifications when your bot can't answer. Know exactly what content to add to your knowledge base." },
 ];
 
 export default function FeaturesSection() {
@@ -28,11 +28,11 @@ export default function FeaturesSection() {
         >
           <p className="text-[13px] font-medium uppercase tracking-[0.1em] text-primary mb-4">Features</p>
           <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.15] tracking-[-0.03em] mb-4">
-            Everything you need to build
-            <br className="hidden sm:block" /> intelligent AI chatbots
+            Everything you need to convert
+            <br className="hidden sm:block" /> visitors into customers
           </h2>
           <p className="text-[16px] text-fg-secondary max-w-[520px] mx-auto leading-relaxed">
-            From crawling to deployment — a complete platform for context-aware AI assistants.
+            From knowledge ingestion to conversion tracking — a complete AI pre-sales platform.
           </p>
         </motion.div>
 

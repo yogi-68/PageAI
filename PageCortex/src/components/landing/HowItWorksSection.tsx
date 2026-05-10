@@ -8,21 +8,21 @@ const steps = [
     num: '01',
     icon: Globe,
     title: 'Connect your website',
-    desc: 'Paste your URL and our crawler indexes every page automatically — extracting meaningful content in seconds.',
+    desc: 'Paste your URL and our crawler indexes every product page, pricing info, and FAQ — extracting the content buyers need.',
     tags: ['Auto-discovers pages', 'Handles dynamic sites', 'Smart extraction'],
   },
   {
     num: '02',
     icon: Cpu,
-    title: 'AI builds your knowledge base',
-    desc: 'Advanced AI analyzes your content, generates vector embeddings, and creates a deep semantic understanding of your site.',
+    title: 'AI learns your product',
+    desc: 'Advanced AI analyzes your content, builds a semantic understanding of pricing, features, integrations, and buyer objections.',
     tags: ['Vector embeddings', 'Semantic chunking', 'High accuracy'],
   },
   {
     num: '03',
     icon: Rocket,
-    title: 'Start answering customers',
-    desc: 'Customize appearance, copy one line of code, and your AI chatbot is live — answering questions instantly.',
+    title: 'Start converting visitors',
+    desc: 'Customize appearance, copy one line of code, and your AI pre-sales assistant is live — converting visitors into trials.',
     tags: ['One-line embed', 'Brand matching', 'Instant deploy'],
   },
 ];
@@ -41,10 +41,10 @@ export default function HowItWorksSection() {
           <p className="text-[13px] font-medium uppercase tracking-[0.1em] text-primary mb-4">How It Works</p>
           <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.15] tracking-[-0.03em] mb-4">
             Three steps to your
-            <br className="hidden sm:block" /> AI assistant
+            <br className="hidden sm:block" /> AI sales assistant
           </h2>
           <p className="text-[16px] text-fg-secondary max-w-[480px] mx-auto leading-relaxed">
-            Go from zero to a fully operational AI chatbot in under 5 minutes.
+            Go from zero to a conversion-boosting AI assistant in under 5 minutes.
           </p>
         </motion.div>
 

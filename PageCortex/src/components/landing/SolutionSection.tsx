@@ -7,18 +7,18 @@ import Link from 'next/link';
 const solutions = [
   {
     icon: TrendingUp,
-    title: 'Capture Every Lead',
-    description: 'AI engages visitors instantly, answers their questions, and guides them toward conversion — automatically.',
+    title: 'Turn Pricing Questions into Conversions',
+    description: 'AI answers pricing, feature, and comparison questions instantly — converting confused visitors into confident trial signups.',
   },
   {
     icon: Zap,
-    title: 'Instant AI Responses',
-    description: 'Sub-2 second responses powered by your actual website content. Accurate, helpful, and always available.',
+    title: 'Answer Buyer Objections in Real-Time',
+    description: '"Does it integrate with X?" "Is this right for my team?" — instant, accurate answers from your actual product content.',
   },
   {
     icon: CheckCircle2,
-    title: 'Never Miss a Question',
-    description: 'Your AI assistant works 24/7, handling customer queries around the clock without any staffing costs.',
+    title: 'Qualify Leads Automatically',
+    description: 'Your AI works 24/7, engaging every visitor with buying intent and guiding them toward signup or demo booking.',
   },
 ];
 
@@ -40,11 +40,11 @@ export default function SolutionSection() {
         >
           <p className="text-[13px] font-medium uppercase tracking-[0.1em] text-primary mb-4">The Solution</p>
           <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.15] tracking-[-0.03em] mb-4">
-            Let AI handle it.
-            <br className="hidden sm:block" /> Automatically.
+            Your AI pre-sales assistant.
+            <br className="hidden sm:block" /> Always closing.
           </h2>
           <p className="text-[16px] text-fg-secondary max-w-[520px] mx-auto leading-relaxed">
-            PageCortex trains a custom chatbot on your website content, so it answers every question accurately — without any effort from your team.
+            PageCortex trains on your website and product content, then answers every buyer question accurately — converting visitors into trials and demos.
           </p>
         </motion.div>
 
@@ -78,7 +78,7 @@ export default function SolutionSection() {
             href="/signup"
             className="inline-flex items-center gap-2 text-[14px] font-medium text-primary hover:text-primary-hover transition-colors duration-200"
           >
-            Start automating your support <ArrowRight className="w-4 h-4" />
+            Start converting visitors today <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
       </div>

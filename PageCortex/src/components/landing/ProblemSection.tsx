@@ -6,28 +6,28 @@ import { TrendingDown, Clock, HelpCircle } from 'lucide-react';
 const problems = [
   {
     icon: TrendingDown,
-    title: 'Lost Leads',
-    description: 'Visitors leave your site without answers. Every unanswered question is a lost conversion opportunity.',
+    title: 'Lost Trial Signups',
+    description: 'Visitors with buying intent leave your site without converting. Every unanswered pricing question is a lost trial signup.',
     stat: '67%',
-    statLabel: 'of visitors leave without engaging',
+    statLabel: 'of buyers leave due to unanswered questions',
     color: 'text-danger',
     bgColor: 'bg-danger/10',
   },
   {
     icon: Clock,
-    title: 'Slow Support',
-    description: 'Customers wait hours for simple answers. Response delays directly reduce satisfaction and revenue.',
-    stat: '12h',
-    statLabel: 'average first response time',
+    title: 'Pricing Confusion',
+    description: 'Prospects can\'t figure out which plan fits their needs. Confusion kills conversions faster than high prices.',
+    stat: '42%',
+    statLabel: 'abandon checkout over pricing confusion',
     color: 'text-warning',
     bgColor: 'bg-warning/10',
   },
   {
     icon: HelpCircle,
-    title: 'Missed Questions',
-    description: "Important customer questions go unanswered outside business hours. Your team can't be online 24/7.",
+    title: 'Missed Buyer Intent',
+    description: '"Is this right for me?" "Do you integrate with X?" — high-intent questions go unanswered outside business hours.',
     stat: '40%',
-    statLabel: 'of queries happen after hours',
+    statLabel: 'of purchase decisions happen after hours',
     color: 'text-violet',
     bgColor: 'bg-violet/10',
   },
@@ -46,11 +46,11 @@ export default function ProblemSection() {
         >
           <p className="text-[13px] font-medium uppercase tracking-[0.1em] text-danger mb-4">The Problem</p>
           <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.15] tracking-[-0.03em] mb-4">
-            Your website is losing customers
-            <br className="hidden sm:block" /> every single day
+            Your website is leaking
+            <br className="hidden sm:block" /> qualified leads
           </h2>
           <p className="text-[16px] text-fg-secondary max-w-[500px] mx-auto leading-relaxed">
-            Without instant, intelligent support, businesses face these critical challenges.
+            Without instant answers to buying questions, your visitors choose competitors instead.
           </p>
         </motion.div>
 

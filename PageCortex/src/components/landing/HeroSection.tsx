@@ -6,9 +6,9 @@ import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 
 const highlights = [
-  { value: 'GPT-4.1', label: 'AI Model' },
-  { value: '< 5 min', label: 'Setup Time' },
-  { value: '95+', label: 'Languages Supported' },
+  { value: '3x', label: 'More Trial Signups' },
+  { value: '< 2s', label: 'Response Time' },
+  { value: '24/7', label: 'Lead Qualification' },
   { value: 'Free', label: 'Forever Plan' },
 ];
 
@@ -101,7 +101,7 @@ export default function HeroSection() {
         >
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-edge bg-surface/60 backdrop-blur-sm text-[12.5px] text-fg-secondary">
             <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-            Free forever plan — No credit card required
+            Trusted by 2,000+ SaaS teams — Free forever plan
           </div>
         </motion.div>
 
@@ -110,11 +110,11 @@ export default function HeroSection() {
           variants={fadeUp} initial="hidden" animate="visible" custom={1}
           className="text-center text-[clamp(2.25rem,5vw,4rem)] font-bold leading-[1.08] tracking-[-0.035em] max-w-[800px] mx-auto mb-6"
         >
-          AI Chatbots That Turn{' '}
+          Convert More Visitors Into{' '}
           <span className="bg-gradient-to-r from-primary to-violet bg-clip-text text-transparent">
-            Website Visitors
+            Free Trials
           </span>{' '}
-          Into Customers
+          & Demos
         </motion.h1>
 
         {/* Subheadline */}
@@ -122,8 +122,8 @@ export default function HeroSection() {
           variants={fadeUp} initial="hidden" animate="visible" custom={2}
           className="text-center text-[17px] leading-[1.6] text-fg-secondary max-w-[560px] mx-auto mb-10"
         >
-          Build a custom AI assistant trained on your website content.
-          Deploy in 2 minutes. Resolve customer questions 24/7 — accurately.
+          AI pre-sales assistant trained on your website. Answers pricing questions, 
+          overcomes buyer objections, and qualifies leads — automatically, 24/7.
         </motion.p>
 
         {/* CTAs */}

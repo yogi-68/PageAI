@@ -12,35 +12,39 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'PageCortex — AI Chatbot Builder | Train on Your Website in Minutes',
+    default: 'PageCortex — AI Pre-Sales Assistant | Convert Visitors into Customers',
     template: '%s | PageCortex',
   },
-  description: 'Build and embed a custom AI chatbot trained on your website in under 5 minutes. PageCortex uses RAG + GPT-4.1 to deliver accurate, source-cited answers — no coding required.',
+  description: 'AI pre-sales assistant that converts website visitors into free trials and qualified demos. Answer buyer objections instantly, qualify leads automatically, and increase trial conversions — no coding required.',
   keywords: [
-    'ai chatbot builder',
+    'ai pre-sales assistant',
+    'ai chatbot for conversions',
     'website chatbot',
     'chatbot for website',
     'ai chatbot saas',
     'train ai on website',
-    'custom ai chatbot',
+    'increase trial conversions',
+    'ai lead qualification',
     'rag chatbot',
     'embed chatbot on website',
     'ai chatbot no code',
-    'ai customer support chatbot',
+    'ai sales assistant',
     'gpt chatbot for website',
     'chatgpt for my website',
     'ai q&a bot',
     'website ai assistant',
     'knowledge base chatbot',
     'chatbase alternative',
+    'intercom alternative',
     'ai live chat',
     'automated customer support ai',
-    'retrieval augmented generation chatbot',
     'how to add ai chatbot to website',
-    'best ai chatbot for small business',
-    'ecommerce chatbot ai',
+    'best ai chatbot for saas',
+    'b2b chatbot ai',
     'saas chatbot builder',
     'no code chatbot builder',
+    'convert visitors to customers',
+    'ai demo booking',
     'pagecortex',
   ],
   authors: [{ name: 'PageCortex', url: 'https://pagecortex.com' }],
@@ -52,16 +56,16 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://pagecortex.com',
     siteName: 'PageCortex',
-    title: 'PageCortex — AI Chatbot Builder for Your Website',
-    description: 'Build a custom AI chatbot trained on your website in under 5 minutes. RAG-powered, source-cited answers. No coding required.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'PageCortex — AI Chatbot Builder' }],
+    title: 'PageCortex — AI Pre-Sales Assistant | Convert Visitors into Customers',
+    description: 'AI assistant that converts website visitors into trials and demos. Answer buyer objections instantly, qualify leads, and boost conversions.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'PageCortex — AI Pre-Sales Assistant' }],
   },
   twitter: {
     card: 'summary_large_image',
     site: '@pagecortex_io',
     creator: '@pagecortex_io',
-    title: 'PageCortex — AI Chatbot Builder for Your Website',
-    description: 'Build a custom AI chatbot trained on your website in under 5 minutes. No coding required.',
+    title: 'PageCortex — AI Pre-Sales Assistant | Convert Visitors into Customers',
+    description: 'AI assistant that converts website visitors into trials and demos. Answer buyer objections instantly.',
     images: ['/og-image.png'],
   },
   robots: {
@@ -84,7 +88,7 @@ const jsonLd = {
       '@id': 'https://pagecortex.com/#website',
       name: 'PageCortex',
       url: 'https://pagecortex.com',
-      description: 'Build and deploy AI chatbots trained on your website in minutes.',
+      description: 'AI pre-sales assistant that converts website visitors into trials and demos.',
       potentialAction: {
         '@type': 'SearchAction',
         target: {
@@ -101,13 +105,15 @@ const jsonLd = {
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Web',
       url: 'https://pagecortex.com',
-      description: 'AI-powered website chatbot platform. Train a custom chatbot on your website content using RAG technology for accurate, citation-backed answers. No coding required.',
+      description: 'AI pre-sales assistant platform. Train on your website content to answer buyer questions, overcome objections, and qualify leads automatically. No coding required.',
       featureList: [
         'Automatic website crawling & indexing',
         'RAG-powered AI with GPT-4.1',
         'Embeddable chat widget',
-        'Real-time conversation analytics',
-        'Multi-website support',
+        'Conversion analytics & funnels',
+        'Confidence-based human handoff',
+        'Unanswered question tracking',
+        'Multi-platform support (WordPress, Wix, Shopify)',
         'Source-cited answers',
       ],
       offers: [
@@ -190,7 +196,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </ThemeProvider>
         {/* PageCortex support widget */}
         <script
-          src="https://pagecortex.vercel.app/widget.js"
+          src="https://www.pagecortex.com/widget.js"
           data-bot-id="54ab9e2c-bb23-4e9c-9c92-4d80da4b4570"
           data-color="#f59e0b"
           data-position="left"

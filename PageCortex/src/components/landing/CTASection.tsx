@@ -21,10 +21,10 @@ export default function CTASection() {
         >
           <div className="max-w-[680px] mx-auto p-12 rounded-3xl border border-edge bg-surface/60 backdrop-blur-sm">
             <h2 className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-bold leading-[1.15] tracking-[-0.03em] mb-4">
-              Ready to build your AI chatbot?
+              Ready to convert more visitors?
             </h2>
             <p className="text-[16px] text-fg-secondary max-w-[440px] mx-auto leading-relaxed mb-8">
-              Join 2,000+ businesses using PageCortex to automate customer support.
+              Join 2,000+ SaaS teams using PageCortex to turn pricing questions into trial signups.
               Start free — no credit card required.
             </p>
             <div className="flex items-center justify-center gap-4 mb-6">
