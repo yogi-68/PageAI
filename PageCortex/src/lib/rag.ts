@@ -537,6 +537,10 @@ CRITICAL RULES — follow these EXACTLY:
                     confidence,
                     model,
                     queryRewrite: null,
+                    chunksRetrieved: rankedChunks.length,
+                    responseTimeMs: Date.now() - startTime,
+                    unanswered: false,
+                    cached: false,
                     suggestions,
                 });
 

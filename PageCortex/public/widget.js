@@ -320,10 +320,7 @@
     <div id="pagecortex-chat">
       <div id="pagecortex-header">
         <div id="pagecortex-avatar">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2">
-            <path d="M12 2a7 7 0 0 1 7 7v1a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"/>
-            <path d="M9 22h6M12 17v5"/>
-          </svg>
+        <img src="${API_BASE}/logo.png" alt="PageCortex" width="20" height="20" style="border-radius:4px" />
         </div>
         <div id="pagecortex-header-text">
           <h3>${config.name}</h3>
@@ -340,7 +337,7 @@
           </svg>
         </button>
       </div>
-      <div id="pagecortex-branding">Powered by <a href="https://pagecortex.io" target="_blank">PageCortex</a></div>
+      <div id="pagecortex-branding">Powered by <a href="https://www.pagecortex.com" target="_blank">PageCortex</a></div>
     </div>
     <button id="pagecortex-trigger">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">

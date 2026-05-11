@@ -76,33 +76,110 @@ export default function PlaygroundPage() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: q, botId: selectedBot, stream: false }),
+        body: JSON.stringify({ query: q, botId: selectedBot, stream: true }),
       });
-      const data = await res.json();
-      const elapsed = Date.now() - startTime;
 
-      if (res.ok) {
-        const newMsg: Message = {
-          role: 'assistant',
-          content: data.answer || data.message || 'No response.',
-          metadata: {
-            confidence: data.confidence,
-            model: data.model,
-            responseTimeMs: data.responseTimeMs || elapsed,
-            chunksRetrieved: data.chunksRetrieved,
-            sources: data.sources,
-            unanswered: data.unanswered,
-            queryRewrite: data.queryRewrite,
-            cached: data.cached,
-          },
-        };
-        setMessages(prev => [...prev, newMsg]);
-        setSelectedMsg(prev => (prev === null ? null : prev));
-      } else {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
         setMessages(prev => [
           ...prev,
-          { role: 'assistant', content: data.error || 'Something went wrong.', metadata: { responseTimeMs: elapsed } },
+          { role: 'assistant', content: data.error || 'Something went wrong.', metadata: { responseTimeMs: Date.now() - startTime } },
         ]);
+        setLoading(false);
+        return;
+      }
+
+      // Stream SSE tokens
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let streamedText = '';
+      let metaData: Message['metadata'] = {};
+      let buffer = '';
+
+      // Add placeholder message
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+      const msgIndex = (messages.length + 1); // +1 for user msg
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const payload = line.slice(6).trim();
+
+            if (payload === '[DONE]') continue;
+
+            try {
+              const evt = JSON.parse(payload);
+              if (evt.type === 'token') {
+                streamedText += evt.content;
+                setMessages(prev => {
+                  const updated = [...prev];
+                  const lastIdx = updated.length - 1;
+                  if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
+                    updated[lastIdx] = { ...updated[lastIdx], content: streamedText };
+                  }
+                  return updated;
+                });
+              } else if (evt.type === 'done') {
+                const elapsed = Date.now() - startTime;
+                metaData = {
+                  confidence: evt.confidence,
+                  model: evt.model,
+                  responseTimeMs: evt.responseTimeMs || elapsed,
+                  chunksRetrieved: evt.chunksRetrieved,
+                  sources: evt.sources,
+                  unanswered: evt.unanswered,
+                  queryRewrite: evt.queryRewrite || null,
+                  cached: evt.cached,
+                };
+                // Attach metadata to the message
+                setMessages(prev => {
+                  const updated = [...prev];
+                  const lastIdx = updated.length - 1;
+                  if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
+                    updated[lastIdx] = {
+                      ...updated[lastIdx],
+                      content: streamedText || updated[lastIdx].content,
+                      metadata: metaData,
+                    };
+                  }
+                  return updated;
+                });
+              } else if (evt.type === 'error') {
+                streamedText = evt.message || 'An error occurred.';
+                setMessages(prev => {
+                  const updated = [...prev];
+                  const lastIdx = updated.length - 1;
+                  if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
+                    updated[lastIdx] = { ...updated[lastIdx], content: streamedText };
+                  }
+                  return updated;
+                });
+              }
+            } catch {
+              // skip malformed SSE lines
+            }
+          }
+        }
+      }
+
+      // Fallback: if streaming produced no text, use non-streaming
+      if (!streamedText) {
+        setMessages(prev => {
+          const updated = [...prev];
+          const lastIdx = updated.length - 1;
+          if (lastIdx >= 0 && updated[lastIdx].role === 'assistant' && !updated[lastIdx].content) {
+            updated[lastIdx] = { ...updated[lastIdx], content: 'No response received.' };
+          }
+          return updated;
+        });
       }
     } catch {
       setMessages(prev => [
@@ -112,7 +189,7 @@ export default function PlaygroundPage() {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, selectedBot]);
+  }, [input, loading, selectedBot, messages.length]);
 
   const clearChat = () => {
     setMessages([]);
