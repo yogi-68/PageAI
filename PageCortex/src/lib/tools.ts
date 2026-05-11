@@ -273,10 +273,64 @@ function buildContextString(
     }
 }
 
-// ─── Main Executor ────────────────────────────────────────
+// ─── Integration Health & Routing ─────────────────────────
 /**
- * Execute a tool call against the first matching enabled integration.
- * Logs the execution result and returns sanitized context for the LLM.
+ * Calculate health score for an integration based on recent performance.
+ * Score: 0-1 (higher is better)
+ */
+function calculateIntegrationHealth(integration: ClientIntegration): number {
+    let score = 0.5; // Base score
+
+    // Recent test status (+0.3 if OK, -0.2 if error/timeout)
+    if (integration.last_test_status === 'ok') {
+        score += 0.3;
+    } else if (integration.last_test_status === 'error' || integration.last_test_status === 'timeout') {
+        score -= 0.2;
+    }
+
+    // Recency bonus — tested within last hour (+0.2)
+    if (integration.last_test_at) {
+        const hoursSinceTest = (Date.now() - new Date(integration.last_test_at).getTime()) / (1000 * 60 * 60);
+        if (hoursSinceTest < 1) score += 0.2;
+        else if (hoursSinceTest > 24) score -= 0.1; // Penalty for stale
+    }
+
+    return Math.max(0, Math.min(1, score));
+}
+
+/**
+ * Select the best integration for a given tool, ranked by:
+ * 1. Tool capability (supports the requested tool)
+ * 2. Health score (recent success + low latency)
+ * 3. Enabled state
+ */
+function selectBestIntegration(
+    toolName: ToolName,
+    integrations: ClientIntegration[]
+): ClientIntegration | null {
+    // Filter to only integrations that support this tool
+    const capable = integrations.filter(int => {
+        const endpointTemplate = ENDPOINT_MAP[int.type]?.[toolName];
+        return !!endpointTemplate;
+    });
+
+    if (capable.length === 0) return null;
+
+    // Rank by health score
+    const ranked = capable.map(int => ({
+        integration: int,
+        health: calculateIntegrationHealth(int),
+    })).sort((a, b) => b.health - a.health);
+
+    return ranked[0].integration;
+}
+
+// ─── Main Executor (with Smart Routing + Fallback) ────────
+/**
+ * Execute a tool call with smart integration routing.
+ * - Selects best integration based on health and capability
+ * - Attempts fallback integrations if first choice fails
+ * - Logs all execution attempts
  */
 export async function executeToolCall(
     toolName: ToolName,
@@ -290,14 +344,60 @@ export async function executeToolCall(
             toolName,
             success: false,
             context: '',
-            error: 'No integrations configured',
+            error: 'No integrations configured. Please add an integration in your dashboard.',
             latencyMs: 0,
             integrationId: null,
         };
     }
 
-    // Use the first enabled integration
-    const integration = integrations[0];
+    // Smart routing: select best integration for this tool
+    const primaryIntegration = selectBestIntegration(toolName, integrations);
+
+    if (!primaryIntegration) {
+        return {
+            toolName,
+            success: false,
+            context: '',
+            error: `No integrations available that support the "${toolName}" tool.`,
+            latencyMs: 0,
+            integrationId: null,
+        };
+    }
+
+    // Attempt primary integration
+    const result = await attemptToolCall(toolName, args, primaryIntegration, botId, userId);
+    
+    // If primary succeeded, return immediately
+    if (result.success) return result;
+
+    // Fallback: try other capable integrations
+    const fallbackIntegrations = integrations.filter(
+        int => int.id !== primaryIntegration.id && ENDPOINT_MAP[int.type]?.[toolName]
+    );
+
+    for (const fallback of fallbackIntegrations) {
+        const fallbackResult = await attemptToolCall(toolName, args, fallback, botId, userId);
+        if (fallbackResult.success) return fallbackResult;
+    }
+
+    // All integrations failed — return the primary failure with conversational message
+    return {
+        ...result,
+        error: result.error || 'Unable to reach the store system right now. Please try again in a moment.',
+    };
+}
+
+/**
+ * Attempt a single tool call against a specific integration.
+ * Logs the result and returns standardized output.
+ */
+async function attemptToolCall(
+    toolName: ToolName,
+    args: Record<string, string>,
+    integration: ClientIntegration,
+    botId: string,
+    userId: string
+): Promise<ToolCallResult> {
     const endpointTemplate = ENDPOINT_MAP[integration.type]?.[toolName];
 
     if (!endpointTemplate) {
@@ -305,7 +405,7 @@ export async function executeToolCall(
             toolName,
             success: false,
             context: '',
-            error: `Tool "${toolName}" not supported for integration type "${integration.type}"`,
+            error: `Tool "${toolName}" not supported for ${integration.type}`,
             latencyMs: 0,
             integrationId: integration.id,
         };
@@ -320,7 +420,7 @@ export async function executeToolCall(
             ? 'success'
             : (result.latencyMs >= 4900 ? 'timeout' : 'error');
 
-    // Fire-and-forget log
+    // Log execution
     void logToolExecution({
         userId,
         botId,

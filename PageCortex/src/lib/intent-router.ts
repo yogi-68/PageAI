@@ -34,7 +34,7 @@ export interface IntentResult {
 // Order ID patterns: #12345, ORD-12345, ORDER-abc123, plain 5-10 digit numbers in context
 const ORDER_ID_PATTERN = /(?:order\s*#?\s*|ord[-_]?|#)([A-Z0-9-]{3,20})/i;
 
-// Phrases that strongly signal a live order lookup is needed
+// Phrases that strongly signal a live order lookup is needed (enhanced)
 const ORDER_STATUS_PHRASES = [
     /where\s+(is|are)\s+(my\s+)?(order|package|shipment|parcel)/i,
     /status\s+of\s+(my\s+)?(order|package)/i,
@@ -44,6 +44,11 @@ const ORDER_STATUS_PHRASES = [
     /hasn'?t?\s+(arrived|shipped|delivered)/i,
     /when\s+will\s+(my\s+)?(order|package|item)\s+(arrive|ship|come|be\s+delivered)/i,
     /order\s+not\s+(received|arrived)/i,
+    /check\s+(my\s+)?(order|package)/i,
+    /(find|locate)\s+(my\s+)?(order|package)/i,
+    /order\s+(tracking|trace|location)/i,
+    /(has|did)\s+(my\s+)?order\s+(ship|arrive|deliver)/i,
+    /delivery\s+(status|update|eta)/i,
 ];
 
 // Shipment tracking phrases
@@ -97,10 +102,44 @@ const RAG_ONLY_PHRASES = [
     /cancel\s+(my\s+)?(subscription|account|plan)/i,
 ];
 
-// ─── Entity Extractors ────────────────────────────────────
+// ─── Entity Extractors (Enhanced with Fuzzy Matching) ─────
+/**
+ * Extract order ID with fuzzy matching and natural language support.
+ * Supports various formats:
+ * - "#12345", "order #1234"
+ * - "ORD-12345", "ORDER-ABC123"
+ * - "my order is 1234"
+ * - "track package 998"
+ * - "order number 4521"
+ */
 function extractOrderId(query: string): string | undefined {
-    const match = query.match(ORDER_ID_PATTERN);
-    return match?.[1];
+    // Pattern 1: Explicit order ID with prefix
+    const explicitMatch = query.match(/(?:order\s*#?\s*|ord[-_]?|#)([A-Z0-9-]{3,20})/i);
+    if (explicitMatch) return explicitMatch[1];
+
+    // Pattern 2: "order number 1234", "order is 1234"
+    const verboseMatch = query.match(/order\s+(?:number\s+)?(?:is\s+)?([A-Z0-9-]{3,20})/i);
+    if (verboseMatch) return verboseMatch[1];
+
+    // Pattern 3: "my 1234 order", "package 998"
+    const contextualMatch = query.match(/(?:my\s+|package\s+|shipment\s+)([A-Z0-9-]{3,20})(?:\s+(?:order|package|shipment))?/i);
+    if (contextualMatch && contextualMatch[1].length >= 3) return contextualMatch[1];
+
+    // Pattern 4: Tracking number format (letters + numbers, 8-30 chars)
+    const trackingMatch = query.match(/\b([A-Z]{2}\d{9,12}|\d{12,18}|1Z[A-Z0-9]{16})\b/i);
+    if (trackingMatch) return trackingMatch[1];
+
+    // Pattern 5: Standalone 3-10 digit number (if query mentions order/package/shipment)
+    if (/\b(order|package|shipment|delivery|track)\b/i.test(query)) {
+        const standaloneNumber = query.match(/\b(\d{3,10})\b/);
+        if (standaloneNumber) return standaloneNumber[1];
+    }
+
+    // Pattern 6: Alphanumeric codes (common in e-commerce)
+    const alphanumericMatch = query.match(/\b([A-Z]{2,4}\d{4,10})\b/i);
+    if (alphanumericMatch) return alphanumericMatch[1];
+
+    return undefined;
 }
 
 function extractLocation(query: string): string | undefined {
