@@ -5,6 +5,7 @@ import { rateLimitChat, verifyDomain, getClientIP, corsHeaders } from '@/lib/rat
 import { logger } from '@/lib/logger';
 import { trackEvent } from '@/lib/analytics';
 import { recordOpenAIError } from '@/lib/alerts';
+import { getIntegrationsForUser } from '@/lib/api-integrations';
 
 // Allow up to 60 s for streaming RAG responses (Vercel Pro)
 export const maxDuration = 60;
@@ -102,16 +103,18 @@ export async function POST(request: NextRequest) {
         // 4. Execute RAG pipeline
         // If RAG fails after increment, we roll back the usage charge.
 
-        // Resolve which data sources this bot may search.
-        // Always search ALL of the user's indexed data sources.
-        // This ensures uploaded files, crawled websites, and any future
-        // sources are all searched regardless of which bot is asking.
-        // Bot-level data_source_ids are included too (for backwards compat).
-        const { data: allUserSources } = await admin
-            .from('data_sources')
-            .select('id')
-            .eq('user_id', bot.user_id)
-            .eq('status', 'indexed');
+        // Resolve data sources + client integrations in parallel for latency savings
+        const [
+            { data: allUserSources },
+            clientIntegrations,
+        ] = await Promise.all([
+            admin
+                .from('data_sources')
+                .select('id')
+                .eq('user_id', bot.user_id)
+                .eq('status', 'indexed'),
+            getIntegrationsForUser(bot.user_id),
+        ]);
 
         const allSourceIds = new Set<string>(allUserSources?.map((s: { id: string }) => s.id) ?? []);
 
@@ -132,6 +135,7 @@ export async function POST(request: NextRequest) {
 
         const ragConfig = {
             userId: bot.user_id,
+            botId,
             // Always pass an array. Empty array → hybrid_search gets no results (correct).
             // Never pass undefined — that would remove the filter and leak all user chunks.
             dataSourceIds: resolvedDataSourceIds.length > 0 ? resolvedDataSourceIds : [],
@@ -140,6 +144,7 @@ export async function POST(request: NextRequest) {
             temperature: bot.temperature || 0.2,
             maxTokens: bot.max_tokens || 1024,
             fallbackMessage: bot.fallback_message || undefined,
+            integrations: clientIntegrations,
         };
 
         // Streaming mode — executeRAGStream is synchronous (returns stream immediately;
@@ -212,6 +217,7 @@ export async function POST(request: NextRequest) {
             queryRewrite: result.queryRewrite || null,
             suggestions: result.suggestions || [],
             unanswered: result.unanswered || false,
+            toolUsed: result.toolUsed || null,
         }, { headers: corsHeaders(origin) });
 
     } catch (error: any) {

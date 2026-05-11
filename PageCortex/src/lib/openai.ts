@@ -113,28 +113,3 @@ export async function generateAnswer(
     };
 }
 
-// ─── Streaming Chat Completion (with retry on init) ───────
-export async function generateAnswerStream(
-    query: string,
-    context: string,
-    systemPrompt?: string,
-    model: string = 'gpt-4.1-mini',
-    temperature: number = 0.2,
-    maxTokens: number = 1024
-) {
-    const defaultSystem = `You are a helpful AI assistant. Answer questions ONLY based on the provided context. If the answer is not found in the context, politely say you don't have that information. Be professional, concise, and cite sources when possible.`;
-
-    return withRetry(() => getOpenAI().chat.completions.create({
-        model,
-        messages: [
-            { role: 'system', content: systemPrompt || defaultSystem },
-            {
-                role: 'user',
-                content: `Context:\n---\n${context}\n---\n\nQuestion: ${query}\n\nAnswer based only on the context above.`,
-            },
-        ],
-        temperature,
-        max_tokens: maxTokens,
-        stream: true,
-    }));
-}

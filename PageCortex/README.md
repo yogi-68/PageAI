@@ -32,7 +32,16 @@ OPENAI_API_KEY=your_openai_key
 
 # App
 NEXT_PUBLIC_APP_URL=https://www.pagecortex.com
+
+# API Integrations (required for tool-calling feature)
+# Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+ENCRYPTION_SECRET=your_64_char_hex_key
+
+# Optional: Groq for faster/cheaper inference on simple queries
+GROQ_API_KEY=gsk_...
 ```
+
+See `.env.example` for the full variable list including billing.
 
 ---
 
@@ -82,11 +91,15 @@ User Query
 
 ### Deployed ✅
 
-- **Advanced RAG Pipeline** — Query rewriting, hybrid search (vector + BM25), re-ranking, confidence scoring
+- **Advanced RAG Pipeline** — Hybrid search (vector + BM25), re-ranking, confidence scoring
+- **Real-Time API Tool Calling** — Live order/shipment/product/shipping queries via Shopify, WooCommerce, or custom REST
+- **Intent Router** — Classifies queries first (keyword matching + optional LLM) to pick RAG, tool call, or both
+- **Secure Credential Storage** — AES-256-GCM encrypted API keys; backend-only; never exposed to frontend
+- **API Integration Dashboard** — Add/edit/test integrations; endpoint whitelist; tool execution logs
 - **Smart Model Routing** — Auto-selects fast or advanced AI based on query complexity
 - **Embeddable Widget** — One script tag, works on any website (WordPress, Shopify, Wix, React, etc.)
 - **AI Testing Playground** — Chat with your bot, inspect confidence scores, latency, RAG sources
-- **Streaming Responses** — Progressive token rendering for ~2-3s perceived response speed
+- **Streaming Responses** — Progressive token rendering with live-data loading indicators
 - **Unanswered Question Monitoring** — Dashboard alerts for queries the bot couldn't handle
 - **Conversion-Focused Design** — Built for pre-sales, not generic support
 - **Source Citations** — Every answer links back to the page it came from
@@ -101,6 +114,7 @@ User Query
 |---------|-------|-------------|
 | **Home** | Overview | Key metrics, recent activity, quick actions |
 | **Train** | Websites, Knowledge, Bots | Configure content sources and bot settings |
+| **Integrations** | API Integrations | Connect Shopify, WooCommerce, custom REST APIs |
 | **Test & Deploy** | Playground | Test bot responses with debug inspector |
 | **Analyze** | Analytics, Unanswered | Conversion metrics, unanswered questions |
 | **Settings** | Billing, Settings | Account, plan management, preferences |
@@ -118,6 +132,9 @@ User Query
 | Hosting | Vercel |
 | Styling | Vanilla CSS + Tailwind-free custom design system |
 | Search | Hybrid (pgvector + BM25 via Supabase RPC) |
+| Encryption | Node.js `crypto` AES-256-GCM (credential storage) |
+
+> See [docs/AI_MODELS.md](docs/AI_MODELS.md) for AI model alternatives, cost analysis, and profitability recommendations.
 
 ---
 
@@ -274,28 +291,42 @@ Crawl a website and index its content.
 - Common questions tracking
 - Retrieval quality preview
 
-### Phase 4: Enterprise Features
-- **Tool & API Management** — Shopify, WooCommerce, custom REST API integrations
+### Phase 4: Enterprise Features (In Progress)
 - **Human Handoff** — Escalation triggers, email notifications, live chat takeover
-- **AI Safety** — Sensitive data masking, response moderation, output sanitization
+- **AI Safety** — PII detection, response moderation, output sanitization
 - **Deployment Versioning** — Staging vs production, rollback, A/B testing
+- **Conversation Memory** — Rolling multi-turn chat history
 
-### Tool & API System (Planned)
+### Tool & API System (Implemented ✅)
 
 Secure, read-only API integrations for live data:
 
-| Integration | Capabilities |
-|-------------|-------------|
-| Shopify | Order tracking, product availability, shipment status |
-| WooCommerce | Order lookup, inventory, shipping |
-| Custom REST | Any read-only API with whitelisted endpoints |
+| Integration | Tools Available |
+|-------------|----------------|
+| Shopify | `getOrderStatus`, `trackShipment`, `getProductAvailability`, `getShippingEstimate` |
+| WooCommerce | `getOrderStatus`, `trackShipment`, `getProductAvailability`, `getShippingEstimate` |
+| Custom REST | Same tools, configurable endpoint mapping |
 
 Architecture:
-- All API calls routed through backend (never exposed to client)
-- Encrypted credential storage
-- AI decides when to use API vs RAG
-- Response sanitization prevents private data exposure
-- Tool execution logging and health monitoring
+- All API calls routed through backend — credentials never reach the browser
+- AES-256-GCM encrypted credential storage (`ENCRYPTION_SECRET`)
+- Endpoint whitelist — AI can only call pre-approved path prefixes
+- Response sanitizer strips tokens, passwords, internal IDs, admin fields
+- 5s timeout on all tool calls; failures degrade gracefully to RAG-only
+- Tool execution logged with latency, status, and input params
+- Intent router decides RAG / tool / both per query using keyword patterns first (zero LLM cost)
+
+### AI Models
+
+See [docs/AI_MODELS.md](docs/AI_MODELS.md) for full analysis. Summary:
+
+| Provider | Model | Use Case | Cost/1M tokens |
+|----------|-------|----------|----------------|
+| OpenAI | `gpt-4.1-mini` | Default fast queries | ~$0.15 in / $0.60 out |
+| OpenAI | `gpt-4.1` | Complex/advanced queries | ~$2 in / $8 out |
+| Groq | `llama-3.3-70b` | **Recommended for Free/Starter** — 10x faster, 5x cheaper | ~$0.59 in / $0.79 out |
+| Anthropic | `claude-3-5-haiku` | Best tool-calling accuracy | ~$0.80 in / $4 out |
+| Google | `gemini-2.0-flash` | Cheapest large-context option | ~$0.075 in / $0.30 out |
 
 ---
 
@@ -305,32 +336,43 @@ Architecture:
 src/
 ├── app/
 │   ├── api/
-│   │   ├── chat/          # Chat endpoint (streaming + non-streaming)
-│   │   ├── crawl/         # Website crawler
-│   │   ├── bots/          # Bot CRUD
-│   │   └── dashboard/     # Dashboard APIs
+│   │   ├── chat/              # Chat endpoint (streaming + non-streaming)
+│   │   ├── integrations/      # Client API integrations CRUD + test + logs
+│   │   ├── crawl/             # Website crawler
+│   │   ├── bots/              # Bot CRUD
+│   │   └── dashboard/         # Dashboard APIs (stats, unanswered)
 │   ├── dashboard/
-│   │   ├── playground/    # AI Testing Playground
-│   │   ├── conversations/ # Unanswered questions
-│   │   ├── analytics/     # Analytics dashboard
-│   │   ├── knowledge/     # Knowledge base
-│   │   ├── bots/          # Bot management
-│   │   ├── websites/      # Website management
-│   │   ├── billing/       # Plan & billing
-│   │   └── settings/      # Account settings
+│   │   ├── integrations/      # API Integrations dashboard
+│   │   ├── playground/        # AI Testing Playground
+│   │   ├── conversations/     # Unanswered questions
+│   │   ├── analytics/         # Analytics dashboard
+│   │   ├── knowledge/         # Knowledge base
+│   │   ├── bots/              # Bot management
+│   │   ├── websites/          # Website management
+│   │   ├── billing/           # Plan & billing
+│   │   └── settings/          # Account settings
 │   └── (landing pages)
 ├── components/
-│   └── landing/           # Marketing page components
+│   └── landing/               # Marketing page components
 ├── lib/
-│   ├── rag.ts             # RAG pipeline (search, rank, generate)
-│   ├── openai.ts          # OpenAI API wrapper
-│   ├── supabase.ts        # Database client
-│   ├── auth.ts            # Auth context
-│   ├── analytics.ts       # Event tracking
-│   └── rate-limit.ts      # Rate limiting
-└── public/
-    ├── widget.js          # Embeddable chat widget
-    └── logo.png           # Brand assets
+│   ├── rag.ts                 # RAG + tool-calling pipeline
+│   ├── intent-router.ts       # Query classifier (rag/tool/both)
+│   ├── tools.ts               # Tool definitions + executor
+│   ├── api-integrations.ts    # Credential manager + API proxy
+│   ├── encryption.ts          # AES-256-GCM credential encryption
+│   ├── openai.ts              # OpenAI API wrapper
+│   ├── supabase.ts            # Database client
+│   ├── auth.ts                # Auth context
+│   ├── analytics.ts           # Event tracking
+│   └── rate-limit.ts          # Rate limiting
+├── public/
+│   ├── widget.js              # Embeddable chat widget (v2.2+)
+│   └── logo.png               # Brand assets
+├── supabase/
+│   ├── schema.sql             # Full DB schema
+│   └── migrations/            # Incremental migrations
+└── docs/
+    └── AI_MODELS.md           # AI model analysis & recommendations
 ```
 
 ---

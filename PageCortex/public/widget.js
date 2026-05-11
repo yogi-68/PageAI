@@ -307,6 +307,11 @@
       51%, 100% { opacity: 0; }
     }
 
+    @keyframes pagecortex-spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
     .pagecortex-stream-text {
       white-space: pre-wrap;
     }
@@ -524,8 +529,34 @@
                             try {
                                 const parsed = JSON.parse(data);
                                 if (parsed.type === 'token' && parsed.content) {
+                                    // Remove the "looking up" indicator once we start getting tokens
+                                    const lookupEl = msg.querySelector(".pagecortex-lookup-indicator");
+                                    if (lookupEl) lookupEl.remove();
                                     tokenQueue.push(parsed.content);
                                     renderTokens();
+                                } else if (parsed.type === 'tool_call') {
+                                    // Show/update live data lookup indicator
+                                    let lookupEl = msg.querySelector(".pagecortex-lookup-indicator");
+                                    if (parsed.status === 'calling') {
+                                        if (!lookupEl) {
+                                            lookupEl = document.createElement("div");
+                                            lookupEl.className = "pagecortex-lookup-indicator";
+                                            lookupEl.style.cssText = "display:flex;align-items:center;gap:6px;font-size:12px;color:#8892b0;padding:4px 0;";
+                                            lookupEl.innerHTML = `
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4f6df5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:pagecortex-spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                                <span>Looking up live data…</span>
+                                            `;
+                                            const bubble = msg.querySelector(".pagecortex-msg-bubble");
+                                            if (bubble) bubble.insertBefore(lookupEl, bubble.firstChild);
+                                        }
+                                    } else if (parsed.status === 'done') {
+                                        if (lookupEl) {
+                                            lookupEl.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg><span style="color:#22c55e">Live data loaded</span>`;
+                                        }
+                                    } else if (parsed.status === 'error') {
+                                        if (lookupEl) lookupEl.remove();
+                                    }
+                                    messages.scrollTop = messages.scrollHeight;
                                 } else if (parsed.type === 'done') {
                                     if (parsed.suggestions && parsed.suggestions.length > 0) {
                                         showSuggestions(parsed.suggestions);
