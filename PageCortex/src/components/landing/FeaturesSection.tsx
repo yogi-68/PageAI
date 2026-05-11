@@ -7,7 +7,7 @@ const features = [
   { icon: Brain, title: 'Advanced RAG Pipeline', desc: 'Query rewriting, hybrid search, re-ranking, and confidence scoring for 95-98% answer accuracy — so your bot never guesses.' },
   { icon: Globe, title: 'Multi-Source Knowledge', desc: 'Ingest from websites, Notion, Google Drive, file uploads, and custom APIs. Train on your entire product knowledge.' },
   { icon: MessageSquare, title: 'Human Handoff', desc: 'When AI confidence is low, automatically redirect to your team via email, contact form, or demo booking link. Never lose a lead.' },
-  { icon: Zap, title: 'Smart Model Routing', desc: 'Routes simple questions to fast AI and complex buyer objections to GPT-4.1 — instant responses without overspending.' },
+  { icon: Zap, title: 'Smart Model Routing', desc: 'Routes simple questions to fast AI and complex buyer objections to our most advanced model — instant responses without overspending.' },
   { icon: Code2, title: 'Works Everywhere', desc: 'One script tag. WordPress, Wix, Shopify, Webflow, Squarespace, React, Vue — any website platform.' },
   { icon: Palette, title: 'Brand Matching', desc: 'Custom colors, welcome messages, personality, and positioning. Looks native to your brand, not like a generic widget.' },
   { icon: BarChart3, title: 'Conversion Analytics', desc: 'Track visitor → conversation → signup funnels. See what questions buyers ask most and which go unanswered.' },

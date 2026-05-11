@@ -186,7 +186,7 @@ export default function PlaygroundPage() {
           ))}
         </select>
         <span className="text-[11px] text-fg-muted px-2 py-0.5 rounded bg-surface-elevated/50 border border-edge">
-          Model: {currentBot?.model || 'gpt-4.1-mini'}
+          Model: {currentBot?.model === 'gpt-4.1' ? 'Advanced AI' : currentBot?.model === 'auto' ? 'Smart Routing' : 'Fast AI'}
         </span>
         <button onClick={clearChat} className="ml-auto px-3 py-1.5 rounded-lg border border-edge text-[12px] text-fg-muted hover:text-fg hover:border-edge-light transition-all">
           Clear Chat
@@ -349,7 +349,13 @@ export default function PlaygroundPage() {
                   <div className="grid grid-cols-2 gap-2">
                     <div className="p-2.5 rounded-lg border border-edge bg-bg/40">
                       <p className="text-[10px] text-fg-muted mb-0.5">Model</p>
-                      <p className="text-[12px] font-medium text-fg">{lastAssistantMsg.metadata.model || '—'}</p>
+                      <p className="text-[12px] font-medium text-fg">{
+                        lastAssistantMsg.metadata.model === 'gpt-4.1' ? 'Advanced AI'
+                          : lastAssistantMsg.metadata.model === 'auto' ? 'Smart Routing'
+                          : lastAssistantMsg.metadata.model === 'none' ? 'Fallback'
+                          : lastAssistantMsg.metadata.model ? 'Fast AI'
+                          : '—'
+                      }</p>
                     </div>
                     <div className="p-2.5 rounded-lg border border-edge bg-bg/40">
                       <p className="text-[10px] text-fg-muted mb-0.5">Latency</p>

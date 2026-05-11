@@ -68,7 +68,7 @@ async function fetchPageContent(
     // ── Static / Auto: try Cheerio first ────────────────────────────────
     try {
         const res = await fetch(pageUrl, {
-            headers: { 'User-Agent': 'PageCortex Bot/2.0 (+https://pagecortex.io)' },
+            headers: { 'User-Agent': 'PageCortex Bot/2.0 (+https://www.pagecortex.com)' },
             signal: AbortSignal.timeout(15000),
         });
         if (!res.ok) return null;

@@ -8,17 +8,46 @@ import { useAuth } from '@/lib/auth';
 import { ThemeToggle } from '@/lib/theme';
 import { supabase } from '@/lib/supabase';
 
-const nav = [
-  { label: 'Overview', href: '/dashboard', icon: '◈' },
-  { label: 'Websites', href: '/dashboard/websites', icon: '◎' },
-  { label: 'Bots', href: '/dashboard/bots', icon: '✦' },
-  { label: 'Playground', href: '/dashboard/playground', icon: '▷' },
-  { label: 'Unanswered', href: '/dashboard/conversations', icon: '⚠' },
-  { label: 'Knowledge', href: '/dashboard/knowledge', icon: '◇' },
-  { label: 'Analytics', href: '/dashboard/analytics', icon: '▣' },
-  { label: 'Billing', href: '/dashboard/billing', icon: '◆' },
-  { label: 'Settings', href: '/dashboard/settings', icon: '⚙' },
+// Intercom-style grouped navigation
+const navSections = [
+  {
+    heading: null, // no heading for top items
+    items: [
+      { label: 'Home', href: '/dashboard', icon: '◈' },
+    ],
+  },
+  {
+    heading: 'Train',
+    items: [
+      { label: 'Websites', href: '/dashboard/websites', icon: '◎' },
+      { label: 'Knowledge', href: '/dashboard/knowledge', icon: '◇' },
+      { label: 'Bots', href: '/dashboard/bots', icon: '✦' },
+    ],
+  },
+  {
+    heading: 'Test & Deploy',
+    items: [
+      { label: 'Playground', href: '/dashboard/playground', icon: '▷' },
+    ],
+  },
+  {
+    heading: 'Analyze',
+    items: [
+      { label: 'Analytics', href: '/dashboard/analytics', icon: '▣' },
+      { label: 'Unanswered', href: '/dashboard/conversations', icon: '⚠' },
+    ],
+  },
+  {
+    heading: 'Settings',
+    items: [
+      { label: 'Billing', href: '/dashboard/billing', icon: '◆' },
+      { label: 'Settings', href: '/dashboard/settings', icon: '⚙' },
+    ],
+  },
 ];
+
+// Flat nav for mobile
+const allNavItems = navSections.flatMap(s => s.items);
 
 interface UsageInfo {
   plan: string;
@@ -64,6 +93,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isActive = (href: string) => href === '/dashboard' ? pathname === href : pathname.startsWith(href);
   const msgPct = usage ? Math.min(100, Math.round((usage.monthly_message_count / Math.max(usage.monthly_message_limit, 1)) * 100)) : 0;
 
+  const renderNavItem = (item: { label: string; href: string; icon: string }, compact?: boolean) => (
+    <Link key={item.href} href={item.href} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13.5px] transition-all duration-200 ${
+      isActive(item.href)
+        ? 'bg-primary/10 text-primary font-medium'
+        : 'text-fg-secondary hover:text-fg hover:bg-surface-elevated/50'
+    }`}>
+      <span className="text-[12px] w-4 text-center">{item.icon}</span>
+      <span className="flex-1">{item.label}</span>
+      {item.label === 'Unanswered' && unresolvedCount > 0 && (
+        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-warning text-[9px] font-bold text-white min-w-[16px] leading-none">
+          {unresolvedCount}
+        </span>
+      )}
+    </Link>
+  );
+
   return (
     <div className="min-h-screen bg-bg flex">
       {/* Sidebar - Desktop */}
@@ -74,21 +119,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="text-[15px] font-semibold text-fg">PageCortex</span>
           </Link>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-          {nav.map(item => (
-            <Link key={item.href} href={item.href} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13.5px] transition-all duration-200 ${
-              isActive(item.href)
-                ? 'bg-primary/10 text-primary font-medium'
-                : 'text-fg-secondary hover:text-fg hover:bg-surface-elevated/50'
-            }`}>
-              <span className="text-[12px] w-4 text-center">{item.icon}</span>
-              <span className="flex-1">{item.label}</span>
-              {item.label === 'Unanswered' && unresolvedCount > 0 && (
-                <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-warning text-[9px] font-bold text-white min-w-[16px] leading-none">
-                  {unresolvedCount}
-                </span>
+        <nav className="flex-1 px-3 py-3 overflow-y-auto">
+          {navSections.map((section, si) => (
+            <div key={si} className={si > 0 ? 'mt-4' : ''}>
+              {section.heading && (
+                <p className="px-3 mb-1.5 text-[10px] font-semibold text-fg-muted/60 uppercase tracking-[0.08em]">
+                  {section.heading}
+                </p>
               )}
-            </Link>
+              <div className="space-y-0.5">
+                {section.items.map(item => renderNavItem(item))}
+              </div>
+            </div>
           ))}
         </nav>
 
@@ -134,19 +176,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="absolute inset-0 bg-bg/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <div className="absolute left-0 top-0 bottom-0 w-65 bg-surface border-r border-edge p-4">
             <div className="flex items-center justify-between mb-6">
-              <span className="text-[15px] font-semibold text-fg">PageCortex</span>
+              <div className="flex items-center gap-2">
+                <Image src="/logo.png" alt="PageCortex" width={24} height={24} className="rounded-lg" />
+                <span className="text-[15px] font-semibold text-fg">PageCortex</span>
+              </div>
               <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-md text-fg-muted hover:text-fg hover:bg-edge/50 transition-colors">
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
               </button>
             </div>
-            <nav className="space-y-0.5">
-              {nav.map(item => (
-                <Link key={item.href} href={item.href} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] transition-colors ${
-                  isActive(item.href) ? 'bg-primary/10 text-primary font-medium' : 'text-fg-secondary hover:text-fg'
-                }`}>
-                  <span className="text-[13px]">{item.icon}</span>
-                  {item.label}
-                </Link>
+            <nav className="space-y-3">
+              {navSections.map((section, si) => (
+                <div key={si}>
+                  {section.heading && (
+                    <p className="px-3 mb-1 text-[10px] font-semibold text-fg-muted/60 uppercase tracking-[0.08em]">{section.heading}</p>
+                  )}
+                  <div className="space-y-0.5">
+                    {section.items.map(item => (
+                      <Link key={item.href} href={item.href} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] transition-colors ${
+                        isActive(item.href) ? 'bg-primary/10 text-primary font-medium' : 'text-fg-secondary hover:text-fg'
+                      }`}>
+                        <span className="text-[13px]">{item.icon}</span>
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               ))}
             </nav>
             {/* Mobile usage bar */}
@@ -184,7 +238,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <ThemeToggle />
         </header>
         <main className="flex-1 p-6">
-          <div className="max-w-275">{children}</div>
+          <div className="w-full">{children}</div>
         </main>
       </div>
     </div>

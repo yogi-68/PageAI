@@ -108,7 +108,7 @@ const jsonLd = {
       description: 'AI pre-sales assistant platform. Train on your website content to answer buyer questions, overcome objections, and qualify leads automatically. No coding required.',
       featureList: [
         'Automatic website crawling & indexing',
-        'RAG-powered AI with GPT-4.1',
+        'Advanced RAG-powered AI',
         'Embeddable chat widget',
         'Conversion analytics & funnels',
         'Confidence-based human handoff',
@@ -134,10 +134,10 @@ const jsonLd = {
       },
       contactPoint: {
         '@type': 'ContactPoint',
-        email: 'hello@pagecortex.io',
+        email: 'yogeshwar0402@gmail.com',
         contactType: 'customer support',
       },
-      sameAs: ['https://twitter.com/PageCortex_io', 'https://github.com/pagecortex'],
+      sameAs: ['https://twitter.com/PageCortex', 'https://github.com/pagecortex'],
     },
     {
       '@type': 'FAQPage',
@@ -150,12 +150,12 @@ const jsonLd = {
         {
           '@type': 'Question',
           name: 'How does PageCortex work?',
-          acceptedAnswer: { '@type': 'Answer', text: 'PageCortex crawls your website, converts your content into vector embeddings, and uses hybrid search (vector + BM25 keyword) to find the most relevant information. It then feeds that context to GPT-4.1 to generate accurate, source-cited answers.' },
+          acceptedAnswer: { '@type': 'Answer', text: 'PageCortex crawls your website, converts your content into vector embeddings, and uses hybrid search to find the most relevant information. It then feeds that context to our AI to generate accurate, source-cited answers.' },
         },
         {
           '@type': 'Question',
           name: 'Is PageCortex free?',
-          acceptedAnswer: { '@type': 'Answer', text: 'Yes! PageCortex offers a free forever plan with 50 messages/month, 1 chatbot, 100 indexed pages, and GPT-4.1 Mini. Paid plans start at $29/month for more capacity.' },
+          acceptedAnswer: { '@type': 'Answer', text: 'Yes! PageCortex offers a free forever plan with 50 messages/month, 1 chatbot, and 100 indexed pages. Paid plans start at $29/month for more capacity.' },
         },
         {
           '@type': 'Question',

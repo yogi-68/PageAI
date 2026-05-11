@@ -44,7 +44,7 @@ const plans: Plan[] = [
       {
         label: 'AI Capabilities',
         features: [
-          { text: '⚡ Fast AI (GPT-4.1 mini)' },
+          { text: '⚡ Fast AI' },
         ],
       },
       {

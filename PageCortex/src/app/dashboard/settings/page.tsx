@@ -54,7 +54,7 @@ export default function SettingsPage() {
       <div className="rounded-xl border border-edge bg-surface/40 p-5 space-y-5">
         <h2 className="text-[16px] font-semibold text-fg">Profile</h2>
 
-        <div className="space-y-4 max-w-[480px]">
+        <div className="space-y-4 max-w-[640px]">
           <div>
             <label className="block text-[13px] font-medium text-fg mb-2">Full name</label>
             <input value={fullName} onChange={e => setFullName(e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-edge bg-bg/60 text-[14px] text-fg placeholder:text-fg-muted focus:outline-none focus:border-primary/50 transition-all" />

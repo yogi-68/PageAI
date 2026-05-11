@@ -26,9 +26,9 @@ const guarantees = [
     tagBg: 'bg-warning/10',
   },
   {
-    title: 'GPT-4.1 on every plan',
-    body: 'Even the free tier runs on OpenAI\'s latest GPT-4.1 Mini. No downgraded AI for lower tiers — everyone gets the same quality answers.',
-    tag: 'GPT-4.1 powered',
+    title: 'Advanced AI on every plan',
+    body: 'Even the free tier runs on the latest AI technology. No downgraded AI for lower tiers — everyone gets the same quality answers.',
+    tag: 'Premium AI',
     tagColor: 'text-violet',
     tagBg: 'bg-violet/10',
   },
