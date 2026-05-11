@@ -139,7 +139,6 @@ export async function POST(request: NextRequest) {
             model: allowedModel,
             temperature: bot.temperature || 0.2,
             maxTokens: bot.max_tokens || 1024,
-            confidenceThreshold: bot.confidence_threshold || 0.65,
             fallbackMessage: bot.fallback_message || undefined,
         };
 
@@ -209,6 +208,8 @@ export async function POST(request: NextRequest) {
             model: result.model,
             cached: result.cached,
             responseTimeMs: result.responseTimeMs,
+            chunksRetrieved: result.chunksRetrieved,
+            queryRewrite: result.queryRewrite || null,
             suggestions: result.suggestions || [],
             unanswered: result.unanswered || false,
         }, { headers: corsHeaders(origin) });

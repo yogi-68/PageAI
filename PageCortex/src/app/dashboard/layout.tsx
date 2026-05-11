@@ -12,6 +12,7 @@ const nav = [
   { label: 'Overview', href: '/dashboard', icon: '◈' },
   { label: 'Websites', href: '/dashboard/websites', icon: '◎' },
   { label: 'Bots', href: '/dashboard/bots', icon: '✦' },
+  { label: 'Playground', href: '/dashboard/playground', icon: '▷' },
   { label: 'Unanswered', href: '/dashboard/conversations', icon: '⚠' },
   { label: 'Knowledge', href: '/dashboard/knowledge', icon: '◇' },
   { label: 'Analytics', href: '/dashboard/analytics', icon: '▣' },
