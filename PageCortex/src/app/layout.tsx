@@ -73,7 +73,14 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, 'max-video-preview': -1, 'max-image-preview': 'large', 'max-snippet': -1 },
   },
-  icons: { icon: '/logo.png', shortcut: '/logo.png', apple: '/logo.png' },
+  icons: {
+    icon: [
+      { url: '/logo.png' },
+      { url: '/icon.png', sizes: '32x32', type: 'image/png' },
+    ],
+    shortcut: '/logo.png',
+    apple: '/apple-touch-icon.png',
+  },
   verification: {
     google: 'ZMpMVrAX3p4Wjm4vhZzl_4dBQlXb56-sEvHLO9fyzd0',
   },
