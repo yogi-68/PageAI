@@ -40,6 +40,7 @@ const navSections = [
   {
     heading: 'Settings',
     items: [
+      { label: 'Integrations', href: '/dashboard/integrations', icon: '🔌' },
       { label: 'Billing', href: '/dashboard/billing', icon: '◆' },
       { label: 'Settings', href: '/dashboard/settings', icon: '⚙' },
     ],
