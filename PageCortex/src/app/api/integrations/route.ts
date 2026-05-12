@@ -14,6 +14,7 @@ import {
     type IntegrationType,
 } from '@/lib/api-integrations';
 import { getAdminClient } from '@/lib/supabase';
+import { formatOperationalError, checkIntegrationLimit, createUsageLimitError } from '@/lib/operational-errors';
 
 async function getSessionUser() {
     const cookieStore = await cookies();
@@ -41,7 +42,8 @@ export async function GET() {
 export async function POST(request: NextRequest) {
     const user = await getSessionUser();
     if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const error = formatOperationalError(new Error('Unauthorized'), 'authentication');
+        return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
     let body: {
@@ -54,24 +56,52 @@ export async function POST(request: NextRequest) {
 
     try {
         body = await request.json();
-    } catch {
-        return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    } catch (err) {
+        const error = formatOperationalError(err, 'validation');
+        return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     const { name, type, baseUrl, credentials, allowedEndpoints } = body;
 
     if (!name || !type || !baseUrl) {
-        return NextResponse.json({ error: 'name, type, and baseUrl are required' }, { status: 400 });
+        return NextResponse.json({ 
+            error: 'Integration name, type, and URL are required' 
+        }, { status: 400 });
     }
 
     const ALLOWED_TYPES: IntegrationType[] = ['shopify', 'woocommerce', 'custom'];
     if (!ALLOWED_TYPES.includes(type)) {
-        return NextResponse.json({ error: `type must be one of: ${ALLOWED_TYPES.join(', ')}` }, { status: 400 });
+        return NextResponse.json({ 
+            error: `Integration type must be one of: ${ALLOWED_TYPES.join(', ')}` 
+        }, { status: 400 });
     }
 
     // Validate URL format
-    try { new URL(baseUrl); } catch {
-        return NextResponse.json({ error: 'baseUrl must be a valid URL' }, { status: 400 });
+    try { 
+        new URL(baseUrl); 
+    } catch {
+        return NextResponse.json({ 
+            error: 'Please enter a valid URL (e.g., https://example.com)' 
+        }, { status: 400 });
+    }
+
+    // Check integration limit based on plan
+    try {
+        const existingIntegrations = await getIntegrationsPublic(user.id);
+        const limitCheck = await checkIntegrationLimit(user.id, existingIntegrations.length);
+        
+        if (!limitCheck.allowed) {
+            const usageError = createUsageLimitError(limitCheck.plan, limitCheck.limit);
+            const formatted = formatOperationalError(usageError, 'usage_limit');
+            return NextResponse.json({ 
+                error: formatted.message,
+                suggestion: formatted.suggestion,
+                code: 'USAGE_LIMIT_EXCEEDED'
+            }, { status: 402 }); // 402 Payment Required
+        }
+    } catch (err) {
+        console.error('Failed to check integration limit:', err);
+        // Continue anyway - don't block integration creation on limit check failures
     }
 
     const result = await createIntegration({
@@ -84,17 +114,19 @@ export async function POST(request: NextRequest) {
     });
 
     if ('error' in result) {
-        return NextResponse.json({ error: result.error }, { status: 500 });
+        const error = formatOperationalError(new Error(result.error), 'database');
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ id: result.id, message: 'Integration created' }, { status: 201 });
+    return NextResponse.json({ id: result.id, message: 'Integration created successfully' }, { status: 201 });
 }
 
 // PATCH /api/integrations — update an existing integration
 export async function PATCH(request: NextRequest) {
     const user = await getSessionUser();
     if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const error = formatOperationalError(new Error('Unauthorized'), 'authentication');
+        return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
     let body: {
@@ -108,12 +140,13 @@ export async function PATCH(request: NextRequest) {
 
     try {
         body = await request.json();
-    } catch {
-        return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    } catch (err) {
+        const error = formatOperationalError(err, 'validation');
+        return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     if (!body.id) {
-        return NextResponse.json({ error: 'id is required' }, { status: 400 });
+        return NextResponse.json({ error: 'Integration ID is required' }, { status: 400 });
     }
 
     const { error } = await updateIntegration({
@@ -127,24 +160,26 @@ export async function PATCH(request: NextRequest) {
     });
 
     if (error) {
-        return NextResponse.json({ error }, { status: 500 });
+        const formattedError = formatOperationalError(new Error(error), 'database');
+        return NextResponse.json({ error: formattedError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ message: 'Integration updated' });
+    return NextResponse.json({ message: 'Integration updated successfully' });
 }
 
 // DELETE /api/integrations — delete an integration
 export async function DELETE(request: NextRequest) {
     const user = await getSessionUser();
     if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const error = formatOperationalError(new Error('Unauthorized'), 'authentication');
+        return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
     if (!id) {
-        return NextResponse.json({ error: 'id query parameter is required' }, { status: 400 });
+        return NextResponse.json({ error: 'Integration ID is required' }, { status: 400 });
     }
 
     const admin = getAdminClient();
@@ -155,8 +190,9 @@ export async function DELETE(request: NextRequest) {
         .eq('user_id', user.id);
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        const formattedError = formatOperationalError(error, 'database');
+        return NextResponse.json({ error: formattedError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ message: 'Integration deleted' });
+    return NextResponse.json({ message: 'Integration deleted successfully' });
 }

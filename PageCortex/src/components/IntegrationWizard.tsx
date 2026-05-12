@@ -73,6 +73,7 @@ export default function IntegrationWizard({ isOpen, onClose, onComplete }: Wizar
   const [testResult, setTestResult] = useState<any>(null);
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   if (!isOpen) return null;
 
@@ -93,11 +94,101 @@ export default function IntegrationWizard({ isOpen, onClose, onComplete }: Wizar
   };
 
   const handleSave = async () => {
+    if (!selectedType) {
+      setSaveError('Please select an integration type');
+      return;
+    }
+
+    // Validation
+    if (!connectionDetails.baseUrl || connectionDetails.baseUrl.trim() === '') {
+      setSaveError('Base URL is required');
+      setCurrentStep(2);
+      return;
+    }
+
+    // Validate URL format
+    try {
+      new URL(connectionDetails.baseUrl);
+    } catch {
+      setSaveError('Please enter a valid URL (e.g., https://example.com)');
+      setCurrentStep(2);
+      return;
+    }
+
+    if (endpoints.length === 0) {
+      setSaveError('Please add at least one allowed endpoint');
+      setCurrentStep(3);
+      return;
+    }
+
     setSaving(true);
-    // Save integration logic here
-    await new Promise(r => setTimeout(r, 1000));
-    setSaving(false);
-    onComplete();
+    setSaveError('');
+
+    try {
+      // Map wizard integration types to API types
+      const typeMapping: Record<string, 'shopify' | 'woocommerce' | 'custom'> = {
+        'shopify': 'shopify',
+        'woocommerce': 'woocommerce',
+        'rest': 'custom',
+        'graphql': 'custom',
+        'supabase': 'custom',
+        'firebase': 'custom',
+      };
+
+      const apiType = typeMapping[selectedType.id] || 'custom';
+
+      // Build integration name
+      const name = connectionDetails.name || `${selectedType.name} Integration`;
+
+      // Build credentials object from connection details
+      const credentials: Record<string, string> = {};
+      Object.entries(connectionDetails).forEach(([key, value]) => {
+        if (key !== 'baseUrl' && key !== 'name' && value) {
+          credentials[key] = value;
+        }
+      });
+
+      const response = await fetch('/api/integrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          type: apiType,
+          baseUrl: connectionDetails.baseUrl,
+          credentials,
+          allowedEndpoints: endpoints,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        
+        // Check for usage limit error
+        if (data.error && data.error.includes('limit')) {
+          setSaveError("You've reached your plan's integration limit. Upgrade to add more connections.");
+        } else {
+          setSaveError(data.error || 'Failed to create integration. Please try again.');
+        }
+        setSaving(false);
+        return;
+      }
+
+      // Success! Reset form and close
+      setCurrentStep(1);
+      setSelectedType(null);
+      setConnectionDetails({});
+      setEndpoints([]);
+      setEnabledTools(['getOrderStatus', 'trackShipment']);
+      setTestQuery('');
+      setTestResult(null);
+      setSaveError('');
+      setSaving(false);
+      onComplete();
+    } catch (error) {
+      console.error('Failed to save integration:', error);
+      setSaveError('An unexpected error occurred. Please check your connection and try again.');
+      setSaving(false);
+    }
   };
 
   return (
@@ -158,6 +249,22 @@ export default function IntegrationWizard({ isOpen, onClose, onComplete }: Wizar
 
         {/* Content */}
         <div className="px-8 py-8 max-h-[60vh] overflow-y-auto">
+          {/* Error Display */}
+          {saveError && (
+            <div className="mb-6 p-4 rounded-lg bg-[#f87171]/10 border border-[#f87171]/30 flex items-start gap-3">
+              <AlertCircle size={18} className="text-[#f87171] shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-[#f87171] font-medium">{saveError}</p>
+              </div>
+              <button
+                onClick={() => setSaveError('')}
+                className="text-[#f87171] hover:text-[#f87171]/80 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
+
           {/* Step 1: Select Platform */}
           {currentStep === 1 && (
             <div className="space-y-4">
@@ -297,6 +404,10 @@ function ConnectionDetailsStep({
 
   const fields = getFieldsForType(type.id);
 
+  const handleFieldChange = (name: string, value: string) => {
+    onChange({ ...values, [name]: value });
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -305,6 +416,42 @@ function ConnectionDetailsStep({
       </div>
 
       <div className="space-y-4">
+        {/* Name field (always show) */}
+        <div>
+          <label className="block text-sm font-medium text-[#edf0f7] mb-2">
+            Integration Name
+            <span className="text-[#f87171] ml-1">*</span>
+          </label>
+          <input
+            type="text"
+            value={values.name || ''}
+            onChange={(e) => handleFieldChange('name', e.target.value)}
+            placeholder={`My ${type.name} Integration`}
+            className="w-full px-4 py-3 bg-[#1a1f35] border border-[#2a3155] rounded-lg text-[#edf0f7] placeholder:text-[#8892b0]/50 focus:outline-none focus:border-[#4f6df5] transition-colors"
+          />
+        </div>
+
+        {/* Base URL field (always show) */}
+        <div>
+          <label className="block text-sm font-medium text-[#edf0f7] mb-2">
+            {type.id === 'shopify' ? 'Store URL' : type.id === 'woocommerce' ? 'Site URL' : type.id === 'supabase' ? 'Project URL' : 'Base URL'}
+            <span className="text-[#f87171] ml-1">*</span>
+          </label>
+          <input
+            type="text"
+            value={values.baseUrl || ''}
+            onChange={(e) => handleFieldChange('baseUrl', e.target.value)}
+            placeholder={
+              type.id === 'shopify' ? 'https://your-store.myshopify.com' :
+              type.id === 'woocommerce' ? 'https://your-store.com' :
+              type.id === 'supabase' ? 'https://xxx.supabase.co' :
+              'https://api.your-domain.com'
+            }
+            className="w-full px-4 py-3 bg-[#1a1f35] border border-[#2a3155] rounded-lg text-[#edf0f7] placeholder:text-[#8892b0]/50 focus:outline-none focus:border-[#4f6df5] transition-colors"
+          />
+        </div>
+
+        {/* Platform-specific credential fields */}
         {fields.map((field) => (
           <div key={field.name}>
             <label className="block text-sm font-medium text-[#edf0f7] mb-2">
@@ -314,7 +461,7 @@ function ConnectionDetailsStep({
             <input
               type={field.type}
               value={values[field.name] || ''}
-              onChange={(e) => onChange({ ...values, [field.name]: e.target.value })}
+              onChange={(e) => handleFieldChange(field.name, e.target.value)}
               placeholder={field.placeholder}
               className="w-full px-4 py-3 bg-[#1a1f35] border border-[#2a3155] rounded-lg text-[#edf0f7] placeholder:text-[#8892b0]/50 focus:outline-none focus:border-[#4f6df5] transition-colors"
             />
@@ -327,6 +474,10 @@ function ConnectionDetailsStep({
 
       <button
         onClick={async () => {
+          if (!values.baseUrl) {
+            setTestStatus('error');
+            return;
+          }
           setTestStatus('testing');
           await new Promise(r => setTimeout(r, 2000));
           setTestStatus('success');
@@ -591,16 +742,13 @@ function TestStep({
 function getFieldsForType(type: string) {
   const fields: Record<string, any[]> = {
     shopify: [
-      { name: 'storeUrl', label: 'Store URL', type: 'text', placeholder: 'https://your-store.myshopify.com', required: true },
       { name: 'apiKey', label: 'Admin API Access Token', type: 'password', placeholder: 'shpat_...', required: true, help: 'Create in Shopify Admin → Apps → Develop apps' },
     ],
     woocommerce: [
-      { name: 'siteUrl', label: 'Site URL', type: 'text', placeholder: 'https://your-store.com', required: true },
       { name: 'consumerKey', label: 'Consumer Key', type: 'password', placeholder: 'ck_...', required: true },
       { name: 'consumerSecret', label: 'Consumer Secret', type: 'password', placeholder: 'cs_...', required: true },
     ],
     supabase: [
-      { name: 'projectUrl', label: 'Project URL', type: 'text', placeholder: 'https://xxx.supabase.co', required: true },
       { name: 'serviceKey', label: 'Service Role Key', type: 'password', placeholder: 'eyJ...', required: true, help: 'Found in Project Settings → API' },
       { name: 'allowedFunctions', label: 'Allowed RPC Functions (comma-separated)', type: 'text', placeholder: 'get_order_status,track_shipment', required: false },
     ],
@@ -609,12 +757,10 @@ function getFieldsForType(type: string) {
       { name: 'serviceAccount', label: 'Service Account JSON', type: 'password', placeholder: 'Paste JSON here', required: true },
     ],
     rest: [
-      { name: 'baseUrl', label: 'Base URL', type: 'text', placeholder: 'https://api.your-domain.com', required: true },
-      { name: 'authType', label: 'Auth Type', type: 'select', options: ['Bearer Token', 'API Key', 'Custom Header'], required: true },
+      { name: 'authType', label: 'Auth Type', type: 'text', placeholder: 'Bearer Token / API Key', required: false },
       { name: 'authValue', label: 'Auth Value', type: 'password', placeholder: 'Your token/key', required: true },
     ],
     graphql: [
-      { name: 'endpoint', label: 'GraphQL Endpoint', type: 'text', placeholder: 'https://api.your-domain.com/graphql', required: true },
       { name: 'authHeader', label: 'Authorization Header', type: 'password', placeholder: 'Bearer your-token', required: true },
     ],
   };

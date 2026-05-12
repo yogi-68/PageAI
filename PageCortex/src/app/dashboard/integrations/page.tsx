@@ -97,6 +97,7 @@ export default function IntegrationsPage() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [logSearch, setLogSearch] = useState('');
   const [logFilter, setLogFilter] = useState<'all' | 'success' | 'error' | 'timeout' | 'blocked'>('all');
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Form state
   const [form, setForm] = useState({
@@ -117,12 +118,21 @@ export default function IntegrationsPage() {
         fetch('/api/integrations'),
         fetch('/api/integrations/logs?limit=30'),
       ]);
+      
+      if (!intRes.ok || !logRes.ok) {
+        console.error('Failed to fetch integration data');
+        setLoading(false);
+        return;
+      }
+      
       const intData = await intRes.json();
       const logData = await logRes.json();
       setIntegrations(intData.integrations || []);
       setLogs(logData.logs || []);
       setStats(logData.stats || {});
-    } catch { /* silent */ }
+    } catch (error) {
+      console.error('Error fetching integrations:', error);
+    }
     setLoading(false);
   }, [user]);
 
@@ -270,9 +280,25 @@ export default function IntegrationsPage() {
         onClose={() => setWizardOpen(false)}
         onComplete={() => {
           setWizardOpen(false);
+          setSuccessMessage('Integration created successfully!');
+          setTimeout(() => setSuccessMessage(''), 5000);
           fetchData();
         }}
       />
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg bg-[#22c55e]/10 border border-[#22c55e]/30 shadow-lg animate-in slide-in-from-top-2">
+          <CheckCircle size={18} className="text-[#22c55e]" />
+          <p className="text-sm text-[#edf0f7] font-medium">{successMessage}</p>
+          <button
+            onClick={() => setSuccessMessage('')}
+            className="text-[#22c55e] hover:text-[#22c55e]/80 transition-colors ml-2"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-start justify-between">

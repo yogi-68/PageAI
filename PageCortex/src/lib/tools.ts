@@ -13,6 +13,7 @@
 
 import type { ClientIntegration } from './api-integrations';
 import { proxyToolCall, sanitizeApiResponse, logToolExecution } from './api-integrations';
+import { formatCustomerError } from './operational-errors';
 
 // ─── OpenAI Tool Definitions ──────────────────────────────
 export const TOOL_DEFINITIONS = [
@@ -358,7 +359,10 @@ export async function executeToolCall(
             toolName,
             success: false,
             context: '',
-            error: `No integrations available that support the "${toolName}" tool.`,
+            error: formatCustomerError(
+                new Error('No integrations available'),
+                toolName
+            ),
             latencyMs: 0,
             integrationId: null,
         };
@@ -383,7 +387,10 @@ export async function executeToolCall(
     // All integrations failed — return the primary failure with conversational message
     return {
         ...result,
-        error: result.error || 'Unable to reach the store system right now. Please try again in a moment.',
+        error: formatCustomerError(
+            new Error(result.error || 'Integration unavailable'),
+            toolName
+        ),
     };
 }
 
@@ -405,7 +412,10 @@ async function attemptToolCall(
             toolName,
             success: false,
             context: '',
-            error: `Tool "${toolName}" not supported for ${integration.type}`,
+            error: formatCustomerError(
+                new Error(`Tool not supported for ${integration.type}`),
+                toolName
+            ),
             latencyMs: 0,
             integrationId: integration.id,
         };
@@ -438,7 +448,10 @@ async function attemptToolCall(
             toolName,
             success: false,
             context: '',
-            error: result.error,
+            error: formatCustomerError(
+                new Error(result.error || 'API call failed'),
+                toolName
+            ),
             latencyMs: result.latencyMs,
             integrationId: integration.id,
         };
