@@ -3,6 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
 import { Sk } from '@/components/ui/Skeleton';
+import IntegrationWizard from '@/components/IntegrationWizard';
+import LiveTestConsole from '@/components/LiveTestConsole';
+import { Search, Activity, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────
 interface Integration {
@@ -91,6 +94,9 @@ export default function IntegrationsPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [modal, setModal] = useState<ModalState>({ open: false, editing: null });
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [logSearch, setLogSearch] = useState('');
+  const [logFilter, setLogFilter] = useState<'all' | 'success' | 'error' | 'timeout' | 'blocked'>('all');
 
   // Form state
   const [form, setForm] = useState({
@@ -247,8 +253,26 @@ export default function IntegrationsPage() {
     ? Math.round(Object.values(stats).reduce((s, t) => s + (t.avgLatencyMs * t.total), 0) / totalCalls)
     : 0;
 
+  const filteredLogs = logs.filter(log => {
+    const matchesSearch = logSearch === '' || 
+      log.tool_name.toLowerCase().includes(logSearch.toLowerCase()) ||
+      log.error_message?.toLowerCase().includes(logSearch.toLowerCase());
+    const matchesFilter = logFilter === 'all' || log.status === logFilter;
+    return matchesSearch && matchesFilter;
+  });
+
   return (
     <div className="space-y-6">
+
+      {/* Integration Wizard */}
+      <IntegrationWizard
+        isOpen={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        onComplete={() => {
+          setWizardOpen(false);
+          fetchData();
+        }}
+      />
 
       {/* Header */}
       <div className="flex items-start justify-between">
@@ -256,27 +280,53 @@ export default function IntegrationsPage() {
           <h1 className="text-[22px] font-bold text-fg tracking-[-0.02em]">API Integrations</h1>
           <p className="text-[14px] text-fg-secondary mt-0.5">Connect live data sources so the AI can answer real-time customer queries</p>
         </div>
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-accent text-white text-[13px] font-medium hover:bg-accent/90 transition-colors"
-        >
-          <span className="text-[16px] leading-none">+</span> Add Integration
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-edge text-fg-secondary text-[13px] font-medium hover:text-fg hover:border-fg/30 transition-colors"
+          >
+            Quick Add
+          </button>
+          <button
+            onClick={() => setWizardOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-accent text-white text-[13px] font-medium hover:bg-accent/90 transition-colors"
+          >
+            <span className="text-[16px] leading-none">+</span> Add Integration
+          </button>
+        </div>
       </div>
 
       {/* Stats Row */}
       {totalCalls > 0 && (
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { label: 'Total Tool Calls', value: totalCalls.toLocaleString() },
-            { label: 'Success Rate', value: `${successRate}%` },
-            { label: 'Avg Latency', value: `${avgLatency}ms` },
-          ].map(k => (
-            <div key={k.label} className="p-4 rounded-xl border border-edge bg-surface/40">
-              <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">{k.label}</span>
-              <p className="text-[24px] font-bold text-fg mt-1">{k.value}</p>
+        <div className="grid grid-cols-4 gap-3">
+          <div className="p-5 rounded-xl border border-edge bg-surface/40 hover:bg-surface/60 transition-colors">
+            <div className="flex items-center gap-2 mb-2">
+              <Activity size={16} className="text-[#4f6df5]" />
+              <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">Total Calls</span>
             </div>
-          ))}
+            <p className="text-[28px] font-bold text-fg">{totalCalls.toLocaleString()}</p>
+          </div>
+          <div className="p-5 rounded-xl border border-edge bg-surface/40 hover:bg-surface/60 transition-colors">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle size={16} className="text-[#22c55e]" />
+              <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">Success Rate</span>
+            </div>
+            <p className="text-[28px] font-bold text-fg">{successRate}%</p>
+          </div>
+          <div className="p-5 rounded-xl border border-edge bg-surface/40 hover:bg-surface/60 transition-colors">
+            <div className="flex items-center gap-2 mb-2">
+              <Clock size={16} className="text-[#f59e0b]" />
+              <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">Avg Latency</span>
+            </div>
+            <p className="text-[28px] font-bold text-fg">{avgLatency}ms</p>
+          </div>
+          <div className="p-5 rounded-xl border border-edge bg-surface/40 hover:bg-surface/60 transition-colors">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle size={16} className="text-[#f87171]" />
+              <span className="text-[12px] font-medium text-fg-muted uppercase tracking-wide">Active</span>
+            </div>
+            <p className="text-[28px] font-bold text-fg">{integrations.filter(i => i.is_enabled).length}</p>
+          </div>
         </div>
       )}
 
@@ -314,16 +364,28 @@ export default function IntegrationsPage() {
                   <span className="text-[11px] px-2 py-0.5 rounded-full font-medium" style={{ background: TYPE_COLORS[integration.type] + '22', color: TYPE_COLORS[integration.type] }}>
                     {TYPE_LABELS[integration.type]}
                   </span>
+                  {!integration.is_enabled && (
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#94a3b8]/10 text-[#94a3b8] font-medium">
+                      Disabled
+                    </span>
+                  )}
                 </div>
                 <p className="text-[12px] text-fg-muted truncate mt-0.5">{integration.base_url}</p>
-                <div className="flex items-center gap-3 mt-1">
+                <div className="flex items-center gap-3 mt-1.5">
                   {integration.last_test_status && (
-                    <span className="flex items-center gap-1 text-[11px]" style={{ color: STATUS_COLORS[integration.last_test_status] }}>
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_COLORS[integration.last_test_status] }} />
+                    <span className="flex items-center gap-1.5 text-[11px]" style={{ color: STATUS_COLORS[integration.last_test_status] }}>
+                      {integration.last_test_status === 'ok' && <CheckCircle size={12} />}
+                      {integration.last_test_status === 'error' && <XCircle size={12} />}
+                      {integration.last_test_status === 'timeout' && <Clock size={12} />}
                       {integration.last_test_message || integration.last_test_status}
                     </span>
                   )}
-                  <span className="text-[11px] text-fg-muted">{integration.allowed_endpoints.length} endpoint{integration.allowed_endpoints.length !== 1 ? 's' : ''} whitelisted</span>
+                  <span className="text-[11px] text-fg-muted">{integration.allowed_endpoints.length} endpoint{integration.allowed_endpoints.length !== 1 ? 's' : ''}</span>
+                  {integration.last_test_at && (
+                    <span className="text-[11px] text-fg-muted">
+                      Tested {new Date(integration.last_test_at).toLocaleDateString()}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -370,6 +432,11 @@ export default function IntegrationsPage() {
         )}
       </div>
 
+      {/* Live Test Console */}
+      {integrations.some(i => i.is_enabled) && (
+        <LiveTestConsole />
+      )}
+
       {/* Tool Stats */}
       {Object.keys(stats).length > 0 && (
         <div className="rounded-xl border border-edge bg-surface/40 overflow-hidden">
@@ -397,40 +464,90 @@ export default function IntegrationsPage() {
       {/* Execution Logs */}
       {logs.length > 0 && (
         <div className="rounded-xl border border-edge bg-surface/40 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-edge">
-            <h2 className="text-[14px] font-semibold text-fg">Recent Tool Calls</h2>
-            <span className="text-[12px] text-fg-muted">Last 30</span>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-edge">
+            <h2 className="text-[14px] font-semibold text-fg">Tool Execution Logs</h2>
+            <div className="flex items-center gap-3">
+              {/* Search */}
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
+                <input
+                  type="text"
+                  value={logSearch}
+                  onChange={(e) => setLogSearch(e.target.value)}
+                  placeholder="Search logs..."
+                  className="w-48 pl-9 pr-3 py-1.5 rounded-lg border border-edge bg-surface text-fg text-[12px] placeholder:text-fg-muted/50 focus:outline-none focus:border-accent/60"
+                />
+              </div>
+              
+              {/* Status Filter */}
+              <select
+                value={logFilter}
+                onChange={(e) => setLogFilter(e.target.value as typeof logFilter)}
+                className="px-3 py-1.5 rounded-lg border border-edge bg-surface text-fg text-[12px] focus:outline-none focus:border-accent/60"
+              >
+                <option value="all">All Status</option>
+                <option value="success">Success</option>
+                <option value="error">Error</option>
+                <option value="timeout">Timeout</option>
+                <option value="blocked">Blocked</option>
+              </select>
+              
+              <span className="text-[12px] text-fg-muted">
+                {filteredLogs.length} of {logs.length}
+              </span>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[12px]">
               <thead>
-                <tr className="border-b border-edge text-fg-muted">
-                  <th className="px-5 py-2.5 text-left font-medium">Tool</th>
-                  <th className="px-4 py-2.5 text-left font-medium">Status</th>
-                  <th className="px-4 py-2.5 text-left font-medium">Latency</th>
-                  <th className="px-4 py-2.5 text-left font-medium">Time</th>
-                  <th className="px-4 py-2.5 text-left font-medium">Details</th>
+                <tr className="border-b border-edge text-fg-muted bg-surface/30">
+                  <th className="px-5 py-3 text-left font-medium">Tool</th>
+                  <th className="px-4 py-3 text-left font-medium">Status</th>
+                  <th className="px-4 py-3 text-left font-medium">Latency</th>
+                  <th className="px-4 py-3 text-left font-medium">Time</th>
+                  <th className="px-4 py-3 text-left font-medium">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-edge">
-                {logs.map(log => (
-                  <tr key={log.id} className="hover:bg-white/2">
-                    <td className="px-5 py-2.5 text-fg font-medium">{log.tool_name}</td>
-                    <td className="px-4 py-2.5">
-                      <span className="flex items-center gap-1.5" style={{ color: STATUS_COLORS[log.status] }}>
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: STATUS_COLORS[log.status] }} />
-                        {log.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-fg-secondary">{log.latency_ms != null ? `${log.latency_ms}ms` : '—'}</td>
-                    <td className="px-4 py-2.5 text-fg-muted">
-                      {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td className="px-4 py-2.5 text-fg-muted truncate max-w-[200px]">
-                      {log.error_message || JSON.stringify(log.input_params || {}).slice(0, 60)}
+                {filteredLogs.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-8 text-center text-fg-muted">
+                      No logs found matching your filters
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredLogs.map(log => (
+                    <tr key={log.id} className="hover:bg-white/2 transition-colors">
+                      <td className="px-5 py-3 text-fg font-medium font-mono">{log.tool_name}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-medium" style={{ 
+                          background: STATUS_COLORS[log.status] + '15', 
+                          color: STATUS_COLORS[log.status] 
+                        }}>
+                          {log.status === 'success' && <CheckCircle size={12} />}
+                          {log.status === 'error' && <XCircle size={12} />}
+                          {log.status === 'timeout' && <Clock size={12} />}
+                          {log.status === 'blocked' && <AlertCircle size={12} />}
+                          {log.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-fg-secondary font-mono">
+                        {log.latency_ms != null ? `${log.latency_ms}ms` : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-fg-muted">
+                        {new Date(log.created_at).toLocaleString([], { 
+                          month: 'short', 
+                          day: 'numeric', 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </td>
+                      <td className="px-4 py-3 text-fg-muted truncate max-w-[250px]">
+                        {log.error_message || Object.keys(log.input_params || {}).map(k => `${k}: ${JSON.stringify((log.input_params as any)[k])}`).join(', ')}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
