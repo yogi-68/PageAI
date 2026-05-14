@@ -1,4 +1,4 @@
-x/**
+/**
  * /api/integrations — CRUD for client API integrations.
  * Requires authenticated Supabase session (dashboard use only).
  * Credentials are always stored encrypted; never returned to the client.
