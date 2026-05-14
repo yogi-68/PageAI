@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { X, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { useAuth } from '@/lib/auth';
 
 // Step components will be defined below
 interface WizardProps {
@@ -64,6 +65,7 @@ const INTEGRATION_TYPES: IntegrationType[] = [
 ];
 
 export default function IntegrationWizard({ isOpen, onClose, onComplete }: WizardProps) {
+  const { session } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedType, setSelectedType] = useState<IntegrationType | null>(null);
   const [connectionDetails, setConnectionDetails] = useState<Record<string, string>>({});
@@ -148,9 +150,14 @@ export default function IntegrationWizard({ isOpen, onClose, onComplete }: Wizar
         }
       });
 
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
       const response = await fetch('/api/integrations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           name,
           type: apiType,

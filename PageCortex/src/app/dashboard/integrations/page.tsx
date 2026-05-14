@@ -84,7 +84,17 @@ interface ModalState {
 
 // ─── Page ─────────────────────────────────────────────────
 export default function IntegrationsPage() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
+
+  const apiFetch = useCallback(async (url: string, options: RequestInit = {}) => {
+    const headers: Record<string, string> = {
+      ...(options.headers as Record<string, string> || {}),
+    };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    return fetch(url, { ...options, headers });
+  }, [session?.access_token]);
 
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [logs, setLogs] = useState<ToolLog[]>([]);
@@ -115,8 +125,8 @@ export default function IntegrationsPage() {
     if (!user) return;
     try {
       const [intRes, logRes] = await Promise.all([
-        fetch('/api/integrations'),
-        fetch('/api/integrations/logs?limit=30'),
+        apiFetch('/api/integrations'),
+        apiFetch('/api/integrations/logs?limit=30'),
       ]);
       
       if (!intRes.ok || !logRes.ok) {
@@ -195,10 +205,10 @@ export default function IntegrationsPage() {
           allowedEndpoints: form.allowedEndpoints,
         };
         if (Object.values(form.credentials).some(v => v)) body.credentials = form.credentials;
-        const res = await fetch('/api/integrations', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const res = await apiFetch('/api/integrations', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         if (!res.ok) { const d = await res.json(); setFormError(d.error || 'Update failed'); return; }
       } else {
-        const res = await fetch('/api/integrations', {
+        const res = await apiFetch('/api/integrations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: form.name, type: form.type, baseUrl: form.baseUrl, credentials: form.credentials, allowedEndpoints: form.allowedEndpoints }),
@@ -214,7 +224,7 @@ export default function IntegrationsPage() {
   const handleTest = async (id: string) => {
     setTestingId(id);
     try {
-      await fetch('/api/integrations/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ integrationId: id }) });
+      await apiFetch('/api/integrations/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ integrationId: id }) });
       await fetchData();
     } catch { /* silent */ }
     setTestingId(null);
@@ -223,7 +233,7 @@ export default function IntegrationsPage() {
   const handleToggle = async (integration: Integration) => {
     setTogglingId(integration.id);
     try {
-      await fetch('/api/integrations', {
+      await apiFetch('/api/integrations', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: integration.id, isEnabled: !integration.is_enabled }),
@@ -237,7 +247,7 @@ export default function IntegrationsPage() {
     if (!confirm('Delete this integration? This cannot be undone.')) return;
     setDeletingId(id);
     try {
-      await fetch(`/api/integrations?id=${id}`, { method: 'DELETE' });
+      await apiFetch(`/api/integrations?id=${id}`, { method: 'DELETE' });
       await fetchData();
     } catch { /* silent */ }
     setDeletingId(null);

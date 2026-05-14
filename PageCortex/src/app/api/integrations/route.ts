@@ -16,7 +16,21 @@ import {
 import { getAdminClient } from '@/lib/supabase';
 import { formatOperationalError, checkIntegrationLimit, createUsageLimitError } from '@/lib/operational-errors';
 
-async function getSessionUser() {
+async function getSessionUser(request?: NextRequest) {
+    if (request) {
+        const authHeader = request.headers.get('Authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.substring(7);
+            const supabaseAuth = createServerClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                { cookies: { getAll: () => [] } }
+            );
+            const { data: { user } } = await supabaseAuth.auth.getUser(token);
+            if (user) return user;
+        }
+    }
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,8 +42,8 @@ async function getSessionUser() {
 }
 
 // GET /api/integrations — list all integrations for the current user
-export async function GET() {
-    const user = await getSessionUser();
+export async function GET(request: NextRequest) {
+    const user = await getSessionUser(request);
     if (!user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -40,7 +54,7 @@ export async function GET() {
 
 // POST /api/integrations — create a new integration
 export async function POST(request: NextRequest) {
-    const user = await getSessionUser();
+    const user = await getSessionUser(request);
     if (!user) {
         const error = formatOperationalError(new Error('Unauthorized'), 'authentication');
         return NextResponse.json({ error: error.message }, { status: 401 });
@@ -123,7 +137,7 @@ export async function POST(request: NextRequest) {
 
 // PATCH /api/integrations — update an existing integration
 export async function PATCH(request: NextRequest) {
-    const user = await getSessionUser();
+    const user = await getSessionUser(request);
     if (!user) {
         const error = formatOperationalError(new Error('Unauthorized'), 'authentication');
         return NextResponse.json({ error: error.message }, { status: 401 });
@@ -169,7 +183,7 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE /api/integrations — delete an integration
 export async function DELETE(request: NextRequest) {
-    const user = await getSessionUser();
+    const user = await getSessionUser(request);
     if (!user) {
         const error = formatOperationalError(new Error('Unauthorized'), 'authentication');
         return NextResponse.json({ error: error.message }, { status: 401 });
