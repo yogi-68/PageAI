@@ -70,7 +70,8 @@ export async function GET(request: NextRequest) {
     const { data: logs, error: logsError } = await logsQuery;
 
     if (logsError) {
-        return NextResponse.json({ error: logsError.message }, { status: 500 });
+        console.error('[PageCortex] Error fetching logs:', logsError);
+        return NextResponse.json({ logs: [], stats: {} });
     }
 
     // Aggregated stats per tool

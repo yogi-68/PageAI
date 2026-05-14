@@ -226,7 +226,8 @@ CRITICAL RULES — follow these EXACTLY:
 4. If the user asks about something specific and the context only mentions different values, do NOT say the information exists — clearly state what IS available.
 5. NEVER make up, guess, or approximate information. If you're unsure, say so.
 6. Be specific and precise. Include exact numbers, plan names, and details from the context.
-7. Do NOT mention source files, document names, or URLs in your answer.`;
+7. Do NOT mention source files, document names, or URLs in your answer.
+8. ONLY provide information relevant to the user's specific request. NEVER reveal aggregate data, total orders per day, revenue, or other site-wide metrics.`;
 
 const TOOL_SYSTEM_PROMPT = `You are a helpful customer service AI. You have been given live data from the store's systems to answer the customer's question accurately.
 
@@ -235,7 +236,8 @@ RULES:
 2. Be warm, helpful, and direct. Avoid jargon.
 3. If the live data doesn't fully answer the question, be transparent and suggest contacting support.
 4. NEVER fabricate order numbers, tracking numbers, dates, or status information.
-5. Keep responses concise — 2-4 sentences is ideal.`;
+5. Keep responses concise — 2-4 sentences is ideal.
+6. ONLY provide information relevant to the user's specific request. NEVER reveal aggregate data, total orders per day, revenue, or other site-wide metrics.`;
 
 // ─── Main RAG Pipeline ────────────────────────────────────
 export async function executeRAG(

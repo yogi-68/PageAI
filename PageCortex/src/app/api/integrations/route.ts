@@ -1,4 +1,4 @@
-/**
+x/**
  * /api/integrations — CRUD for client API integrations.
  * Requires authenticated Supabase session (dashboard use only).
  * Credentials are always stored encrypted; never returned to the client.
@@ -43,13 +43,18 @@ async function getSessionUser(request?: NextRequest) {
 
 // GET /api/integrations — list all integrations for the current user
 export async function GET(request: NextRequest) {
-    const user = await getSessionUser(request);
-    if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    try {
+        const user = await getSessionUser(request);
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
 
-    const integrations = await getIntegrationsPublic(user.id);
-    return NextResponse.json({ integrations });
+        const integrations = await getIntegrationsPublic(user.id);
+        return NextResponse.json({ integrations });
+    } catch (error) {
+        console.error('[PageCortex] Error in GET /api/integrations:', error);
+        return NextResponse.json({ integrations: [] });
+    }
 }
 
 // POST /api/integrations — create a new integration
