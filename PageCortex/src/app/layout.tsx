@@ -196,6 +196,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <script
+          defer
+          data-website-id="dfid_rYbWFAaUUrBUlUiGo435r"
+          data-domain="pagecortex.com"
+          src="https://datafa.st/js/script.js"
+        ></script>
       </head>
       <body className="antialiased">
         <ThemeProvider>
