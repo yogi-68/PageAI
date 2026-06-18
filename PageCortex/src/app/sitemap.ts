@@ -4,7 +4,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://pagecortex.com";
 
     return [
-        // Core pages
+        // ─── Core pages ────────────────────────────────────────
         {
             url: baseUrl,
             lastModified: new Date(),
@@ -35,7 +35,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
             changeFrequency: "monthly",
             priority: 0.5,
         },
-        // Product & docs
+        {
+            url: `${baseUrl}/privacy`,
+            lastModified: new Date(),
+            changeFrequency: "yearly",
+            priority: 0.3,
+        },
+        {
+            url: `${baseUrl}/terms`,
+            lastModified: new Date(),
+            changeFrequency: "yearly",
+            priority: 0.3,
+        },
+
+        // ─── Product & docs ────────────────────────────────────
         {
             url: `${baseUrl}/docs`,
             lastModified: new Date(),
@@ -54,7 +67,52 @@ export default function sitemap(): MetadataRoute.Sitemap {
             changeFrequency: "weekly",
             priority: 0.7,
         },
-        // Blog
+
+        // ─── Use Cases (SEO landing pages) ─────────────────────
+        {
+            url: `${baseUrl}/use-cases`,
+            lastModified: new Date(),
+            changeFrequency: "weekly",
+            priority: 0.9,
+        },
+        {
+            url: `${baseUrl}/use-cases/ai-assistant-for-website`,
+            lastModified: new Date(),
+            changeFrequency: "monthly",
+            priority: 0.95,
+        },
+        {
+            url: `${baseUrl}/use-cases/ai-chatbot-for-website`,
+            lastModified: new Date(),
+            changeFrequency: "monthly",
+            priority: 0.95,
+        },
+        {
+            url: `${baseUrl}/use-cases/chatbot-for-saas`,
+            lastModified: new Date(),
+            changeFrequency: "monthly",
+            priority: 0.9,
+        },
+        {
+            url: `${baseUrl}/use-cases/no-code-chatbot-builder`,
+            lastModified: new Date(),
+            changeFrequency: "monthly",
+            priority: 0.9,
+        },
+        {
+            url: `${baseUrl}/use-cases/chatbase-alternative`,
+            lastModified: new Date(),
+            changeFrequency: "monthly",
+            priority: 0.9,
+        },
+        {
+            url: `${baseUrl}/use-cases/embed-chatbot-on-website`,
+            lastModified: new Date(),
+            changeFrequency: "monthly",
+            priority: 0.9,
+        },
+
+        // ─── Blog ──────────────────────────────────────────────
         {
             url: `${baseUrl}/blog`,
             lastModified: new Date(),
@@ -62,42 +120,43 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 0.9,
         },
         {
-            url: `${baseUrl}/blog/how-ai-chatbots-are-transforming-customer-support`,
-            lastModified: new Date("2025-01-15"),
+            url: `${baseUrl}/blog/ai-presales-assistants-boosting-saas-conversions`,
+            lastModified: new Date("2025-05-10"),
             changeFrequency: "monthly",
             priority: 0.8,
         },
         {
-            url: `${baseUrl}/blog/complete-guide-to-rag-powered-chatbots`,
-            lastModified: new Date("2025-01-10"),
+            url: `${baseUrl}/blog/complete-guide-rag-powered-chatbots`,
+            lastModified: new Date("2025-05-05"),
             changeFrequency: "monthly",
             priority: 0.8,
         },
         {
-            url: `${baseUrl}/blog/5-metrics-to-track-for-your-chatbot`,
-            lastModified: new Date("2025-01-05"),
+            url: `${baseUrl}/blog/saas-chatbot-conversion-metrics`,
+            lastModified: new Date("2025-04-28"),
             changeFrequency: "monthly",
             priority: 0.7,
         },
         {
-            url: `${baseUrl}/blog/why-your-website-needs-an-ai-chatbot`,
-            lastModified: new Date("2024-12-28"),
+            url: `${baseUrl}/blog/pricing-page-ai-assistant`,
+            lastModified: new Date("2025-04-20"),
             changeFrequency: "monthly",
             priority: 0.7,
         },
         {
-            url: `${baseUrl}/blog/how-to-make-your-ai-chatbot-sound-human`,
-            lastModified: new Date("2024-12-20"),
+            url: `${baseUrl}/blog/embed-chatbot-any-website`,
+            lastModified: new Date("2025-04-15"),
             changeFrequency: "monthly",
             priority: 0.7,
         },
         {
-            url: `${baseUrl}/blog/pagecortex-vs-traditional-chatbot-builders`,
-            lastModified: new Date("2024-12-15"),
+            url: `${baseUrl}/blog/pagecortex-vs-chatbase-vs-intercom`,
+            lastModified: new Date("2025-04-10"),
             changeFrequency: "monthly",
-            priority: 0.7,
+            priority: 0.8,
         },
-        // Auth (lower priority, no-index handled by page metadata)
+
+        // ─── Auth (low priority) ──────────────────────────────
         {
             url: `${baseUrl}/login`,
             lastModified: new Date(),

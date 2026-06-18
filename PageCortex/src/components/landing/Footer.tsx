@@ -6,18 +6,26 @@ const footerLinks = {
     { label: 'Features', href: '/#features' },
     { label: 'Pricing', href: '/#pricing' },
     { label: 'How It Works', href: '/#how-it-works' },
+    { label: 'Use Cases', href: '/use-cases' },
+    { label: 'Blog', href: '/blog' },
+  ],
+  'Use Cases': [
+    { label: 'AI Assistant for Website', href: '/use-cases/ai-assistant-for-website' },
+    { label: 'AI Chatbot for Website', href: '/use-cases/ai-chatbot-for-website' },
+    { label: 'Chatbot for SaaS', href: '/use-cases/chatbot-for-saas' },
+    { label: 'No-Code Chatbot Builder', href: '/use-cases/no-code-chatbot-builder' },
+    { label: 'Chatbase Alternative', href: '/use-cases/chatbase-alternative' },
+    { label: 'Embed Chatbot', href: '/use-cases/embed-chatbot-on-website' },
+  ],
+  Resources: [
+    { label: 'Documentation', href: '/docs' },
+    { label: 'API Reference', href: '/api-reference' },
+    { label: 'Changelog', href: '/changelog' },
     { label: 'Blog', href: '/blog' },
   ],
   Company: [
     { label: 'About', href: '/about' },
     { label: 'Contact', href: '/contact' },
-  ],
-  Resources: [
-    { label: 'Documentation', href: '/docs' },
-    { label: 'Blog', href: '/blog' },
-    { label: 'Contact', href: '/contact' },
-  ],
-  Legal: [
     { label: 'Privacy Policy', href: '/privacy' },
     { label: 'Terms of Service', href: '/terms' },
   ],
@@ -27,7 +35,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-edge bg-surface/30">
       <div className="max-w-[1200px] mx-auto px-6 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
           {/* Brand */}
           <div className="col-span-2">
             <Link href="/" className="flex items-center gap-2.5 mb-4">

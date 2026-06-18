@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth';
 
 const mainLinks = [
   { label: 'Features', href: '/#features' },
+  { label: 'Use Cases', href: '/use-cases' },
   { label: 'Pricing', href: '/#pricing' },
   { label: 'Blog', href: '/blog' },
 ];
@@ -16,6 +17,8 @@ const mainLinks = [
 const resourceLinks = [
   { label: 'Documentation', href: '/docs' },
   { label: 'Blog', href: '/blog' },
+  { label: 'Use Cases', href: '/use-cases' },
+  { label: 'API Reference', href: '/api-reference' },
 ];
 
 const companyLinks = [
