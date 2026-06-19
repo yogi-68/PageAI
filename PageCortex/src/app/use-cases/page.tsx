@@ -219,10 +219,10 @@ export default function UseCasesPage() {
     <>
       <Navbar />
       <main className="min-h-screen bg-bg pt-32 pb-24">
-        <section className="max-w-[1200px] mx-auto px-6 mb-16">
+        <section className="max-w-[1280px] mx-auto px-6 mb-16">
           <div className="text-center">
-            <p className="text-[13px] font-medium uppercase tracking-[0.1em] text-primary mb-4">Use Cases</p>
-            <h1 className="text-[clamp(2rem,4vw,3rem)] font-bold text-fg tracking-[-0.03em] mb-4">
+            <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-primary mb-4">Use Cases</p>
+            <h1 className="text-[clamp(2rem,4vw,3rem)] font-bold text-fg tracking-[-0.035em] mb-4">
               AI-Powered Solutions for Every Website
             </h1>
             <p className="text-[16px] text-fg-secondary max-w-[560px] mx-auto leading-relaxed">
@@ -231,21 +231,21 @@ export default function UseCasesPage() {
           </div>
         </section>
 
-        <section className="max-w-[1200px] mx-auto px-6">
+        <section className="max-w-[1280px] mx-auto px-6">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {useCases.map((uc) => (
               <Link
                 key={uc.slug}
                 href={`/use-cases/${uc.slug}`}
-                className="group block p-6 rounded-2xl border border-edge bg-surface/40 hover:bg-surface/80 transition-all duration-300 hover:border-edge-light"
+                className="group block p-6 rounded-3xl border border-edge bg-surface hover:bg-surface-elevated/60 hover:border-edge-light hover:scale-[1.01] transition-all duration-300"
               >
-                <h2 className="text-[18px] font-semibold text-fg tracking-[-0.01em] mb-2 group-hover:text-primary transition-colors">
+                <h2 className="text-[18px] font-bold text-fg tracking-[-0.02em] mb-2 group-hover:text-primary transition-colors">
                   {uc.title}
                 </h2>
                 <p className="text-[13.5px] text-fg-secondary leading-relaxed mb-4">
                   {uc.metaDescription.substring(0, 120)}…
                 </p>
-                <span className="text-[13px] font-medium text-primary group-hover:underline">
+                <span className="text-[13px] font-semibold text-primary group-hover:underline">
                   Learn more →
                 </span>
               </Link>
@@ -257,3 +257,4 @@ export default function UseCasesPage() {
     </>
   );
 }
+

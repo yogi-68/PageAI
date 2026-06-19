@@ -17,8 +17,10 @@ interface Plan {
   price: { m: number; a: number };
   badge?: { text: string; color: 'primary' | 'success' };
   trial?: boolean;
-  accentClass: string;
+  cardClass: string;
+  badgeClass: string;
   ctaClass: string;
+  accentColor: string;
   groups: FeatureGroup[];
 }
 
@@ -28,8 +30,10 @@ const plans: Plan[] = [
     name: 'Free',
     desc: 'For trying things out',
     price: { m: 0, a: 0 },
-    accentClass: 'border-edge bg-surface/40 hover:border-edge-light',
-    ctaClass: 'bg-edge/60 hover:bg-edge-light text-fg',
+    cardClass: 'border-edge bg-surface',
+    badgeClass: '',
+    ctaClass: 'bg-surface-elevated border border-edge hover:bg-edge text-fg',
+    accentColor: 'text-fg-muted',
     groups: [
       {
         label: 'Usage',
@@ -64,8 +68,10 @@ const plans: Plan[] = [
     price: { m: 29, a: 23 },
     badge: { text: 'Most Popular', color: 'primary' },
     trial: true,
-    accentClass: 'border-primary/40 bg-primary/4 hover:border-primary/60',
-    ctaClass: 'bg-primary hover:bg-primary-hover text-white hover:shadow-[0_0_24px_rgba(79,109,245,0.25)]',
+    cardClass: 'border-primary/30 bg-primary/[0.03]',
+    badgeClass: 'bg-primary',
+    ctaClass: 'bg-primary hover:bg-primary-hover text-white hover:shadow-lg hover:shadow-primary/20',
+    accentColor: 'text-primary',
     groups: [
       {
         label: 'Usage',
@@ -106,8 +112,10 @@ const plans: Plan[] = [
     price: { m: 69, a: 55 },
     badge: { text: 'Best Value', color: 'success' },
     trial: true,
-    accentClass: 'border-success/30 bg-success/3 hover:border-success/50',
-    ctaClass: 'bg-success hover:bg-success/90 text-white',
+    cardClass: 'border-success/25 bg-success/[0.02]',
+    badgeClass: 'bg-success',
+    ctaClass: 'bg-success hover:opacity-90 text-white',
+    accentColor: 'text-success',
     groups: [
       {
         label: 'Usage',
@@ -156,8 +164,10 @@ const plans: Plan[] = [
     desc: 'For scaling businesses',
     price: { m: 199, a: 159 },
     trial: false,
-    accentClass: 'border-warning/30 bg-warning/3 hover:border-warning/50',
-    ctaClass: 'bg-warning hover:bg-warning/90 text-[#1a1200]',
+    cardClass: 'border-warning/25 bg-warning/[0.02]',
+    badgeClass: '',
+    ctaClass: 'bg-warning hover:opacity-90 text-[#1a1200]',
+    accentColor: 'text-warning',
     groups: [
       {
         label: 'Usage',
@@ -214,7 +224,7 @@ export default function PricingSection() {
 
   return (
     <section id="pricing" className="py-24 relative">
-      <div className="max-w-300 mx-auto px-6">
+      <div className="max-w-[1280px] mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -222,30 +232,30 @@ export default function PricingSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-12"
         >
-          <p className="text-[13px] font-medium uppercase tracking-widest text-primary mb-4">Pricing</p>
-          <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.15] tracking-[-0.03em] mb-4">
+          <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-primary mb-4">Pricing</p>
+          <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.12] tracking-[-0.035em] mb-4">
             Simple, transparent pricing
           </h2>
-          <p className="text-[16px] text-fg-secondary max-w-125 mx-auto leading-relaxed">
+          <p className="text-[16px] text-fg-secondary max-w-[500px] mx-auto leading-relaxed">
             More conversations, more pages, better ROI than any competitor. Start free, upgrade when you see results.
           </p>
         </motion.div>
 
         {/* Billing toggle */}
         <div className="flex items-center justify-center gap-3 mb-12">
-          <span className={`text-[13.5px] transition-colors duration-200 ${!annual ? 'text-fg font-medium' : 'text-fg-muted'}`}>
+          <span className={`text-[13.5px] font-medium transition-colors duration-200 ${!annual ? 'text-fg' : 'text-fg-muted'}`}>
             Monthly
           </span>
           <button
             onClick={() => setAnnual(!annual)}
             aria-label="Toggle annual billing"
-            className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${annual ? 'bg-primary' : 'bg-edge-light'}`}
+            className={`relative w-12 h-6.5 rounded-full transition-colors duration-300 ${annual ? 'bg-primary' : 'bg-edge-light'}`}
           >
-            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-300 ${annual ? 'left-6' : 'left-1'}`} />
+            <div className={`absolute top-1 w-4.5 h-4.5 rounded-full bg-white shadow transition-transform duration-300 ${annual ? 'left-6.5' : 'left-1'}`} />
           </button>
-          <span className={`text-[13.5px] transition-colors duration-200 ${annual ? 'text-fg font-medium' : 'text-fg-muted'}`}>
+          <span className={`text-[13.5px] font-medium transition-colors duration-200 ${annual ? 'text-fg' : 'text-fg-muted'}`}>
             Annual{' '}
-            <span className="inline-block px-1.5 py-0.5 rounded-md bg-success/15 text-success text-[11px] font-semibold ml-1">
+            <span className="inline-block px-1.5 py-0.5 rounded-md bg-success/12 text-success text-[11px] font-semibold ml-1">
               Save 20%
             </span>
           </span>
@@ -260,12 +270,12 @@ export default function PricingSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-60px' }}
               transition={{ delay: i * 0.08, duration: 0.4 }}
-              className={`relative rounded-2xl border transition-all duration-300 flex flex-col ${plan.accentClass}`}
+              className={`relative rounded-3xl border transition-all duration-300 flex flex-col hover:scale-[1.01] ${plan.cardClass}`}
             >
               {/* Badge */}
               {plan.badge && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                  <span className={`px-3 py-1 rounded-full text-white text-[11px] font-semibold whitespace-nowrap shadow-sm ${plan.badge.color === 'primary' ? 'bg-primary' : 'bg-success'}`}>
+                  <span className={`px-3 py-1 rounded-full text-white text-[11px] font-bold whitespace-nowrap shadow-sm ${plan.badgeClass}`}>
                     {plan.badge.text}
                   </span>
                 </div>
@@ -275,7 +285,7 @@ export default function PricingSection() {
                 {/* Trial badge */}
                 {plan.trial && (
                   <div className="mb-3">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-success/10 text-success text-[11px] font-medium">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-success/10 text-success text-[11px] font-semibold border border-success/20">
                       <span className="w-1 h-1 rounded-full bg-success" />
                       7-day free trial
                     </span>
@@ -283,7 +293,7 @@ export default function PricingSection() {
                 )}
 
                 {/* Plan name */}
-                <h3 className="text-[18px] font-bold text-fg tracking-[-0.02em]">{plan.name}</h3>
+                <h3 className="text-[19px] font-bold text-fg tracking-[-0.025em]">{plan.name}</h3>
                 <p className="text-[12.5px] text-fg-muted mt-0.5">{plan.desc}</p>
 
                 {/* Price */}
@@ -292,7 +302,7 @@ export default function PricingSection() {
                     <span className="text-[13px] text-fg-muted line-through mr-1.5">${plan.price.m}/mo</span>
                   )}
                   <div className="flex items-baseline gap-1">
-                    <span className="text-[38px] font-bold text-fg tracking-[-0.04em] leading-none">
+                    <span className="text-[40px] font-bold text-fg tracking-[-0.04em] leading-none">
                       ${annual ? plan.price.a : plan.price.m}
                     </span>
                     {plan.price.m > 0 && <span className="text-[14px] text-fg-muted">/mo</span>}
@@ -317,14 +327,14 @@ export default function PricingSection() {
                 {/* CTA */}
                 <Link
                   href={plan.id === 'free' ? '/signup' : `/signup?plan=${plan.id}${annual ? '&billing=annual' : ''}`}
-                  className={`block text-center text-[13.5px] font-semibold py-2.5 rounded-xl transition-all duration-200 mt-5 ${plan.ctaClass}`}
+                  className={`block text-center text-[13.5px] font-semibold py-2.5 rounded-2xl transition-all duration-200 mt-5 ${plan.ctaClass}`}
                 >
                   {plan.id === 'free' ? 'Start Free' : plan.trial ? 'Start Free Trial' : 'Get Started'}
                 </Link>
               </div>
 
               {/* Divider */}
-              <div className="mx-6 border-t border-edge/60" />
+              <div className="mx-6 border-t border-edge/50" />
 
               {/* Grouped features */}
               <div className="p-6 pt-4 space-y-4 flex-1">
@@ -334,8 +344,8 @@ export default function PricingSection() {
                     <ul className="space-y-1.5">
                       {group.features.map((f) => (
                         <li key={f.text} className="flex items-start gap-2">
-                          <Check className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${f.highlight ? 'text-primary' : 'text-success'}`} />
-                          <span className={`text-[12.5px] leading-snug ${f.highlight ? 'text-fg font-medium' : 'text-fg-secondary'}`}>{f.text}</span>
+                          <Check className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${f.highlight ? plan.accentColor : 'text-success'}`} />
+                          <span className={`text-[12.5px] leading-snug ${f.highlight ? 'text-fg font-semibold' : 'text-fg-secondary'}`}>{f.text}</span>
                         </li>
                       ))}
                     </ul>
@@ -374,9 +384,9 @@ export default function PricingSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-60px' }}
           transition={{ delay: 0.35, duration: 0.4 }}
-          className="mt-8 mx-auto max-w-215 rounded-2xl border border-primary/20 bg-primary/3 px-6 py-5"
+          className="mt-8 mx-auto max-w-3xl rounded-3xl border border-primary/15 bg-primary/[0.02] px-6 py-6"
         >
-          <p className="text-center text-[13px] font-semibold text-fg mb-3">How PageCortex compares at $69/month</p>
+          <p className="text-center text-[13px] font-bold text-fg mb-4">How PageCortex compares at $69/month</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             {[
               { name: 'PageCortex Growth', msgs: '10,000', pages: '10,000', highlight: true },
@@ -384,11 +394,11 @@ export default function PricingSection() {
               { name: 'Biel.ai $150', msgs: '10,000', pages: '3,000' },
               { name: 'OkayIQ $74', msgs: '5,000', pages: '1,000' },
             ].map((c) => (
-              <div key={c.name} className={`rounded-xl p-3 ${c.highlight ? 'bg-primary/10 border border-primary/30' : 'bg-surface/60 border border-edge'}`}>
-                <p className={`text-[11.5px] font-semibold mb-2 ${c.highlight ? 'text-primary' : 'text-fg-muted'}`}>{c.name}</p>
-                <p className="text-[13px] font-bold text-fg">{c.msgs}</p>
+              <div key={c.name} className={`rounded-2xl p-3.5 ${c.highlight ? 'bg-primary/8 border border-primary/25' : 'bg-surface/80 border border-edge'}`}>
+                <p className={`text-[11.5px] font-bold mb-2 ${c.highlight ? 'text-primary' : 'text-fg-muted'}`}>{c.name}</p>
+                <p className="text-[14px] font-bold text-fg">{c.msgs}</p>
                 <p className="text-[10.5px] text-fg-muted">messages</p>
-                <p className="text-[13px] font-bold text-fg mt-1">{c.pages}</p>
+                <p className="text-[14px] font-bold text-fg mt-1">{c.pages}</p>
                 <p className="text-[10.5px] text-fg-muted">pages</p>
               </div>
             ))}
@@ -404,8 +414,8 @@ export default function PricingSection() {
           className="mt-16"
         >
           <div className="text-center mb-8">
-            <p className="text-[13px] font-medium uppercase tracking-widest text-primary mb-2">Add-ons</p>
-            <h3 className="text-[clamp(1.25rem,2.5vw,1.75rem)] font-bold tracking-[-0.02em]">
+            <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-primary mb-2">Add-ons</p>
+            <h3 className="text-[clamp(1.25rem,2.5vw,1.75rem)] font-bold tracking-[-0.025em]">
               Supercharge your plan
             </h3>
             <p className="text-[14px] text-fg-secondary mt-2">
@@ -414,31 +424,31 @@ export default function PricingSection() {
           </div>
 
           {/* Message add-ons */}
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-fg-muted mb-3 text-center">Extra Conversations</p>
-          <div className="grid sm:grid-cols-3 gap-4 max-w-175 mx-auto mb-8">
+          <p className="text-[12px] font-bold uppercase tracking-wide text-fg-muted mb-4 text-center">Extra Conversations</p>
+          <div className="grid sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
             {addons.map((addon) => (
               <div
                 key={addon.messages}
-                className={`relative p-5 rounded-2xl border flex flex-col items-center text-center transition-all duration-300 ${
+                className={`relative p-5 rounded-3xl border flex flex-col items-center text-center transition-all duration-300 hover:scale-[1.01] ${
                   addon.popular
-                    ? 'border-primary/40 bg-primary/4'
-                    : 'border-edge bg-surface/40 hover:bg-surface/70 hover:border-edge-light'
+                    ? 'border-primary/30 bg-primary/[0.03]'
+                    : 'border-edge bg-surface hover:bg-surface-elevated/50'
                 }`}
               >
                 {addon.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="px-3 py-1 rounded-full bg-primary text-white text-[11px] font-medium">
+                    <span className="px-3 py-1 rounded-full bg-primary text-white text-[11px] font-bold">
                       Best Value
                     </span>
                   </div>
                 )}
-                <div className="text-[28px] font-bold text-fg tracking-[-0.03em] mt-1">${addon.price}</div>
-                <div className="text-[13px] text-fg-muted mt-0.5">one-time</div>
-                <div className="text-[16px] font-semibold text-fg mt-3">{addon.messages} messages</div>
+                <div className="text-[30px] font-bold text-fg tracking-[-0.03em] mt-1">${addon.price}</div>
+                <div className="text-[12.5px] text-fg-muted mt-0.5">one-time</div>
+                <div className="text-[16px] font-bold text-fg mt-3">{addon.messages} messages</div>
                 <div className="text-[12px] text-fg-secondary mt-1">{addon.desc}</div>
                 <Link
                   href="/dashboard/billing"
-                  className="mt-4 w-full text-center text-[13px] font-medium py-2 rounded-lg bg-edge/50 hover:bg-edge-light text-fg transition-colors duration-200"
+                  className="mt-4 w-full text-center text-[13px] font-semibold py-2.5 rounded-2xl bg-surface-elevated hover:bg-edge text-fg transition-colors duration-200 border border-edge"
                 >
                   Add to account
                 </Link>

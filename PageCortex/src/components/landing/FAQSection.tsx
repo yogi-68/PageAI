@@ -22,7 +22,7 @@ export default function FAQSection() {
 
   return (
     <section id="faq" className="py-24 relative">
-      <div className="max-w-[680px] mx-auto px-6">
+      <div className="max-w-[720px] mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -30,13 +30,13 @@ export default function FAQSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-14"
         >
-          <p className="text-[13px] font-medium uppercase tracking-[0.1em] text-primary mb-4">FAQ</p>
-          <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.15] tracking-[-0.03em]">
+          <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-primary mb-4">FAQ</p>
+          <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.12] tracking-[-0.035em]">
             Frequently asked questions
           </h2>
         </motion.div>
 
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {faqs.map((faq, i) => {
             const isOpen = open === i;
             return (
@@ -46,16 +46,24 @@ export default function FAQSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ delay: i * 0.04, duration: 0.3 }}
-                className="rounded-xl border border-edge bg-surface/40 overflow-hidden transition-colors hover:border-edge-light"
+                className={`rounded-2xl border overflow-hidden transition-all duration-200 ${
+                  isOpen
+                    ? 'border-primary/25 bg-primary/[0.02]'
+                    : 'border-edge bg-surface hover:border-edge-light'
+                }`}
               >
                 <button
                   onClick={() => setOpen(isOpen ? null : i)}
                   className="w-full flex items-center justify-between px-5 py-4 text-left cursor-pointer"
                 >
-                  <span className="text-[14.5px] font-medium text-fg pr-4">{faq.q}</span>
-                  <ChevronDown
-                    className={`w-4 h-4 text-fg-muted shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
-                  />
+                  <span className={`text-[14.5px] font-semibold pr-4 transition-colors ${isOpen ? 'text-fg' : 'text-fg'}`}>
+                    {faq.q}
+                  </span>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
+                    isOpen ? 'bg-primary/10 text-primary rotate-180' : 'bg-surface-elevated text-fg-muted'
+                  }`}>
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </div>
                 </button>
                 <AnimatePresence initial={false}>
                   {isOpen && (
@@ -66,7 +74,7 @@ export default function FAQSection() {
                       transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
                       className="overflow-hidden"
                     >
-                      <div className="px-5 pb-4">
+                      <div className="px-5 pb-5">
                         <p className="text-[13.5px] text-fg-secondary leading-relaxed">{faq.a}</p>
                       </div>
                     </motion.div>

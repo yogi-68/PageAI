@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeToggle } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
+import { ChevronDown } from 'lucide-react';
 
 const mainLinks = [
   { label: 'Features', href: '/#features' },
@@ -42,28 +43,26 @@ function DropdownMenu({ label, items }: { label: string; items: { label: string;
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-1 text-[13.5px] text-fg-secondary hover:text-fg transition-colors duration-200"
+        className="flex items-center gap-1 text-[13.5px] text-fg-secondary hover:text-fg transition-colors duration-200 font-medium"
       >
         {label}
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
-          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full left-1/2 -translate-x-1/2 mt-2 py-1.5 w-44 rounded-xl border border-edge bg-surface/95 backdrop-blur-xl shadow-lg z-50"
+            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+            transition={{ duration: 0.15, ease: [0.25, 0.4, 0.25, 1] }}
+            className="absolute top-full left-1/2 -translate-x-1/2 mt-2.5 py-1.5 w-48 rounded-2xl border border-edge bg-surface/98 backdrop-blur-2xl shadow-xl shadow-black/5 z-50"
           >
             {items.map(item => (
               <Link
                 key={item.label}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className="block px-4 py-2 text-[13px] text-fg-secondary hover:text-fg hover:bg-surface-elevated/50 transition-colors rounded-lg mx-1"
+                className="block px-4 py-2.5 text-[13px] text-fg-secondary hover:text-fg hover:bg-surface-elevated/80 transition-all rounded-xl mx-1 font-medium"
               >
                 {item.label}
               </Link>
@@ -89,23 +88,25 @@ export default function Navbar() {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
       scrolled
-        ? 'bg-bg/80 backdrop-blur-2xl border-b border-edge/50'
+        ? 'bg-bg/90 backdrop-blur-2xl border-b border-edge/60 shadow-sm shadow-black/[0.04]'
         : 'bg-transparent'
     }`}>
-      <div className="max-w-300 mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-[1280px] mx-auto px-6 h-[64px] flex items-center justify-between gap-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <Image src="/logo.png" alt="PageCortex" width={32} height={32} className="rounded-lg" />
-          <span className="text-[17px] font-semibold text-fg tracking-tight">PageCortex</span>
+        <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+          <div className="w-8 h-8 rounded-xl overflow-hidden ring-1 ring-edge group-hover:ring-primary/30 transition-all">
+            <Image src="/logo.png" alt="PageCortex" width={32} height={32} className="rounded-xl" />
+          </div>
+          <span className="text-[17px] font-bold text-fg tracking-tight">PageCortex</span>
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-7">
+        <div className="hidden md:flex items-center gap-6 flex-1 justify-center">
           {mainLinks.map((l) => (
             <Link
               key={l.label}
               href={l.href}
-              className="text-[13.5px] text-fg-secondary hover:text-fg transition-colors duration-200"
+              className="text-[13.5px] font-medium text-fg-secondary hover:text-fg transition-colors duration-200"
             >
               {l.label}
             </Link>
@@ -115,12 +116,12 @@ export default function Navbar() {
         </div>
 
         {/* Desktop Actions */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-3 shrink-0">
           <ThemeToggle />
           {user ? (
             <Link
               href="/dashboard"
-              className="text-[13.5px] font-medium px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white transition-all duration-300 hover:shadow-[0_0_24px_rgba(79,109,245,0.25)]"
+              className="text-[13.5px] font-semibold px-5 py-2.5 rounded-full bg-fg text-bg hover:opacity-90 transition-all duration-200 flex items-center gap-1.5"
             >
               Dashboard →
             </Link>
@@ -128,15 +129,15 @@ export default function Navbar() {
             <>
               <Link
                 href="/login"
-                className="text-[13.5px] text-fg-secondary hover:text-fg transition-colors duration-200 px-3 py-1.5"
+                className="text-[13.5px] font-medium text-fg-secondary hover:text-fg transition-colors duration-200 px-3 py-2"
               >
                 Log in
               </Link>
               <Link
                 href="/signup"
-                className="text-[13.5px] font-medium px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white transition-all duration-300 hover:shadow-[0_0_24px_rgba(79,109,245,0.25)]"
+                className="text-[13.5px] font-semibold px-5 py-2.5 rounded-full bg-fg text-bg hover:opacity-90 transition-all duration-200 flex items-center gap-1.5 shadow-sm"
               >
-                Get Started
+                Get Started →
               </Link>
             </>
           )}
@@ -145,16 +146,38 @@ export default function Navbar() {
         {/* Mobile Toggle */}
         <button
           onClick={() => setOpen(!open)}
-          className="md:hidden p-2 text-fg-secondary hover:text-fg transition-colors"
+          className="md:hidden p-2 rounded-lg text-fg-secondary hover:text-fg hover:bg-surface-elevated/80 transition-all"
           aria-label="Toggle menu"
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-            {open ? (
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            ) : (
-              <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-            )}
-          </svg>
+          <motion.div
+            animate={open ? 'open' : 'closed'}
+            className="w-5 h-4 flex flex-col justify-between"
+          >
+            <motion.span
+              variants={{
+                open: { rotate: 45, y: 7 },
+                closed: { rotate: 0, y: 0 },
+              }}
+              transition={{ duration: 0.2 }}
+              className="block h-0.5 w-full bg-current rounded-full"
+            />
+            <motion.span
+              variants={{
+                open: { opacity: 0, scaleX: 0 },
+                closed: { opacity: 1, scaleX: 1 },
+              }}
+              transition={{ duration: 0.2 }}
+              className="block h-0.5 w-full bg-current rounded-full"
+            />
+            <motion.span
+              variants={{
+                open: { rotate: -45, y: -7 },
+                closed: { rotate: 0, y: 0 },
+              }}
+              transition={{ duration: 0.2 }}
+              className="block h-0.5 w-full bg-current rounded-full"
+            />
+          </motion.div>
         </button>
       </div>
 
@@ -166,41 +189,41 @@ export default function Navbar() {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="md:hidden bg-surface/95 backdrop-blur-2xl border-b border-edge overflow-hidden"
+            className="md:hidden bg-bg/98 backdrop-blur-2xl border-b border-edge overflow-hidden"
           >
-            <div className="px-6 py-4 space-y-1">
+            <div className="px-6 py-5 space-y-1">
               {mainLinks.map((l) => (
                 <Link
                   key={l.label}
                   href={l.href}
                   onClick={() => setOpen(false)}
-                  className="block text-[14px] text-fg-secondary hover:text-fg py-2.5 transition-colors"
+                  className="block text-[15px] font-medium text-fg-secondary hover:text-fg py-2.5 border-b border-edge/40 last:border-0 transition-colors"
                 >
                   {l.label}
                 </Link>
               ))}
               <div className="pt-2">
-                <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-wide py-1.5">Resources</p>
+                <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-widest py-2">Resources</p>
                 {resourceLinks.map(l => (
-                  <Link key={l.label} href={l.href} onClick={() => setOpen(false)} className="block text-[14px] text-fg-secondary hover:text-fg py-2 pl-2 transition-colors">{l.label}</Link>
+                  <Link key={l.label} href={l.href} onClick={() => setOpen(false)} className="block text-[14px] font-medium text-fg-secondary hover:text-fg py-2 pl-1 transition-colors">{l.label}</Link>
                 ))}
               </div>
               <div className="pt-1">
-                <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-wide py-1.5">Company</p>
+                <p className="text-[11px] font-semibold text-fg-muted uppercase tracking-widest py-2">Company</p>
                 {companyLinks.map(l => (
-                  <Link key={l.label} href={l.href} onClick={() => setOpen(false)} className="block text-[14px] text-fg-secondary hover:text-fg py-2 pl-2 transition-colors">{l.label}</Link>
+                  <Link key={l.label} href={l.href} onClick={() => setOpen(false)} className="block text-[14px] font-medium text-fg-secondary hover:text-fg py-2 pl-1 transition-colors">{l.label}</Link>
                 ))}
               </div>
-              <div className="pt-3 mt-2 border-t border-edge space-y-2">
-                <div className="flex items-center justify-between py-2.5">
-                  <span className="text-[14px] text-fg-secondary">Theme</span>
+              <div className="pt-4 mt-2 border-t border-edge space-y-3">
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-[14px] font-medium text-fg-secondary">Theme</span>
                   <ThemeToggle />
                 </div>
                 {user ? (
                   <Link
                     href="/dashboard"
                     onClick={() => setOpen(false)}
-                    className="block text-[14px] font-medium text-center px-4 py-2.5 rounded-lg bg-primary hover:bg-primary-hover text-white transition-all"
+                    className="block text-[14px] font-semibold text-center px-4 py-3 rounded-full bg-fg text-bg hover:opacity-90 transition-all"
                   >
                     Dashboard →
                   </Link>
@@ -209,16 +232,16 @@ export default function Navbar() {
                     <Link
                       href="/login"
                       onClick={() => setOpen(false)}
-                      className="block text-[14px] text-fg-secondary hover:text-fg py-2.5"
+                      className="block text-[14px] font-medium text-fg-secondary hover:text-fg py-2.5 text-center transition-colors"
                     >
                       Log in
                     </Link>
                     <Link
                       href="/signup"
                       onClick={() => setOpen(false)}
-                      className="block text-[14px] font-medium text-center px-4 py-2.5 rounded-lg bg-primary hover:bg-primary-hover text-white transition-all"
+                      className="block text-[14px] font-semibold text-center px-4 py-3 rounded-full bg-fg text-bg hover:opacity-90 transition-all"
                     >
-                      Get Started
+                      Get Started →
                     </Link>
                   </>
                 )}
@@ -230,4 +253,3 @@ export default function Navbar() {
     </nav>
   );
 }
-
