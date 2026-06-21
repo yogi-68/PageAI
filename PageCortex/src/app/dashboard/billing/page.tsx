@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Sk } from '@/components/ui/Skeleton';
-import { BILLING_PLANS, comparePlans, getPlanButtonLabel } from '@/lib/plans-shared';
+import { BILLING_PLANS, comparePlans, getPlanButtonLabel, shouldShowPlanButton } from '@/lib/plans-shared';
 
 const plans = BILLING_PLANS;
 
@@ -29,7 +29,18 @@ interface ProfileData {
 interface BillingMode { testMode: boolean; mockMode: boolean; ok: boolean; }
 
 export default function BillingPage() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
+
+  const billingFetch = useCallback(async (url: string, options: RequestInit = {}) => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string> || {}),
+    };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    return fetch(url, { ...options, headers, credentials: 'include' });
+  }, [session?.access_token]);
   const searchParams = useSearchParams();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
@@ -93,7 +104,7 @@ export default function BillingPage() {
   const handleCancelSubscription = async () => {
     setLoading('free');
     try {
-      const res = await fetch('/api/billing/cancel', { method: 'POST' });
+      const res = await billingFetch('/api/billing/cancel', { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
         toast.success(data.message || 'Subscription cancelled');
@@ -120,9 +131,8 @@ export default function BillingPage() {
 
     setLoading(planId);
     try {
-      const res = await fetch('/api/billing/checkout', {
+      const res = await billingFetch('/api/billing/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ planId }),
       });
       const data = await res.json();
@@ -137,9 +147,8 @@ export default function BillingPage() {
   const handleBuyAddon = async (addonId: string) => {
     setLoading(addonId);
     try {
-      const res = await fetch('/api/billing/addons/checkout', {
+      const res = await billingFetch('/api/billing/addons/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ addonId }),
       });
       const data = await res.json();
@@ -222,6 +231,20 @@ export default function BillingPage() {
           }`}>{currentPlan}</p>
           {profile?.dodo_subscription_id && (
             <p className="text-[11px] text-fg-muted mt-1">Subscription active</p>
+          )}
+          {currentPlan !== 'free' && (
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm('Cancel your subscription and return to the Free plan? You will keep access until the end of your billing period.')) {
+                  handleCancelSubscription();
+                }
+              }}
+              disabled={loading === 'free'}
+              className="mt-3 text-[12px] font-medium text-fg-secondary hover:text-danger transition-colors disabled:opacity-50"
+            >
+              {loading === 'free' ? 'Cancelling…' : 'Cancel subscription'}
+            </button>
           )}
         </div>
         <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">
@@ -322,7 +345,8 @@ export default function BillingPage() {
           const planAction = comparePlans(plan.id, currentPlan);
           const isCurrent = planAction === 'current';
           const isEnterprise = plan.id === 'enterprise';
-          const buttonLabel = getPlanButtonLabel(planAction, loading === plan.id);
+          const showButton = shouldShowPlanButton(planAction, plan.id, currentPlan);
+          const buttonLabel = getPlanButtonLabel(planAction, loading === plan.id, { id: plan.id, name: plan.name });
           return (
             <div key={plan.id} className={`relative flex flex-col p-5 rounded-xl border transition-all duration-200 ${(plan as any).popular ? 'border-primary bg-primary/[0.04]' : 'border-edge bg-surface/40'} ${isCurrent ? 'ring-1 ring-primary/40' : ''}`}>
               {(plan as any).popular && <span className="absolute -top-2.5 left-4 px-2.5 py-0.5 rounded-md bg-primary text-white text-[11px] font-semibold">Popular</span>}
@@ -346,23 +370,29 @@ export default function BillingPage() {
                   </li>
                 ))}
               </ul>
-              <button
-                onClick={() => isEnterprise ? window.open('mailto:support@pagecortex.com?subject=Enterprise%20Plan', '_blank') : handlePlanChange(plan.id)}
-                disabled={isCurrent || loading === plan.id || planAction === 'contact'}
-                className={`w-full py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
-                  isCurrent
-                    ? 'bg-edge/50 text-fg-muted cursor-default'
-                    : (plan as any).popular
-                      ? 'bg-primary text-white hover:bg-primary-hover'
-                      : isEnterprise
-                        ? 'bg-[#a78bfa]/10 text-[#a78bfa] border border-[#a78bfa]/20 hover:bg-[#a78bfa]/20'
-                        : planAction === 'downgrade'
-                          ? 'border border-warning/30 text-warning hover:bg-warning/[0.06]'
-                          : 'border border-edge text-fg hover:bg-surface-elevated/50 hover:border-edge-light'
-                } disabled:opacity-50`}
-              >
-                {buttonLabel}
-              </button>
+              {showButton ? (
+                <button
+                  onClick={() => isEnterprise ? window.open('mailto:support@pagecortex.com?subject=Enterprise%20Plan', '_blank') : handlePlanChange(plan.id)}
+                  disabled={isCurrent || loading === plan.id || planAction === 'contact'}
+                  className={`w-full py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
+                    isCurrent
+                      ? 'bg-edge/50 text-fg-muted cursor-default'
+                      : (plan as any).popular
+                        ? 'bg-primary text-white hover:bg-primary-hover'
+                        : isEnterprise
+                          ? 'bg-violet/10 text-violet border border-violet/20 hover:bg-violet/20'
+                          : planAction === 'downgrade'
+                            ? 'border border-edge text-fg-secondary hover:bg-surface-elevated/50 hover:border-edge-light'
+                            : 'border border-edge text-fg hover:bg-surface-elevated/50 hover:border-edge-light'
+                  } disabled:opacity-50`}
+                >
+                  {buttonLabel}
+                </button>
+              ) : (
+                <p className="w-full py-2.5 text-center text-[12px] text-fg-muted">
+                  Use &quot;Cancel subscription&quot; above to return to Free
+                </p>
+              )}
             </div>
           );
         })}

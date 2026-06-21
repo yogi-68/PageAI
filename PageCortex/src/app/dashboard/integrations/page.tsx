@@ -78,6 +78,21 @@ const DEFAULT_ENDPOINTS: Record<string, string[]> = {
   custom: ['/orders/', '/products/', '/shipments/', '/shipping/'],
 };
 
+const ENDPOINT_HELP: Record<string, { summary: string; examples: string[] }> = {
+  shopify: {
+    summary: 'Path prefixes the AI may call on your Shopify Admin API. Defaults below cover orders, products, and shipping.',
+    examples: ['/admin/api/2024-01/orders/', '/admin/api/2024-01/products/'],
+  },
+  woocommerce: {
+    summary: 'WooCommerce REST API path prefixes. Defaults cover orders, products, and shipping zones.',
+    examples: ['/wp-json/wc/v3/orders/', '/wp-json/wc/v3/products/'],
+  },
+  custom: {
+    summary: 'Path prefixes on your API that match the tools you want (order lookup, product stock, shipping). Start each path with /.',
+    examples: ['/orders/', '/products/', '/api/v1/orders/'],
+  },
+};
+
 // ─── Modal State ──────────────────────────────────────────
 interface ModalState {
   open: boolean;
@@ -629,16 +644,16 @@ export default function IntegrationsPage() {
 
       {/* Add / Edit Modal */}
       {modal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
-          <div className="w-full max-w-lg rounded-2xl border border-edge bg-[#0d1117] shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-edge bg-surface shadow-2xl overflow-hidden">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-edge">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-edge bg-surface-elevated/30">
               <h2 className="text-[16px] font-bold text-fg">{modal.editing ? 'Edit Integration' : 'Add Integration'}</h2>
               <button onClick={closeModal} className="text-fg-muted hover:text-fg text-[20px] leading-none">×</button>
             </div>
 
             {/* Modal Body */}
-            <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto bg-surface">
               {/* Name */}
               <div>
                 <label className="block text-[12px] font-medium text-fg-secondary mb-1.5">Integration Name</label>
@@ -646,7 +661,7 @@ export default function IntegrationsPage() {
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="My Shopify Store"
-                  className="w-full px-3 py-2 rounded-lg border border-edge bg-surface text-fg text-[13px] outline-none focus:border-accent/60"
+                  className="w-full px-3 py-2 rounded-lg border border-edge bg-bg text-fg text-[13px] placeholder:text-fg-muted outline-none focus:border-primary/60"
                 />
               </div>
 
@@ -658,8 +673,9 @@ export default function IntegrationsPage() {
                     {(['shopify', 'woocommerce', 'custom'] as const).map(t => (
                       <button
                         key={t}
+                        type="button"
                         onClick={() => handleTypeChange(t)}
-                        className={`py-2.5 rounded-lg border text-[12px] font-medium transition-colors ${form.type === t ? 'border-accent bg-accent/10 text-accent' : 'border-edge text-fg-secondary hover:border-fg/30 hover:text-fg'}`}
+                        className={`py-2.5 rounded-lg border text-[12px] font-medium transition-colors ${form.type === t ? 'border-primary bg-primary/10 text-primary' : 'border-edge text-fg-secondary hover:border-primary/30 hover:text-fg'}`}
                       >
                         {TYPE_LABELS[t]}
                       </button>
@@ -671,78 +687,98 @@ export default function IntegrationsPage() {
               {/* Base URL */}
               <div>
                 <label className="block text-[12px] font-medium text-fg-secondary mb-1.5">
-                  {form.type === 'shopify' ? 'Store URL (e.g. https://yourstore.myshopify.com)' : form.type === 'woocommerce' ? 'Site URL (e.g. https://yourstore.com)' : 'Base API URL'}
+                  {form.type === 'shopify' ? 'Store URL' : form.type === 'woocommerce' ? 'Site URL' : 'Base API URL'}
                 </label>
                 <input
                   value={form.baseUrl}
                   onChange={e => setForm(f => ({ ...f, baseUrl: e.target.value }))}
                   placeholder={form.type === 'shopify' ? 'https://yourstore.myshopify.com' : form.type === 'woocommerce' ? 'https://yourstore.com' : 'https://api.yourstore.com'}
-                  className="w-full px-3 py-2 rounded-lg border border-edge bg-surface text-fg text-[13px] outline-none focus:border-accent/60"
+                  className="w-full px-3 py-2 rounded-lg border border-edge bg-bg text-fg text-[13px] placeholder:text-fg-muted outline-none focus:border-primary/60"
                 />
+                <p className="text-[11px] text-fg-muted mt-1">
+                  {form.type === 'shopify' && 'Your myshopify.com store URL — no trailing path.'}
+                  {form.type === 'woocommerce' && 'Your WordPress site root URL where WooCommerce is installed.'}
+                  {form.type === 'custom' && 'Root URL of your REST API (scheme + host only, no path).'}
+                </p>
               </div>
 
               {/* Credentials */}
               <div>
                 <label className="block text-[12px] font-medium text-fg-secondary mb-1.5">
-                  Credentials {modal.editing && <span className="text-fg-muted">(leave blank to keep existing)</span>}
+                  Credentials {modal.editing && <span className="text-fg-muted font-normal">(leave blank to keep existing)</span>}
                 </label>
                 <div className="space-y-2">
                   {(CREDENTIAL_FIELDS[form.type] || []).map(field => (
                     <div key={field.key}>
-                      <label className="block text-[11px] text-fg-muted mb-1">{field.label}</label>
+                      <label className="block text-[11px] text-fg-secondary mb-1">{field.label}</label>
                       <input
                         type={field.type || 'text'}
                         value={form.credentials[field.key] || ''}
                         onChange={e => handleCredentialChange(field.key, e.target.value)}
                         placeholder={field.placeholder}
-                        className="w-full px-3 py-2 rounded-lg border border-edge bg-surface text-fg text-[13px] outline-none focus:border-accent/60 font-mono"
+                        className="w-full px-3 py-2 rounded-lg border border-edge bg-bg text-fg text-[13px] placeholder:text-fg-muted outline-none focus:border-primary/60 font-mono"
                       />
                     </div>
                   ))}
                 </div>
-                <p className="text-[11px] text-fg-muted mt-1.5">Credentials are encrypted with AES-256-GCM and never exposed to the frontend.</p>
+                <p className="text-[11px] text-fg-muted mt-1.5">
+                  {form.type === 'shopify' && 'Create an Admin API access token in Shopify Admin → Settings → Apps → Develop apps.'}
+                  {form.type === 'woocommerce' && 'Generate REST API keys in WooCommerce → Settings → Advanced → REST API.'}
+                  {form.type === 'custom' && 'Use the full header value, e.g. Authorization: Bearer your_token'}
+                </p>
               </div>
 
               {/* Allowed Endpoints */}
               <div>
                 <label className="block text-[12px] font-medium text-fg-secondary mb-1.5">Allowed Endpoints (whitelist)</label>
+                <p className="text-[11px] text-fg-muted mb-2">{ENDPOINT_HELP[form.type]?.summary}</p>
                 <div className="flex gap-2 mb-2">
                   <input
                     value={form.endpointInput}
                     onChange={e => setForm(f => ({ ...f, endpointInput: e.target.value }))}
-                    onKeyDown={e => e.key === 'Enter' && addEndpoint()}
-                    placeholder="/orders/"
-                    className="flex-1 px-3 py-1.5 rounded-lg border border-edge bg-surface text-fg text-[12px] outline-none focus:border-accent/60 font-mono"
+                    onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addEndpoint())}
+                    placeholder={ENDPOINT_HELP[form.type]?.examples[0] || '/orders/'}
+                    className="flex-1 px-3 py-1.5 rounded-lg border border-edge bg-bg text-fg text-[12px] placeholder:text-fg-muted outline-none focus:border-primary/60 font-mono"
                   />
-                  <button onClick={addEndpoint} className="px-3 py-1.5 rounded-lg bg-accent/10 text-accent border border-accent/30 text-[12px] font-medium hover:bg-accent/20">Add</button>
+                  <button type="button" onClick={addEndpoint} className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/30 text-[12px] font-medium hover:bg-primary/20">Add</button>
                 </div>
+                {form.allowedEndpoints.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, allowedEndpoints: [...DEFAULT_ENDPOINTS[form.type]] }))}
+                    className="mb-2 text-[11px] font-medium text-primary hover:underline"
+                  >
+                    Use recommended defaults for {TYPE_LABELS[form.type]}
+                  </button>
+                )}
                 <div className="flex flex-wrap gap-1.5">
                   {form.allowedEndpoints.map(ep => (
-                    <span key={ep} className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent/10 text-accent text-[11px] font-mono border border-accent/20">
+                    <span key={ep} className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[11px] font-mono border border-primary/20">
                       {ep}
-                      <button onClick={() => removeEndpoint(ep)} className="text-accent/60 hover:text-accent ml-0.5">×</button>
+                      <button type="button" onClick={() => removeEndpoint(ep)} className="text-primary/60 hover:text-primary ml-0.5">×</button>
                     </span>
                   ))}
                 </div>
-                <p className="text-[11px] text-fg-muted mt-1.5">The AI can only call endpoints whose path starts with one of these prefixes.</p>
+                <p className="text-[11px] text-fg-muted mt-1.5">The AI can only call URLs whose path starts with one of these prefixes. Recommended paths are pre-filled when you pick a type.</p>
               </div>
 
               {formError && (
-                <div className="px-3 py-2 rounded-lg bg-red-400/10 border border-red-400/20 text-[12px] text-red-400">
+                <div className="px-3 py-2 rounded-lg bg-danger/10 border border-danger/20 text-[12px] text-danger">
                   {formError}
                 </div>
               )}
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-edge">
-              <button onClick={closeModal} className="px-4 py-2 rounded-lg border border-edge text-[13px] text-fg-secondary hover:text-fg hover:border-fg/30 transition-colors">
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-edge bg-surface-elevated/30">
+              <button type="button" onClick={closeModal} className="px-4 py-2 rounded-lg border border-edge text-[13px] text-fg-secondary hover:text-fg hover:border-edge-light transition-colors">
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="px-4 py-2 rounded-lg bg-accent text-white text-[13px] font-medium hover:bg-accent/90 transition-colors disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors disabled:opacity-50"
               >
                 {saving ? 'Saving…' : modal.editing ? 'Save Changes' : 'Create Integration'}
               </button>

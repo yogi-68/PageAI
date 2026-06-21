@@ -29,12 +29,26 @@ export const BILLING_PLANS = [
     { id: 'enterprise' as const, name: 'Enterprise', price: -1, trial: false, features: ['Unlimited Chatbots', 'Unlimited messages', 'Unlimited pages', 'All AI tiers', 'All data connectors', 'Dedicated account manager', 'Custom integrations'] },
 ];
 
-export function getPlanButtonLabel(action: PlanAction, loading: boolean): string {
+export function getPlanButtonLabel(
+    action: PlanAction,
+    loading: boolean,
+    plan?: { id: string; name: string }
+): string {
     if (loading) return 'Loading...';
     switch (action) {
         case 'current': return 'Current Plan';
         case 'upgrade': return 'Upgrade';
-        case 'downgrade': return 'Downgrade';
+        case 'downgrade':
+            if (plan?.id === 'free') return 'Cancel subscription';
+            return plan ? `Switch to ${plan.name}` : 'Switch plan';
         case 'contact': return 'Contact Sales';
     }
+}
+
+/** Hide redundant actions — cancel lives on the current-plan card, not the Free tier card */
+export function shouldShowPlanButton(action: PlanAction, planId: string, currentPlanId: string): boolean {
+    if (planId === 'free' && currentPlanId !== 'free' && action === 'downgrade') {
+        return false;
+    }
+    return true;
 }
