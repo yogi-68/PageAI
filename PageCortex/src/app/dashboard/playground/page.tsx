@@ -262,9 +262,6 @@ export default function PlaygroundPage() {
             <option key={b.id} value={b.id}>{b.name}</option>
           ))}
         </select>
-        <span className="text-[11px] text-fg-muted px-2 py-0.5 rounded bg-surface-elevated/50 border border-edge">
-          Model: {currentBot?.model === 'gpt-4.1' ? 'GPT-4.1' : currentBot?.model === 'auto' ? 'Smart routing' : 'GPT-4.1 Mini'}
-        </span>
         <button onClick={clearChat} className="ml-auto px-3 py-1.5 rounded-lg border border-edge text-[12px] text-fg-muted hover:text-fg hover:border-edge-light transition-all">
           Clear Chat
         </button>
@@ -288,7 +285,6 @@ export default function PlaygroundPage() {
                 Testing Mode
               </p>
             </div>
-            <span className="ml-auto px-2 py-0.5 rounded-md bg-warning/10 text-warning text-[10px] font-medium">SANDBOX</span>
           </div>
 
           {/* Messages */}
@@ -424,17 +420,6 @@ export default function PlaygroundPage() {
 
                   {/* Metadata grid */}
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="p-2.5 rounded-lg border border-edge bg-bg/40">
-                      <p className="text-[10px] text-fg-muted mb-0.5">Model</p>
-                      <p className="text-[12px] font-medium text-fg">{
-                        lastAssistantMsg.metadata.model === 'gpt-4.1' ? 'GPT-4.1'
-                          : lastAssistantMsg.metadata.model === 'auto' ? 'Smart routing'
-                          : lastAssistantMsg.metadata.model === 'none' ? 'Fallback'
-                          : lastAssistantMsg.metadata.model === 'gpt-4.1-mini' ? 'GPT-4.1 Mini'
-                          : lastAssistantMsg.metadata.model ? lastAssistantMsg.metadata.model
-                          : '—'
-                      }</p>
-                    </div>
                     <div className="p-2.5 rounded-lg border border-edge bg-bg/40">
                       <p className="text-[10px] text-fg-muted mb-0.5">Latency</p>
                       <p className="text-[12px] font-medium text-fg">{lastAssistantMsg.metadata.responseTimeMs ? `${lastAssistantMsg.metadata.responseTimeMs}ms` : '—'}</p>

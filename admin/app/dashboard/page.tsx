@@ -213,7 +213,7 @@ export default function DashboardOverview() {
           <table className="w-full text-[12.5px]">
             <thead>
               <tr style={{ borderBottom: '1px solid var(--edge)', background: 'rgba(255,255,255,0.015)' }}>
-                {['User', 'Plan', 'Status', 'Usage', 'Joined'].map(h => (
+                {['User', 'Plan', 'Billing', 'Renews', 'Status', 'Usage', 'Joined'].map(h => (
                   <th key={h} className="text-left px-4 py-3 font-medium uppercase tracking-wide text-[11px]"
                     style={{ color: 'var(--fg-muted)' }}>{h}</th>
                 ))}
@@ -246,6 +246,14 @@ export default function DashboardOverview() {
                     </td>
                     <td className="px-4 py-3">
                       <PlanBadge plan={u.plan || 'free'} />
+                    </td>
+                    <td className="px-4 py-3 text-[11.5px]" style={{ color: 'var(--fg-secondary)' }}>
+                      {isPaid ? (u.billing_interval === 'yearly' ? 'Annual' : u.billing_interval === 'monthly' ? 'Monthly' : '—') : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-[11.5px] whitespace-nowrap" style={{ color: 'var(--fg-secondary)' }}>
+                      {isPaid && u.subscription_expires_at
+                        ? new Date(u.subscription_expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                        : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <span className="flex items-center gap-1.5 text-[11.5px] font-medium">

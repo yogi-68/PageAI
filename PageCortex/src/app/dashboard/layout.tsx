@@ -38,12 +38,6 @@ const navSections = [
     ],
   },
   {
-    heading: 'Marketing',
-    items: [
-      { label: 'Growth Hub', href: '/dashboard/growth', icon: '🚀' },
-    ],
-  },
-  {
     heading: 'Settings',
     items: [
       { label: 'Integrations', href: '/dashboard/integrations', icon: '🔌' },

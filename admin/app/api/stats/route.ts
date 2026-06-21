@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
                 ] = await Promise.all([
                     admin.from('profiles').select('plan, dodo_subscription_id'),
                     admin.from('profiles').select('*', { count: 'exact', head: true }).eq('plan', 'free').not('dodo_subscription_id', 'is', null),
-                    admin.from('profiles').select('id, email, full_name, plan, created_at, monthly_message_count, monthly_message_limit, dodo_subscription_id').order('created_at', { ascending: false }).limit(10),
+                    admin.from('profiles').select('id, email, full_name, plan, created_at, monthly_message_count, monthly_message_limit, dodo_subscription_id, subscription_expires_at, billing_interval').order('created_at', { ascending: false }).limit(10),
                     admin.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', weekAgo),
                     admin.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', monthAgo),
                     admin.from('conversations').select('*', { count: 'exact', head: true }).gte('created_at', weekAgo),
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
 
                 let query = admin
                     .from('profiles')
-                    .select('id, email, full_name, plan, monthly_message_count, monthly_message_limit, addon_message_balance, max_chatbots, max_pages_indexed, total_pages_indexed, dodo_subscription_id, created_at, updated_at', { count: 'exact' })
+                    .select('id, email, full_name, plan, monthly_message_count, monthly_message_limit, addon_message_balance, max_chatbots, max_pages_indexed, total_pages_indexed, dodo_subscription_id, subscription_expires_at, billing_interval, subscription_started_at, created_at, updated_at', { count: 'exact' })
                     .order('created_at', { ascending: false })
                     .range(offset, offset + limit - 1);
 

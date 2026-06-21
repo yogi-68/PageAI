@@ -14,9 +14,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    let addonIdForLog = '';
+    let productIdForLog = '';
     try {
         const body = await request.json();
         const { addonId } = body as { addonId: string };
+        addonIdForLog = addonId;
         const userId = user.id;
 
         if (!addonId) {
@@ -47,6 +50,7 @@ export async function POST(request: NextRequest) {
 
         const useTestMode = isTestMode();
         const productId = getAddonProductIdForUser(addonId, useTestMode);
+        productIdForLog = productId || '';
 
         if (!productId) {
             return NextResponse.json(
@@ -66,14 +70,14 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const payment = await (dodo as any).payments.create({
+        const session = await dodo.checkoutSessions.create({
+            product_cart: [{ product_id: productId, quantity: 1 }],
             customer: {
                 email: profile.email,
                 name: profile.full_name || profile.email,
                 ...(!useTestMode && profile.dodo_customer_id && { customer_id: profile.dodo_customer_id }),
             },
-            product_cart: [{ product_id: productId, quantity: 1 }],
-            payment_link: true,
+            billing_address: { country: 'US' },
             return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?addon_success=true&addon=${addonId}`,
             metadata: {
                 userId,
@@ -83,7 +87,7 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        const url = payment.payment_link || payment.url;
+        const url = session.checkout_url;
         if (!url) {
             return NextResponse.json(
                 { error: 'Payment provider did not return a checkout URL. Please try again or contact support.' },
@@ -100,7 +104,11 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ success: true, url });
     } catch (error: any) {
-        logger.error('billing', 'Add-on checkout failed', { error: error.message });
-        return NextResponse.json({ error: error.message || 'Failed to create checkout' }, { status: 500 });
+        const message = error?.message || 'Failed to create checkout';
+        logger.error('billing', 'Add-on checkout failed', { error: message, addonId: addonIdForLog });
+        const hint = productIdForLog.startsWith('adn_')
+            ? ' Dodo add-on IDs (adn_*) are for subscriptions. Create one-time products (prod_*) for message packs and set DODO_ADDON_* to those product IDs.'
+            : '';
+        return NextResponse.json({ error: `${message}${hint}` }, { status: 500 });
     }
 }

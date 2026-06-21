@@ -54,7 +54,6 @@ export default function BillingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [billingMode, setBillingMode] = useState<BillingMode | null>(null);
   const [livePagesCount, setLivePagesCount] = useState<number | null>(null);
-  const [subscriptionDatesUnavailable, setSubscriptionDatesUnavailable] = useState(false);
 
   const refreshProfile = useCallback(async () => {
     if (!user) return;
@@ -88,11 +87,9 @@ export default function BillingPage() {
         .single();
       if (fallback.data) {
         applyProfile(fallback.data);
-        setSubscriptionDatesUnavailable(true);
       }
     } else if (data) {
       applyProfile(data);
-      setSubscriptionDatesUnavailable(false);
     }
 
     supabase.from('documents').select('id', { count: 'exact', head: true }).eq('user_id', user.id).then(({ count }) => {
@@ -247,18 +244,22 @@ export default function BillingPage() {
           <p className={`text-[20px] font-bold mt-1 capitalize ${
             currentPlan === 'free' ? 'text-fg-muted' : currentPlan === 'growth' ? 'text-primary' : currentPlan === 'scale' ? 'text-warning' : 'text-success'
           }`}>{currentPlan}</p>
-          {profile?.dodo_subscription_id && (
+          {profile?.dodo_subscription_id && currentPlan !== 'free' && (
             <p className="text-[11px] text-fg-muted mt-1">Subscription active</p>
           )}
-          {profile?.subscription_expires_at && currentPlan !== 'free' && (
-            <p className="text-[11px] text-fg-muted mt-1">
-              Renews on{' '}
-              {new Date(profile.subscription_expires_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-              {profile.billing_interval === 'yearly' ? ' (annual plan)' : profile.billing_interval === 'monthly' ? ' (monthly plan)' : ''}
+          {currentPlan !== 'free' && profile?.billing_interval && (
+            <p className="text-[11px] text-fg-secondary mt-1 capitalize">
+              {profile.billing_interval === 'yearly' ? 'Annual billing' : 'Monthly billing'}
             </p>
           )}
-          {!profile?.subscription_expires_at && currentPlan !== 'free' && profile?.dodo_subscription_id && subscriptionDatesUnavailable && (
-            <p className="text-[11px] text-fg-muted mt-1">Renewal date unavailable — apply database migration 20260623_subscription_dates.sql</p>
+          {profile?.subscription_expires_at && currentPlan !== 'free' && (
+            <p className="text-[12px] font-medium text-fg mt-1">
+              Renews on{' '}
+              {new Date(profile.subscription_expires_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+            </p>
+          )}
+          {!profile?.subscription_expires_at && currentPlan !== 'free' && profile?.dodo_subscription_id && (
+            <p className="text-[11px] text-fg-muted mt-1">Renewal date syncs after your next billing event</p>
           )}
         </div>
         <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">

@@ -1,8 +1,13 @@
--- Apply pending production migrations (run in Supabase SQL Editor, in order)
--- Verify after: SELECT column_name FROM information_schema.columns
---   WHERE table_name = 'profiles' AND column_name LIKE 'subscription%';
-
-\i supabase/migrations/20260512_api_integrations.sql
-\i supabase/migrations/20260622_protect_billing_profile_fields.sql
-\i supabase/migrations/20260623_subscription_dates.sql
-\i supabase/migrations/20260624_protect_subscription_date_fields.sql
+-- Apply pending production migrations in Supabase Dashboard → SQL Editor
+-- Do NOT use \i — it only works in psql, not the Supabase SQL Editor.
+--
+-- Run this file instead (billing + subscription columns):
+--   scripts/apply-billing-migrations.sql
+--
+-- Or run each migration file contents manually in order:
+--   supabase/migrations/20260512_api_integrations.sql
+--   supabase/migrations/20260622_protect_billing_profile_fields.sql
+--   supabase/migrations/20260623_subscription_dates.sql
+--   supabase/migrations/20260624_protect_subscription_date_fields.sql
+--
+-- NEVER run supabase/schema.sql on an existing database (causes "profiles already exists").

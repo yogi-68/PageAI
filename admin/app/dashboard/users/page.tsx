@@ -14,8 +14,21 @@ interface User {
   max_pages_indexed: number;
   total_pages_indexed: number;
   dodo_subscription_id: string | null;
+  subscription_expires_at: string | null;
+  billing_interval: string | null;
   botCount: number;
   created_at: string;
+}
+
+function formatRenewalDate(iso: string | null): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function billingLabel(interval: string | null): string {
+  if (interval === 'yearly') return 'Annual';
+  if (interval === 'monthly') return 'Monthly';
+  return '—';
 }
 
 const PLAN_CONFIG: Record<string, { color: string; bg: string }> = {
@@ -154,7 +167,7 @@ export default function UsersPage() {
           <table className="w-full text-[12.5px]">
             <thead>
               <tr style={{ borderBottom: '1px solid var(--edge)', background: 'rgba(255,255,255,0.015)' }}>
-                {['User', 'Plan', 'Messages', 'Bots', 'Pages', 'Subscription', 'Joined', 'Actions'].map(h => (
+                {['User', 'Plan', 'Billing', 'Renews', 'Messages', 'Bots', 'Pages', 'Status', 'Joined', 'Actions'].map(h => (
                   <th key={h} className="text-left px-4 py-3 font-medium uppercase tracking-wide text-[11px] whitespace-nowrap"
                     style={{ color: 'var(--fg-muted)' }}>{h}</th>
                 ))}
@@ -163,7 +176,7 @@ export default function UsersPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center">
+                  <td colSpan={10} className="py-16 text-center">
                     <div className="inline-flex items-center gap-2" style={{ color: 'var(--fg-secondary)' }}>
                       <div className="w-4 h-4 rounded-full animate-spin" style={{ border: '2px solid var(--edge)', borderTopColor: 'var(--primary)' }} />
                       Loading users…
@@ -172,7 +185,7 @@ export default function UsersPage() {
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-[13px]" style={{ color: 'var(--fg-secondary)' }}>
+                  <td colSpan={10} className="py-16 text-center text-[13px]" style={{ color: 'var(--fg-secondary)' }}>
                     No users found
                   </td>
                 </tr>
@@ -204,6 +217,12 @@ export default function UsersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <PlanBadge plan={u.plan || 'free'} />
+                    </td>
+                    <td className="px-4 py-3 text-[11.5px]" style={{ color: 'var(--fg-secondary)' }}>
+                      {isPaid ? billingLabel(u.billing_interval) : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-[11.5px] whitespace-nowrap" style={{ color: 'var(--fg-secondary)' }}>
+                      {isPaid ? formatRenewalDate(u.subscription_expires_at) : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
