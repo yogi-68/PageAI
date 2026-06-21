@@ -186,6 +186,22 @@ export async function POST(request: NextRequest) {
                     if (billingInterval) updatePayload.billing_interval = billingInterval;
                     if (!expiresAt) logMissingPeriodEnd(eventType, data as Record<string, unknown>);
                     await admin.from('profiles').update(updatePayload).eq('id', userId);
+
+                    const messagesToAdd = parseInt(metadata.messages_to_add || '0', 10);
+                    const addonType = (metadata.addon_type || metadata.addonId) as string;
+                    if (messagesToAdd > 0 && addonType && metadata.credited_in_api !== 'true') {
+                        await admin.rpc('add_addon_balance', { p_user_id: userId, p_messages: messagesToAdd });
+                        await admin.from('message_addons').insert({
+                            user_id: userId,
+                            addon_type: addonType,
+                            messages_purchased: messagesToAdd,
+                            amount_paid_usd: data.amount ? String(Number(data.amount) / 100) : '0',
+                            dodo_payment_id: data.payment_id || null,
+                            expires_at: expiresAt || updatePayload.subscription_expires_at || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                        });
+                        logger.info('webhook', `Add-on credited via plan_changed: +${messagesToAdd} messages`, { userId, addonType });
+                    }
+
                     logger.info('webhook', `User plan changed to ${resolvedPlanId}`, { userId, plan: resolvedPlanId });
                 }
                 break;
@@ -275,6 +291,29 @@ export async function POST(request: NextRequest) {
                         { '1000_messages': 1000, '5000_messages': 5000, '10000_messages': 10000 }[addonType as string] || 0;
 
                     if (messagesToAdd > 0) {
+                        if (metadata.credited_in_api === 'true') {
+                            logger.info('webhook', 'Skipping add-on credit — already credited in API', { userId: payUserId, addonType });
+                            break;
+                        }
+
+                        if (data.payment_id) {
+                            const { data: existing } = await admin
+                                .from('message_addons')
+                                .select('id')
+                                .eq('dodo_payment_id', data.payment_id)
+                                .maybeSingle();
+                            if (existing) {
+                                logger.info('webhook', 'Skipping duplicate add-on credit for payment', { paymentId: data.payment_id });
+                                break;
+                            }
+                        }
+
+                        const { data: payProfile } = await admin
+                            .from('profiles')
+                            .select('subscription_expires_at')
+                            .eq('id', payUserId)
+                            .single();
+
                         await admin.rpc('add_addon_balance', {
                             p_user_id: payUserId,
                             p_messages: messagesToAdd,
@@ -286,7 +325,7 @@ export async function POST(request: NextRequest) {
                             messages_purchased: messagesToAdd,
                             amount_paid_usd: data.total_amount ? (data.total_amount / 100).toFixed(2) : '0',
                             dodo_payment_id: data.payment_id || null,
-                            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                            expires_at: payProfile?.subscription_expires_at || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                         });
 
                         trackEvent('addon.purchased', {

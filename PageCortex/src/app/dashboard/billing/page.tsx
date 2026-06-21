@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { useSearchParams } from 'next/navigation';
@@ -36,7 +36,33 @@ const PROFILE_SELECT_BASE =
 const PROFILE_SELECT_WITH_DATES =
   `${PROFILE_SELECT_BASE}, subscription_started_at, subscription_expires_at, billing_interval`;
 
-export default function BillingPage() {
+function formatBillingDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function BillingPageFallback() {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2"><Sk className="h-7 w-40" /><Sk className="h-4 w-72" /></div>
+      <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">
+        <div className="flex justify-between"><Sk className="h-5 w-32" /><Sk className="h-5 w-20 rounded-md" /></div>
+        <div className="space-y-3"><Sk className="h-2 w-full rounded-full" /><Sk className="h-2 w-full rounded-full" /></div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">
+            <Sk className="h-5 w-20" />
+            <Sk className="h-8 w-16" />
+            <div className="space-y-2">{[...Array(4)].map((_, j) => <Sk key={j} className="h-3 w-full" />)}</div>
+            <Sk className="h-9 w-full rounded-lg" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BillingPageContent() {
   const { user, session } = useAuth();
 
   const billingFetch = useCallback(async (url: string, options: RequestInit = {}) => {
@@ -160,6 +186,11 @@ export default function BillingPage() {
   };
 
   const handleBuyAddon = async (addonId: string) => {
+    if (!profile || profile.plan === 'free' || !profile.dodo_subscription_id) {
+      toast.error('Upgrade to a paid plan before purchasing message add-ons.');
+      return;
+    }
+
     setLoading(addonId);
     try {
       const res = await billingFetch('/api/billing/addons/checkout', {
@@ -167,10 +198,12 @@ export default function BillingPage() {
         body: JSON.stringify({ addonId }),
       });
       const data = await res.json();
-      if (data.url) {
+      if (res.ok && data.immediate) {
+        toast.success(data.message || 'Add-on messages added to your account!');
+        refreshProfile();
+      } else if (data.url) {
         window.location.href = data.url;
       } else {
-        // 503 = not configured, 500 = API error — both show a user-friendly message
         toast.error(data.error || 'Add-on payments are not available right now — please contact support.');
       }
     } catch (e: any) {
@@ -179,25 +212,7 @@ export default function BillingPage() {
     setLoading(null);
   };
 
-  if (!profile) return (
-    <div className="space-y-6">
-      <div className="space-y-2"><Sk className="h-7 w-40" /><Sk className="h-4 w-72" /></div>
-      <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">
-        <div className="flex justify-between"><Sk className="h-5 w-32" /><Sk className="h-5 w-20 rounded-md" /></div>
-        <div className="space-y-3"><Sk className="h-2 w-full rounded-full" /><Sk className="h-2 w-full rounded-full" /></div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">
-            <Sk className="h-5 w-20" />
-            <Sk className="h-8 w-16" />
-            <div className="space-y-2">{[...Array(4)].map((_, j) => <Sk key={j} className="h-3 w-full" />)}</div>
-            <Sk className="h-9 w-full rounded-lg" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  if (!profile) return <BillingPageFallback />;
 
   const currentPlan = profile?.plan || 'free';
   const msgUsed = profile?.monthly_message_count || 0;
@@ -254,8 +269,7 @@ export default function BillingPage() {
           )}
           {profile?.subscription_expires_at && currentPlan !== 'free' && (
             <p className="text-[12px] font-medium text-fg mt-1">
-              Renews on{' '}
-              {new Date(profile.subscription_expires_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+              Renews on {formatBillingDate(profile.subscription_expires_at)}
             </p>
           )}
           {!profile?.subscription_expires_at && currentPlan !== 'free' && profile?.dodo_subscription_id && (
@@ -317,8 +331,10 @@ export default function BillingPage() {
           <div className="mb-3">
             <h2 className="text-[16px] font-bold text-fg">Message Add-on Packs</h2>
             <p className="text-[13px] text-fg-secondary mt-0.5">
-              Instantly add messages to your account — no plan change needed. Credits never expire and are used before overage billing kicks in.
-              {currentPlan === 'free' && <span className="ml-1 text-primary font-medium">Available on all plans including Free.</span>}
+              Add extra messages to your subscription. Credits are valid until your next billing date and are used after your plan quota.
+              {currentPlan === 'free' && (
+                <span className="ml-1 text-fg-muted">Requires an active paid subscription.</span>
+              )}
             </p>
           </div>
           <div className="grid sm:grid-cols-3 gap-3">
@@ -332,15 +348,15 @@ export default function BillingPage() {
                 <p className="text-[15px] font-bold text-fg mt-1">{addon.label}</p>
                 <div className="flex items-baseline gap-1 my-2">
                   <span className="text-[26px] font-bold text-fg">${addon.price}</span>
-                  <span className="text-[12px] text-fg-muted">one-time</span>
+                  <span className="text-[12px] text-fg-muted">/ cycle</span>
                 </div>
                 <p className="text-[11px] text-fg-muted mb-4">{addon.perK} per 1K messages</p>
                 <button
                   onClick={() => handleBuyAddon(addon.id)}
-                  disabled={loading === addon.id}
+                  disabled={loading === addon.id || currentPlan === 'free' || !profile?.dodo_subscription_id}
                   className={`w-full py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 disabled:opacity-50 ${addon.badge === 'Best value' ? 'bg-success text-white hover:bg-success/90' : 'border border-edge text-fg hover:bg-surface-elevated/50 hover:border-edge-light'}`}
                 >
-                  {loading === addon.id ? 'Redirecting...' : 'Buy Now'}
+                  {loading === addon.id ? 'Processing...' : currentPlan === 'free' ? 'Upgrade plan first' : 'Buy Now'}
                 </button>
               </div>
             ))}
@@ -348,7 +364,10 @@ export default function BillingPage() {
           {addonBalance > 0 && (
             <p className="text-[12px] text-success mt-2 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />
-              You have <strong>{addonBalance.toLocaleString()}</strong> add-on messages remaining this billing cycle.
+              You have <strong>{addonBalance.toLocaleString()}</strong> add-on messages remaining
+              {profile?.subscription_expires_at
+                ? ` until ${formatBillingDate(profile.subscription_expires_at)}`
+                : ' this billing cycle'}.
             </p>
           )}
         </div>
@@ -424,5 +443,13 @@ export default function BillingPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<BillingPageFallback />}>
+      <BillingPageContent />
+    </Suspense>
   );
 }
