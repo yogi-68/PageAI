@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDodoClientForUser, isDevUser, getAddonProductIdForUser, isMockMode, MESSAGE_ADDONS, AddonId } from '@/lib/dodo';
+import { getDodoClientForUser, getAddonProductIdForUser, isMockMode, isTestMode, MESSAGE_ADDONS, AddonId } from '@/lib/dodo';
 import { getAdminClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { validateEnv } from '@/lib/env';
@@ -45,19 +45,19 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const userTestMode = isDevUser(profile.email);
-        const productId = getAddonProductIdForUser(addonId, userTestMode);
+        const useTestMode = isTestMode();
+        const productId = getAddonProductIdForUser(addonId, useTestMode);
 
         if (!productId) {
             return NextResponse.json(
-                { error: `Add-on product not configured. Set DODO_ADDON_${addonId.split('_')[0].toUpperCase()}${userTestMode ? ' or DODO_TEST_PRODUCT_ID' : ''} in environment variables.` },
+                { error: `Add-on product not configured. Set DODO_ADDON_${addonId.split('_')[0].toUpperCase()} in environment variables.` },
                 { status: 503 }
             );
         }
 
         let dodo;
         try {
-            dodo = getDodoClientForUser(userTestMode);
+            dodo = getDodoClientForUser(useTestMode);
         } catch (clientErr: any) {
             logger.error('billing', 'Dodo client init failed for addon', { error: clientErr.message });
             return NextResponse.json(
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
             customer: {
                 email: profile.email,
                 name: profile.full_name || profile.email,
-                ...(!userTestMode && profile.dodo_customer_id && { customer_id: profile.dodo_customer_id }),
+                ...(!useTestMode && profile.dodo_customer_id && { customer_id: profile.dodo_customer_id }),
             },
             product_cart: [{ product_id: productId, quantity: 1 }],
             payment_link: true,

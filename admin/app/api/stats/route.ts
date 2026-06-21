@@ -340,10 +340,19 @@ export async function GET(request: NextRequest) {
             case 'webhooks': {
                 const { data: events } = await admin
                     .from('webhook_events')
-                    .select('*')
-                    .order('created_at', { ascending: false })
+                    .select('id, event_id, event_type, processed_at')
+                    .order('processed_at', { ascending: false })
                     .limit(50);
-                return NextResponse.json({ events: events || [] });
+                return NextResponse.json({
+                    events: (events || []).map(e => ({
+                        id: e.id,
+                        event_type: e.event_type,
+                        status: 'processed',
+                        created_at: e.processed_at,
+                        payload: { event_id: e.event_id },
+                        error_message: null,
+                    })),
+                });
             }
 
             default:

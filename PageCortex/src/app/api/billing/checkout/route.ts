@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDodoClientForUser, isDevUser, getProductIdForUser, isMockMode, PLANS, PlanId, YEARLY_PRICES } from '@/lib/dodo';
+import { getDodoClientForUser, getProductIdForUser, isMockMode, isTestMode, PLANS, PlanId, YEARLY_PRICES } from '@/lib/dodo';
 import { getAdminClient } from '@/lib/supabase';
 import { validateEnv } from '@/lib/env';
 import { getSessionUser } from '@/lib/auth-server';
@@ -49,22 +49,22 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const userTestMode = isDevUser(profile.email);
-        const productId = getProductIdForUser(planId, isAnnual, userTestMode);
+        const useTestMode = isTestMode();
+        const productId = getProductIdForUser(planId, isAnnual, useTestMode);
 
-        console.log('[billing/checkout] creating subscription', { productId, planId, userTestMode });
+        console.log('[billing/checkout] creating subscription', { productId, planId, useTestMode });
 
         if (!productId) {
             const missing = isAnnual
                 ? `DODO_PRODUCT_${planId.toUpperCase()}_YEARLY`
                 : `DODO_PRODUCT_${planId.toUpperCase()}`;
             return NextResponse.json(
-                { error: `Product not configured. Set ${missing}${userTestMode ? ' or DODO_TEST_PRODUCT_ID' : ''} in environment variables.` },
+                { error: `Product not configured. Set ${missing} in environment variables.` },
                 { status: 503 }
             );
         }
 
-        const dodo = getDodoClientForUser(userTestMode);
+        const dodo = getDodoClientForUser(useTestMode);
 
         const willGetTrial = !isAnnual && plan.trialDays > 0 && !profile.has_used_trial;
         const trialDays = willGetTrial ? plan.trialDays : 0;
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
             customer: {
                 email: profile.email,
                 name: profile.full_name || profile.email,
-                ...(!userTestMode && profile.dodo_customer_id && { customer_id: profile.dodo_customer_id }),
+                ...(!useTestMode && profile.dodo_customer_id && { customer_id: profile.dodo_customer_id }),
             },
             product_id: productId,
             quantity: 1,
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        if (!userTestMode && subscription.customer?.customer_id && !profile.dodo_customer_id) {
+        if (!useTestMode && subscription.customer?.customer_id && !profile.dodo_customer_id) {
             await admin
                 .from('profiles')
                 .update({ dodo_customer_id: subscription.customer.customer_id })

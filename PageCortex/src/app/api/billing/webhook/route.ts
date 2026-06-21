@@ -7,6 +7,35 @@ import { recordWebhookFailure } from '@/lib/alerts';
 import { validateEnv } from '@/lib/env';
 import crypto from 'crypto';
 
+/** Extract subscription period end and billing interval from Dodo webhook payload */
+function parseSubscriptionDates(data: Record<string, unknown>, metadata: Record<string, unknown>) {
+    const periodEnd =
+        data.current_period_end ||
+        data.next_billing_date ||
+        data.renewal_at ||
+        (data.billing_cycle as Record<string, unknown> | undefined)?.end ||
+        null;
+
+    let expiresAt: string | null = null;
+    if (periodEnd) {
+        if (typeof periodEnd === 'number') {
+            expiresAt = new Date(periodEnd * 1000).toISOString();
+        } else if (typeof periodEnd === 'string') {
+            expiresAt = new Date(periodEnd).toISOString();
+        }
+    }
+
+    const billingMeta = metadata.billing as string | undefined;
+    const billingInterval =
+        billingMeta === 'annual' || billingMeta === 'yearly' ? 'yearly' :
+        billingMeta === 'monthly' ? 'monthly' :
+        data.billing_interval === 'yearly' || data.billing_interval === 'annual' ? 'yearly' :
+        data.billing_interval === 'monthly' ? 'monthly' :
+        null;
+
+    return { expiresAt, billingInterval };
+}
+
 // Dodo Payments uses Svix-style webhook signatures
 // Header: webhook-signature = "v1,<base64_sig>"
 // Signed content: "${webhook_id}.${webhook_timestamp}.${body}"
@@ -97,7 +126,8 @@ export async function POST(request: NextRequest) {
                 if (!userId) break;
 
                 const resolvedPlanId = planId || getPlanByProductId(productId) || 'starter';
-                await admin.from('profiles').update({
+                const { expiresAt, billingInterval } = parseSubscriptionDates(data, metadata);
+                const updatePayload: Record<string, unknown> = {
                     plan: resolvedPlanId,
                     dodo_customer_id: data.customer?.customer_id || null,
                     dodo_subscription_id: data.subscription_id || null,
@@ -105,11 +135,13 @@ export async function POST(request: NextRequest) {
                     max_pages_indexed: getPageLimit(resolvedPlanId),
                     max_chatbots: getChatbotLimit(resolvedPlanId),
                     api_access: ['growth', 'scale', 'enterprise'].includes(resolvedPlanId),
-                    // Belt-and-suspenders: mark trial used on activation too.
-                    // Checkout already sets this, but this catches edge cases
-                    // (e.g. direct Dodo API subscriptions, admin-created subs).
                     has_used_trial: true,
-                }).eq('id', userId);
+                };
+                if (expiresAt) updatePayload.subscription_expires_at = expiresAt;
+                if (billingInterval) updatePayload.billing_interval = billingInterval;
+                updatePayload.subscription_started_at = new Date().toISOString();
+
+                await admin.from('profiles').update(updatePayload).eq('id', userId);
                 logger.info('webhook', `User upgraded to ${resolvedPlanId}`, { userId, plan: resolvedPlanId });
                 break;
             }
@@ -126,13 +158,17 @@ export async function POST(request: NextRequest) {
                 }
                 if (userId) {
                     const resolvedPlanId = getPlanByProductId(productId) || 'starter';
-                    await admin.from('profiles').update({
+                    const { expiresAt, billingInterval } = parseSubscriptionDates(data, metadata);
+                    const updatePayload: Record<string, unknown> = {
                         plan: resolvedPlanId,
                         monthly_message_limit: getMessageLimit(resolvedPlanId),
                         max_pages_indexed: getPageLimit(resolvedPlanId),
                         max_chatbots: getChatbotLimit(resolvedPlanId),
                         api_access: ['growth', 'scale', 'enterprise'].includes(resolvedPlanId),
-                    }).eq('id', userId);
+                    };
+                    if (expiresAt) updatePayload.subscription_expires_at = expiresAt;
+                    if (billingInterval) updatePayload.billing_interval = billingInterval;
+                    await admin.from('profiles').update(updatePayload).eq('id', userId);
                     logger.info('webhook', `User plan changed to ${resolvedPlanId}`, { userId, plan: resolvedPlanId });
                 }
                 break;
@@ -147,10 +183,13 @@ export async function POST(request: NextRequest) {
                     if (profile) userId = profile.id;
                 }
                 if (userId) {
-                    await admin.from('profiles').update({
+                    const { expiresAt } = parseSubscriptionDates(data, metadata);
+                    const updatePayload: Record<string, unknown> = {
                         monthly_message_count: 0,
                         usage_reset_at: new Date().toISOString(),
-                    }).eq('id', userId);
+                    };
+                    if (expiresAt) updatePayload.subscription_expires_at = expiresAt;
+                    await admin.from('profiles').update(updatePayload).eq('id', userId);
                     logger.info('webhook', `Subscription renewed, usage reset`, { userId });
                 }
                 break;
@@ -169,6 +208,8 @@ export async function POST(request: NextRequest) {
                     await admin.from('profiles').update({
                         plan: 'free',
                         dodo_subscription_id: null,
+                        subscription_expires_at: null,
+                        billing_interval: null,
                         monthly_message_limit: 50,
                         max_pages_indexed: 100,
                         max_chatbots: 1,

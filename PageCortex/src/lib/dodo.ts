@@ -16,14 +16,10 @@ export function isMockMode(): boolean {
     );
 }
 
-// ─── Per-user Test Mode ───────────────────────────────────
-// Only the developer account uses Dodo sandbox — all other users get live payments.
-// Override via DEVELOPER_TEST_EMAIL env var if the developer email changes.
-const DEVELOPER_TEST_EMAIL = (process.env.DEVELOPER_TEST_EMAIL || 'yogeshwar0402@gmail.com').toLowerCase();
-
-/** Returns true only for the developer account — routes them to Dodo sandbox */
-export function isDevUser(email: string): boolean {
-    return email.toLowerCase() === DEVELOPER_TEST_EMAIL;
+// ─── Per-user Test Mode (deprecated — use isTestMode() globally only) ───
+/** @deprecated Per-user sandbox routing removed. Use isTestMode() for explicit sandbox only. */
+export function isDevUser(_email: string): boolean {
+    return false;
 }
 
 // When DODO_TEST_MODE=true (global), a single DODO_TEST_PRODUCT_ID stands in for every
@@ -56,11 +52,11 @@ export function getDodoClientForUser(userTestMode: boolean): DodoPayments {
     }
 }
 
-/** Get the Dodo product ID for a plan, respecting the user's payment mode */
-export function getProductIdForUser(planId: string, isAnnual: boolean, userTestMode: boolean): string | null {
-    if (userTestMode) {
-        // Developer uses a single sandbox product for all plans
-        return process.env.DODO_TEST_PRODUCT_ID || null;
+/** Get the Dodo product ID for a plan (live products unless DODO_TEST_MODE=true) */
+export function getProductIdForUser(planId: string, isAnnual: boolean, _userTestMode?: boolean): string | null {
+    const useTest = isTestMode();
+    if (useTest && _testFallback) {
+        return _testFallback;
     }
     if (isAnnual) {
         return process.env[`DODO_PRODUCT_${planId.toUpperCase()}_YEARLY`] || null;
@@ -68,10 +64,10 @@ export function getProductIdForUser(planId: string, isAnnual: boolean, userTestM
     return process.env[`DODO_PRODUCT_${planId.toUpperCase()}`] || null;
 }
 
-/** Get the Dodo product ID for a message add-on, respecting the user's payment mode */
-export function getAddonProductIdForUser(addonId: string, userTestMode: boolean): string | null {
-    if (userTestMode) {
-        return process.env.DODO_TEST_PRODUCT_ID || null;
+/** Get the Dodo product ID for a message add-on (live unless DODO_TEST_MODE=true) */
+export function getAddonProductIdForUser(addonId: string, _userTestMode?: boolean): string | null {
+    if (isTestMode() && _testFallback) {
+        return _testFallback;
     }
     const addonNum = addonId.split('_')[0];
     return process.env[`DODO_ADDON_${addonNum}`] || null;
@@ -152,7 +148,7 @@ export const PLANS = {
             '1 Chatbot',
             '100 messages/month',
             '200 pages indexed',
-            'Fast AI responses',
+            'GPT-4.1 Mini only',
             'Website source only',
             'PageCortex branding',
         ],
@@ -178,7 +174,7 @@ export const PLANS = {
             '1 Chatbot',
             '4,000 messages/month',
             '1,000 pages indexed',
-            'Smart AI routing',
+            'GPT-4.1 Mini + smart routing',
             'Website + File Upload',
             'Basic analytics',
             'Remove branding',
@@ -207,7 +203,7 @@ export const PLANS = {
             '3 Chatbots',
             '10,000 messages/month',
             '10,000 pages indexed',
-            'Advanced AI + Smart routing',
+            'GPT-4.1 Mini + GPT-4.1 with smart routing',
             'All data sources',
             'Advanced analytics',
             'API access',
@@ -236,7 +232,7 @@ export const PLANS = {
             '10 Chatbots',
             '40,000 messages/month',
             '50,000 pages indexed',
-            'Premium AI priority access',
+            'GPT-4.1 Mini + GPT-4.1 with smart routing',
             'All data sources + API',
             'Advanced analytics + exports',
             'Dedicated support',
@@ -266,7 +262,7 @@ export const PLANS = {
             'Unlimited Chatbots',
             'Unlimited messages',
             'Unlimited pages',
-            'All AI tiers unlocked',
+            'GPT-4.1 Mini + GPT-4.1 with smart routing',
             'All data sources',
             'Dedicated account manager',
             'SLA guarantee',

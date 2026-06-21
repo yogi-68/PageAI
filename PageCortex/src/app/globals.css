@@ -16,6 +16,7 @@
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
   --color-violet: #8b5cf6;
+  --color-accent: var(--color-primary);
 }
 
 /* Dark theme overrides */

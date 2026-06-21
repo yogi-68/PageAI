@@ -5,7 +5,6 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { Sk } from '@/components/ui/Skeleton';
-import IntegrationWizard from '@/components/IntegrationWizard';
 import LiveTestConsole from '@/components/LiveTestConsole';
 import { Search, Activity, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
 
@@ -121,7 +120,6 @@ export default function IntegrationsPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [modal, setModal] = useState<ModalState>({ open: false, editing: null });
-  const [wizardOpen, setWizardOpen] = useState(false);
   const [logSearch, setLogSearch] = useState('');
   const [logFilter, setLogFilter] = useState<'all' | 'success' | 'error' | 'timeout' | 'blocked'>('all');
   const [successMessage, setSuccessMessage] = useState('');
@@ -222,6 +220,11 @@ export default function IntegrationsPage() {
     setFormError('');
     if (!form.name.trim()) { setFormError('Name is required'); return; }
     if (!form.baseUrl.trim()) { setFormError('Base URL is required'); return; }
+    if (form.baseUrl.toLowerCase().includes('supabase.co')) {
+      setFormError('Custom REST is for your store/API with /orders/ and /products/ paths. Supabase project URLs are not supported here.');
+      return;
+    }
+    if (form.allowedEndpoints.length === 0) { setFormError('At least one allowed endpoint is required'); return; }
     try { new URL(form.baseUrl); } catch { setFormError('Base URL must be a valid URL'); return; }
 
     setSaving(true);
@@ -313,18 +316,6 @@ export default function IntegrationsPage() {
   return (
     <div className="space-y-6">
 
-      {/* Integration Wizard */}
-      <IntegrationWizard
-        isOpen={wizardOpen}
-        onClose={() => setWizardOpen(false)}
-        onComplete={() => {
-          setWizardOpen(false);
-          setSuccessMessage('Integration created successfully!');
-          setTimeout(() => setSuccessMessage(''), 5000);
-          fetchData();
-        }}
-      />
-
       {/* Success Message */}
       {successMessage && (
         <div className="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg bg-[#22c55e]/10 border border-[#22c55e]/30 shadow-lg animate-in slide-in-from-top-2">
@@ -349,14 +340,7 @@ export default function IntegrationsPage() {
           <button
             onClick={openAdd}
             disabled={!hasApiAccess}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-edge text-fg-secondary text-[13px] font-medium hover:text-fg hover:border-fg/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Quick Add
-          </button>
-          <button
-            onClick={() => setWizardOpen(true)}
-            disabled={!hasApiAccess}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-accent text-white text-[13px] font-medium hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span className="text-[16px] leading-none">+</span> Add Integration
           </button>
@@ -430,7 +414,7 @@ export default function IntegrationsPage() {
             <div className="text-[32px] mb-2">🔌</div>
             <p className="text-[14px] font-medium text-fg">No integrations yet</p>
             <p className="text-[13px] text-fg-secondary mt-1 mb-4">Connect Shopify, WooCommerce, or any REST API to answer live customer queries.</p>
-            <button onClick={openAdd} className="px-4 py-2 rounded-lg bg-accent text-white text-[13px] font-medium hover:bg-accent/90 transition-colors">
+            <button onClick={openAdd} className="px-4 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors">
               Add your first integration
             </button>
           </div>
@@ -483,7 +467,7 @@ export default function IntegrationsPage() {
                 <button
                   onClick={() => handleToggle(integration)}
                   disabled={togglingId === integration.id}
-                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${integration.is_enabled ? 'bg-accent' : 'bg-edge'} ${togglingId === integration.id ? 'opacity-50' : ''}`}
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${integration.is_enabled ? 'bg-primary' : 'bg-edge'} ${togglingId === integration.id ? 'opacity-50' : ''}`}
                   title={integration.is_enabled ? 'Disable' : 'Enable'}
                 >
                   <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${integration.is_enabled ? 'translate-x-4' : 'translate-x-0'}`} />
@@ -700,6 +684,11 @@ export default function IntegrationsPage() {
                   {form.type === 'woocommerce' && 'Your WordPress site root URL where WooCommerce is installed.'}
                   {form.type === 'custom' && 'Root URL of your REST API (scheme + host only, no path).'}
                 </p>
+                {form.baseUrl.toLowerCase().includes('supabase.co') && (
+                  <p className="text-[11px] text-warning mt-1.5 px-2 py-1.5 rounded-md bg-warning/10 border border-warning/20">
+                    Custom REST is for your store/API with /orders/ and /products/ paths. Supabase project URLs are not supported here.
+                  </p>
+                )}
               </div>
 
               {/* Credentials */}

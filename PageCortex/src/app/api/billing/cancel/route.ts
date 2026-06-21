@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDodoClientForUser, isDevUser } from '@/lib/dodo';
+import { getDodoClientForUser, isTestMode } from '@/lib/dodo';
 import { getAdminClient } from '@/lib/supabase';
 import { validateEnv } from '@/lib/env';
 import { getSessionUser } from '@/lib/auth-server';
@@ -51,8 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        const userTestMode = isDevUser(profile.email);
-        const dodo = getDodoClientForUser(userTestMode);
+        const dodo = getDodoClientForUser(isTestMode());
 
         await (dodo as any).subscriptions.cancel(profile.dodo_subscription_id);
 

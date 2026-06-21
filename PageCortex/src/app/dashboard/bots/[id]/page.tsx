@@ -282,8 +282,12 @@ export default function BotManagePage() {
             </div>
             <div className="p-5 rounded-xl border border-edge bg-surface/40">
               <p className="text-[11px] font-medium text-fg-muted uppercase tracking-wide mb-1">Model</p>
-              <p className="text-[15px] font-semibold text-fg capitalize">{bot.model === 'auto' ? 'Smart routing' : bot.model === 'gpt-4.1-mini' ? 'Fast AI' : 'Advanced AI'}</p>
-              <p className="text-[11px] text-fg-muted mt-0.5">{bot.model === 'gpt-4.1-mini' ? 'Fast & cost-efficient' : bot.model === 'gpt-4.1' ? 'Most capable' : 'Smart routing by complexity'}</p>
+              <p className="text-[15px] font-semibold text-fg capitalize">
+                {bot.model === 'auto' ? 'Smart routing' : bot.model === 'gpt-4.1-mini' ? 'GPT-4.1 Mini' : bot.model === 'gpt-4.1' ? 'GPT-4.1' : bot.model}
+              </p>
+              <p className="text-[11px] text-fg-muted mt-0.5">
+                {bot.model === 'gpt-4.1-mini' ? 'Fast & cost-efficient' : bot.model === 'gpt-4.1' ? 'Full GPT-4.1 model' : 'Routes between GPT-4.1 Mini and GPT-4.1 by complexity'}
+              </p>
             </div>
             <div className="p-5 rounded-xl border border-edge bg-surface/40">
               <p className="text-[11px] font-medium text-fg-muted uppercase tracking-wide mb-1">Status</p>
@@ -398,24 +402,24 @@ export default function BotManagePage() {
           <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">
             <div>
               <h3 className="text-[14px] font-semibold text-fg">AI Model</h3>
-              <p className="text-[12px] text-fg-muted mt-0.5">Smart routing automatically adapts to query complexity — no action needed.</p>
+              <p className="text-[12px] text-fg-muted mt-0.5">Choose GPT-4.1 Mini, smart routing, or full GPT-4.1 based on your plan.</p>
             </div>
             {/* Plan gating legend */}
             {plan === 'free' && (
               <div className="px-3 py-2 rounded-lg bg-warning/8 border border-warning/20 text-[11px] text-warning">
-                Free plan includes Fast AI only. <Link href="/dashboard/billing" className="underline font-medium">Upgrade to Starter</Link> to unlock Smart Routing, and Growth for Advanced AI.
+                Free plan includes GPT-4.1 Mini only. <Link href="/dashboard/billing" className="underline font-medium">Upgrade to Starter</Link> for smart routing, and Growth for GPT-4.1.
               </div>
             )}
             {plan === 'starter' && (
               <div className="px-3 py-2 rounded-lg bg-primary/6 border border-primary/20 text-[11px] text-fg-secondary">
-                Starter includes Fast AI + Smart Routing. <Link href="/dashboard/billing" className="underline font-medium">Upgrade to Growth</Link> to unlock Advanced AI.
+                Starter includes GPT-4.1 Mini + smart routing. <Link href="/dashboard/billing" className="underline font-medium">Upgrade to Growth</Link> to unlock GPT-4.1.
               </div>
             )}
             <div className="space-y-2">
               {([
-                { id: 'gpt-4.1-mini', name: 'Fast AI', desc: 'Fast & cost-efficient. Best for most support bots.', minPlan: 'free' },
-                { id: 'auto', name: 'Smart Routing', desc: 'Auto-selects the best model per query — fast for simple, advanced for complex.', minPlan: 'starter' },
-                { id: 'gpt-4.1', name: 'Advanced AI', desc: 'Most capable model. Best for technical or complex topics.', minPlan: 'growth' },
+                { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', desc: 'Fast & cost-efficient. Best for most support bots.', minPlan: 'free' },
+                { id: 'auto', name: 'Smart routing', desc: 'Auto-selects GPT-4.1 Mini or GPT-4.1 per query based on complexity.', minPlan: 'starter' },
+                { id: 'gpt-4.1', name: 'GPT-4.1', desc: 'Full GPT-4.1 model. Best for technical or complex topics.', minPlan: 'growth' },
               ] as { id: string; name: string; desc: string; minPlan: string }[]).map(m => {
                 const planRank: Record<string, number> = { free: 0, starter: 1, growth: 2, scale: 3, enterprise: 4 };
                 const locked = (planRank[plan] ?? 0) < (planRank[m.minPlan] ?? 0);

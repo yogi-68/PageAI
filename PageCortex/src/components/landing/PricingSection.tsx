@@ -48,7 +48,7 @@ const plans: Plan[] = [
       {
         label: 'AI Capabilities',
         features: [
-          { text: '⚡ Fast AI' },
+          { text: 'GPT-4.1 Mini only' },
         ],
       },
       {
@@ -86,7 +86,7 @@ const plans: Plan[] = [
       {
         label: 'AI Capabilities',
         features: [
-          { text: '⚡ Fast AI + 🧠 Smart routing' },
+          { text: 'GPT-4.1 Mini + smart routing' },
         ],
       },
       {
@@ -130,7 +130,7 @@ const plans: Plan[] = [
       {
         label: 'AI Capabilities',
         features: [
-          { text: '🧠 Advanced AI + Smart routing', highlight: true },
+          { text: 'GPT-4.1 Mini + GPT-4.1 with smart routing', highlight: true },
           { text: 'Custom system prompts' },
         ],
       },
@@ -182,7 +182,7 @@ const plans: Plan[] = [
       {
         label: 'AI Capabilities',
         features: [
-          { text: '🚀 All AI models', highlight: true },
+          { text: 'GPT-4.1 Mini + GPT-4.1 with smart routing', highlight: true },
           { text: 'Custom system prompts' },
         ],
       },

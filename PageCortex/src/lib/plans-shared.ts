@@ -22,33 +22,27 @@ export function comparePlans(targetPlanId: string, currentPlanId: string): PlanA
 
 /** Display config for billing page — keep in sync with PLANS in lib/dodo.ts */
 export const BILLING_PLANS = [
-    { id: 'free' as const, name: 'Free', price: 0, trial: false, features: ['1 Chatbot', '100 messages/month', '200 Pages indexed', 'Fast AI only', 'Basic analytics', 'Website connector', 'PageCortex branding'] },
-    { id: 'starter' as const, name: 'Starter', price: 29, trial: true, features: ['1 Chatbot', '4,000 messages/month', '1,000 Pages indexed', 'Smart AI routing', 'Website + File upload', 'Remove PageCortex branding', 'Email support'] },
-    { id: 'growth' as const, name: 'Growth', price: 69, popular: true, trial: true, features: ['3 Chatbots', '10,000 messages/month', '10,000 Pages indexed', 'Advanced AI + Smart routing', 'All data connectors', 'Advanced analytics', 'Priority support', 'Custom system prompts'] },
-    { id: 'scale' as const, name: 'Scale', price: 199, trial: false, features: ['10 Chatbots', '40,000 messages/month', '50,000 Pages indexed', 'All AI models', 'All data connectors', 'Dedicated support'] },
-    { id: 'enterprise' as const, name: 'Enterprise', price: -1, trial: false, features: ['Unlimited Chatbots', 'Unlimited messages', 'Unlimited pages', 'All AI tiers', 'All data connectors', 'Dedicated account manager', 'Custom integrations'] },
+    { id: 'free' as const, name: 'Free', price: 0, trial: false, features: ['1 Chatbot', '100 messages/month', '200 Pages indexed', 'GPT-4.1 Mini only', 'Basic analytics', 'Website connector', 'PageCortex branding'] },
+    { id: 'starter' as const, name: 'Starter', price: 29, trial: true, features: ['1 Chatbot', '4,000 messages/month', '1,000 Pages indexed', 'GPT-4.1 Mini + smart routing', 'Website + File upload', 'Remove PageCortex branding', 'Email support'] },
+    { id: 'growth' as const, name: 'Growth', price: 69, popular: true, trial: true, features: ['3 Chatbots', '10,000 messages/month', '10,000 Pages indexed', 'GPT-4.1 Mini + GPT-4.1 with smart routing', 'All data connectors', 'Advanced analytics', 'Priority support', 'Custom system prompts'] },
+    { id: 'scale' as const, name: 'Scale', price: 199, trial: false, features: ['10 Chatbots', '40,000 messages/month', '50,000 Pages indexed', 'GPT-4.1 Mini + GPT-4.1 with smart routing', 'All data connectors', 'Dedicated support'] },
+    { id: 'enterprise' as const, name: 'Enterprise', price: -1, trial: false, features: ['Unlimited Chatbots', 'Unlimited messages', 'Unlimited pages', 'GPT-4.1 Mini + GPT-4.1 with smart routing', 'All data connectors', 'Dedicated account manager', 'Custom integrations'] },
 ];
 
-export function getPlanButtonLabel(
-    action: PlanAction,
-    loading: boolean,
-    plan?: { id: string; name: string }
-): string {
+export function getPlanButtonLabel(action: PlanAction, loading: boolean): string {
     if (loading) return 'Loading...';
     switch (action) {
         case 'current': return 'Current Plan';
         case 'upgrade': return 'Upgrade';
-        case 'downgrade':
-            if (plan?.id === 'free') return 'Cancel subscription';
-            return plan ? `Switch to ${plan.name}` : 'Switch plan';
         case 'contact': return 'Contact Sales';
+        default: return '';
     }
 }
 
-/** Hide redundant actions — cancel lives on the current-plan card, not the Free tier card */
-export function shouldShowPlanButton(action: PlanAction, planId: string, currentPlanId: string): boolean {
-    if (planId === 'free' && currentPlanId !== 'free' && action === 'downgrade') {
-        return false;
-    }
-    return true;
+/** Upgrade-only UI: show button for upgrade, current, and enterprise contact only */
+export function shouldShowPlanButton(action: PlanAction, planId: string): boolean {
+    if (action === 'upgrade') return true;
+    if (action === 'current') return true;
+    if (action === 'contact' && planId === 'enterprise') return true;
+    return false;
 }

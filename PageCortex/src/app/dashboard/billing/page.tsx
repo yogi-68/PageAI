@@ -24,6 +24,9 @@ interface ProfileData {
   max_pages_indexed: number;
   dodo_subscription_id: string | null;
   addon_message_balance: number;
+  subscription_started_at: string | null;
+  subscription_expires_at: string | null;
+  billing_interval: string | null;
 }
 
 interface BillingMode { testMode: boolean; mockMode: boolean; ok: boolean; }
@@ -49,7 +52,7 @@ export default function BillingPage() {
 
   const refreshProfile = useCallback(() => {
     if (!user) return;
-    supabase.from('profiles').select('plan, monthly_message_count, monthly_message_limit, total_pages_indexed, max_pages_indexed, dodo_subscription_id, addon_message_balance').eq('id', user.id).single().then(({ data }) => {
+    supabase.from('profiles').select('plan, monthly_message_count, monthly_message_limit, total_pages_indexed, max_pages_indexed, dodo_subscription_id, addon_message_balance, subscription_started_at, subscription_expires_at, billing_interval').eq('id', user.id).single().then(({ data }) => {
       if (data) setProfile(data as ProfileData);
     });
     // Fetch live pages count from actual documents table (profiles.total_pages_indexed can be stale)
@@ -101,33 +104,9 @@ export default function BillingPage() {
     }
   }, [searchParams, refreshProfile]);
 
-  const handleCancelSubscription = async () => {
-    setLoading('free');
-    try {
-      const res = await billingFetch('/api/billing/cancel', { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(data.message || 'Subscription cancelled');
-        refreshProfile();
-      } else {
-        toast.error(data.error || 'Failed to cancel subscription');
-      }
-    } catch (e: any) {
-      toast.error(e.message);
-    }
-    setLoading(null);
-  };
-
   const handlePlanChange = async (planId: string) => {
     const action = comparePlans(planId, profile?.plan || 'free');
-    if (action === 'current' || action === 'contact') return;
-
-    if (planId === 'free') {
-      if ((profile?.plan || 'free') === 'free') return;
-      if (!confirm('Cancel your subscription and downgrade to the Free plan?')) return;
-      await handleCancelSubscription();
-      return;
-    }
+    if (action !== 'upgrade') return;
 
     setLoading(planId);
     try {
@@ -232,19 +211,12 @@ export default function BillingPage() {
           {profile?.dodo_subscription_id && (
             <p className="text-[11px] text-fg-muted mt-1">Subscription active</p>
           )}
-          {currentPlan !== 'free' && (
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm('Cancel your subscription and return to the Free plan? You will keep access until the end of your billing period.')) {
-                  handleCancelSubscription();
-                }
-              }}
-              disabled={loading === 'free'}
-              className="mt-3 text-[12px] font-medium text-fg-secondary hover:text-danger transition-colors disabled:opacity-50"
-            >
-              {loading === 'free' ? 'Cancelling…' : 'Cancel subscription'}
-            </button>
+          {profile?.subscription_expires_at && currentPlan !== 'free' && (
+            <p className="text-[11px] text-fg-muted mt-1">
+              {profile.billing_interval === 'yearly' ? 'Renews on' : 'Renews on'}{' '}
+              {new Date(profile.subscription_expires_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+              {profile.billing_interval === 'yearly' ? ' (annual plan)' : ' (monthly plan)'}
+            </p>
           )}
         </div>
         <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">
@@ -345,8 +317,8 @@ export default function BillingPage() {
           const planAction = comparePlans(plan.id, currentPlan);
           const isCurrent = planAction === 'current';
           const isEnterprise = plan.id === 'enterprise';
-          const showButton = shouldShowPlanButton(planAction, plan.id, currentPlan);
-          const buttonLabel = getPlanButtonLabel(planAction, loading === plan.id, { id: plan.id, name: plan.name });
+          const showButton = shouldShowPlanButton(planAction, plan.id);
+          const buttonLabel = getPlanButtonLabel(planAction, loading === plan.id);
           return (
             <div key={plan.id} className={`relative flex flex-col p-5 rounded-xl border transition-all duration-200 ${(plan as any).popular ? 'border-primary bg-primary/[0.04]' : 'border-edge bg-surface/40'} ${isCurrent ? 'ring-1 ring-primary/40' : ''}`}>
               {(plan as any).popular && <span className="absolute -top-2.5 left-4 px-2.5 py-0.5 rounded-md bg-primary text-white text-[11px] font-semibold">Popular</span>}
@@ -373,7 +345,7 @@ export default function BillingPage() {
               {showButton ? (
                 <button
                   onClick={() => isEnterprise ? window.open('mailto:support@pagecortex.com?subject=Enterprise%20Plan', '_blank') : handlePlanChange(plan.id)}
-                  disabled={isCurrent || loading === plan.id || planAction === 'contact'}
+                  disabled={isCurrent || loading === plan.id}
                   className={`w-full py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
                     isCurrent
                       ? 'bg-edge/50 text-fg-muted cursor-default'
@@ -389,9 +361,9 @@ export default function BillingPage() {
                   {buttonLabel}
                 </button>
               ) : (
-                <p className="w-full py-2.5 text-center text-[12px] text-fg-muted">
-                  Use &quot;Cancel subscription&quot; above to return to Free
-                </p>
+                <div className="w-full py-2.5 text-center text-[12px] text-fg-muted border border-edge/50 rounded-lg">
+                  —
+                </div>
               )}
             </div>
           );
@@ -399,10 +371,13 @@ export default function BillingPage() {
       </div>
 
       {/* Overage pricing note */}
-      <div className="p-4 rounded-xl border border-edge bg-surface/40">
+      <div className="p-4 rounded-xl border border-edge bg-surface/40 space-y-2">
         <p className="text-[13px] text-fg-secondary">
           <span className="font-medium text-fg">Usage priority:</span> Plan quota is used first → then add-on credits → then auto-overage (if enabled) at $4 / 1,000 messages.
           All paid plans include a 7-day free trial.
+        </p>
+        <p className="text-[12px] text-fg-muted">
+          All conversations are powered by OpenAI GPT-4.1 family models (GPT-4.1 Mini and GPT-4.1).
         </p>
       </div>
     </div>
