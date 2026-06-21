@@ -31,6 +31,11 @@ interface ProfileData {
 
 interface BillingMode { testMode: boolean; mockMode: boolean; ok: boolean; }
 
+const PROFILE_SELECT_BASE =
+  'plan, monthly_message_count, monthly_message_limit, total_pages_indexed, max_pages_indexed, dodo_subscription_id, addon_message_balance';
+const PROFILE_SELECT_WITH_DATES =
+  `${PROFILE_SELECT_BASE}, subscription_started_at, subscription_expires_at, billing_interval`;
+
 export default function BillingPage() {
   const { user, session } = useAuth();
 
@@ -49,13 +54,47 @@ export default function BillingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [billingMode, setBillingMode] = useState<BillingMode | null>(null);
   const [livePagesCount, setLivePagesCount] = useState<number | null>(null);
+  const [subscriptionDatesUnavailable, setSubscriptionDatesUnavailable] = useState(false);
 
-  const refreshProfile = useCallback(() => {
+  const refreshProfile = useCallback(async () => {
     if (!user) return;
-    supabase.from('profiles').select('plan, monthly_message_count, monthly_message_limit, total_pages_indexed, max_pages_indexed, dodo_subscription_id, addon_message_balance, subscription_started_at, subscription_expires_at, billing_interval').eq('id', user.id).single().then(({ data }) => {
-      if (data) setProfile(data as ProfileData);
-    });
-    // Fetch live pages count from actual documents table (profiles.total_pages_indexed can be stale)
+
+    const applyProfile = (data: Record<string, unknown>) => {
+      setProfile({
+        plan: String(data.plan || 'free'),
+        monthly_message_count: Number(data.monthly_message_count || 0),
+        monthly_message_limit: Number(data.monthly_message_limit || 50),
+        total_pages_indexed: Number(data.total_pages_indexed || 0),
+        max_pages_indexed: Number(data.max_pages_indexed || 100),
+        dodo_subscription_id: (data.dodo_subscription_id as string | null) ?? null,
+        addon_message_balance: Number(data.addon_message_balance || 0),
+        subscription_started_at: (data.subscription_started_at as string | null) ?? null,
+        subscription_expires_at: (data.subscription_expires_at as string | null) ?? null,
+        billing_interval: (data.billing_interval as string | null) ?? null,
+      });
+    };
+
+    let { data, error } = await supabase
+      .from('profiles')
+      .select(PROFILE_SELECT_WITH_DATES)
+      .eq('id', user.id)
+      .single();
+
+    if (error) {
+      const fallback = await supabase
+        .from('profiles')
+        .select(PROFILE_SELECT_BASE)
+        .eq('id', user.id)
+        .single();
+      if (fallback.data) {
+        applyProfile(fallback.data);
+        setSubscriptionDatesUnavailable(true);
+      }
+    } else if (data) {
+      applyProfile(data);
+      setSubscriptionDatesUnavailable(false);
+    }
+
     supabase.from('documents').select('id', { count: 'exact', head: true }).eq('user_id', user.id).then(({ count }) => {
       setLivePagesCount(count ?? 0);
     });
@@ -213,10 +252,13 @@ export default function BillingPage() {
           )}
           {profile?.subscription_expires_at && currentPlan !== 'free' && (
             <p className="text-[11px] text-fg-muted mt-1">
-              {profile.billing_interval === 'yearly' ? 'Renews on' : 'Renews on'}{' '}
+              Renews on{' '}
               {new Date(profile.subscription_expires_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-              {profile.billing_interval === 'yearly' ? ' (annual plan)' : ' (monthly plan)'}
+              {profile.billing_interval === 'yearly' ? ' (annual plan)' : profile.billing_interval === 'monthly' ? ' (monthly plan)' : ''}
             </p>
+          )}
+          {!profile?.subscription_expires_at && currentPlan !== 'free' && profile?.dodo_subscription_id && subscriptionDatesUnavailable && (
+            <p className="text-[11px] text-fg-muted mt-1">Renewal date unavailable — apply database migration 20260623_subscription_dates.sql</p>
           )}
         </div>
         <div className="p-5 rounded-xl border border-edge bg-surface/40 space-y-4">

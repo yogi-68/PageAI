@@ -36,6 +36,21 @@ function parseSubscriptionDates(data: Record<string, unknown>, metadata: Record<
     return { expiresAt, billingInterval };
 }
 
+/** Log when Dodo payload shape lacks a recognizable period end (helps debug missing renewal dates) */
+function logMissingPeriodEnd(eventType: string, data: Record<string, unknown>) {
+    const dateKeys = Object.keys(data).filter(k =>
+        /period|billing|renew|expir|end|next/i.test(k)
+    );
+    logger.warn('webhook', `No subscription period end found in ${eventType} payload`, {
+        eventType,
+        dateRelatedKeys: dateKeys,
+        sampleValues: dateKeys.slice(0, 8).reduce<Record<string, unknown>>((acc, k) => {
+            acc[k] = data[k];
+            return acc;
+        }, {}),
+    });
+}
+
 // Dodo Payments uses Svix-style webhook signatures
 // Header: webhook-signature = "v1,<base64_sig>"
 // Signed content: "${webhook_id}.${webhook_timestamp}.${body}"
@@ -139,6 +154,7 @@ export async function POST(request: NextRequest) {
                 };
                 if (expiresAt) updatePayload.subscription_expires_at = expiresAt;
                 if (billingInterval) updatePayload.billing_interval = billingInterval;
+                if (!expiresAt) logMissingPeriodEnd(eventType, data as Record<string, unknown>);
                 updatePayload.subscription_started_at = new Date().toISOString();
 
                 await admin.from('profiles').update(updatePayload).eq('id', userId);
@@ -168,6 +184,7 @@ export async function POST(request: NextRequest) {
                     };
                     if (expiresAt) updatePayload.subscription_expires_at = expiresAt;
                     if (billingInterval) updatePayload.billing_interval = billingInterval;
+                    if (!expiresAt) logMissingPeriodEnd(eventType, data as Record<string, unknown>);
                     await admin.from('profiles').update(updatePayload).eq('id', userId);
                     logger.info('webhook', `User plan changed to ${resolvedPlanId}`, { userId, plan: resolvedPlanId });
                 }
@@ -189,6 +206,7 @@ export async function POST(request: NextRequest) {
                         usage_reset_at: new Date().toISOString(),
                     };
                     if (expiresAt) updatePayload.subscription_expires_at = expiresAt;
+                    if (!expiresAt) logMissingPeriodEnd(eventType, data as Record<string, unknown>);
                     await admin.from('profiles').update(updatePayload).eq('id', userId);
                     logger.info('webhook', `Subscription renewed, usage reset`, { userId });
                 }
