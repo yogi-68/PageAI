@@ -24,6 +24,12 @@ const REQUIRED: Record<string, string[]> = {
     openai: [
         'OPENAI_API_KEY',
     ],
+    integrations: [
+        'NEXT_PUBLIC_SUPABASE_URL',
+        'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+        'SUPABASE_SERVICE_ROLE_KEY',
+        'ENCRYPTION_SECRET',
+    ],
 };
 
 export function validateEnv(...groups: Array<keyof typeof REQUIRED>): NextResponse | null {

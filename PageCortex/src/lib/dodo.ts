@@ -10,7 +10,10 @@ export function isTestMode(): boolean {
     return (process.env.DODO_TEST_MODE || '').trim() === 'true';
 }
 export function isMockMode(): boolean {
-    return (process.env.DODO_MOCK_PAYMENTS || '').trim() === 'true';
+    return (
+        (process.env.DODO_MOCK_PAYMENTS || '').trim() === 'true' &&
+        process.env.NODE_ENV !== 'production'
+    );
 }
 
 // ─── Per-user Test Mode ───────────────────────────────────
@@ -161,6 +164,7 @@ export const PLANS = {
             dataSources: ['website'],
             apiAccess: false,
             customBranding: false,
+            integrations: 0,
         },
     },
     starter: {
@@ -188,6 +192,7 @@ export const PLANS = {
             dataSources: ['website', 'file_upload', 'sitemap'],
             apiAccess: false,
             customBranding: true,
+            integrations: 0,
         },
     },
     growth: {
@@ -217,6 +222,7 @@ export const PLANS = {
             dataSources: ['website', 'file_upload', 'sitemap', 'notion', 'google_drive'],
             apiAccess: true,
             customBranding: true,
+            integrations: 3,
         },
     },
     scale: {
@@ -246,6 +252,7 @@ export const PLANS = {
             dataSources: ['website', 'file_upload', 'sitemap', 'notion', 'google_drive', 'gitbook', 'zendesk', 'confluence'],
             apiAccess: true,
             customBranding: true,
+            integrations: 10,
         },
     },
     enterprise: {
@@ -275,11 +282,26 @@ export const PLANS = {
             dataSources: ['website', 'file_upload', 'sitemap', 'notion', 'google_drive', 'gitbook', 'zendesk', 'confluence', 'api'],
             apiAccess: true,
             customBranding: true,
+            integrations: -1,
         },
     },
 } as const;
 
 export type PlanId = keyof typeof PLANS;
+
+export { PLAN_RANK, comparePlans, type PlanAction } from './plans-shared';
+
+/** Max API integrations allowed per plan (-1 = unlimited) */
+export function getIntegrationLimit(planId: string): number {
+    const limits: Record<string, number> = {
+        free: 0,
+        starter: 0,
+        growth: 3,
+        scale: 10,
+        enterprise: -1,
+    };
+    return limits[planId] ?? 0;
+}
 
 // Overage pricing: $4 per 1,000 messages
 export const OVERAGE_RATE = 4; // USD per 1000 messages
@@ -322,10 +344,15 @@ export function getAddonByProductId(productId: string): AddonId | null {
     return null;
 }
 
-// Map Dodo Product ID to our plan ID
+// Map Dodo Product ID to our plan ID (monthly + yearly)
 export function getPlanByProductId(productId: string): PlanId | null {
     for (const [key, plan] of Object.entries(PLANS)) {
         if (plan.productId === productId) {
+            return key as PlanId;
+        }
+    }
+    for (const [key, yearlyId] of Object.entries(YEARLY_PRODUCT_IDS)) {
+        if (yearlyId === productId) {
             return key as PlanId;
         }
     }

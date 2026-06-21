@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
 import { Sk } from '@/components/ui/Skeleton';
 import IntegrationWizard from '@/components/IntegrationWizard';
 import LiveTestConsole from '@/components/LiveTestConsole';
@@ -108,6 +110,8 @@ export default function IntegrationsPage() {
   const [logSearch, setLogSearch] = useState('');
   const [logFilter, setLogFilter] = useState<'all' | 'success' | 'error' | 'timeout' | 'blocked'>('all');
   const [successMessage, setSuccessMessage] = useState('');
+  const [hasApiAccess, setHasApiAccess] = useState<boolean | null>(null);
+  const [userPlan, setUserPlan] = useState('free');
 
   // Form state
   const [form, setForm] = useState({
@@ -124,6 +128,16 @@ export default function IntegrationsPage() {
   const fetchData = useCallback(async () => {
     if (!user) return;
     try {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('plan, api_access')
+        .eq('id', user.id)
+        .single();
+      if (profileData) {
+        setHasApiAccess(profileData.api_access ?? false);
+        setUserPlan(profileData.plan || 'free');
+      }
+
       const [intRes, logRes] = await Promise.all([
         apiFetch('/api/integrations'),
         apiFetch('/api/integrations/logs?limit=30'),
@@ -319,18 +333,41 @@ export default function IntegrationsPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={openAdd}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-edge text-fg-secondary text-[13px] font-medium hover:text-fg hover:border-fg/30 transition-colors"
+            disabled={!hasApiAccess}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-edge text-fg-secondary text-[13px] font-medium hover:text-fg hover:border-fg/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Quick Add
           </button>
           <button
             onClick={() => setWizardOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-accent text-white text-[13px] font-medium hover:bg-accent/90 transition-colors"
+            disabled={!hasApiAccess}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-accent text-white text-[13px] font-medium hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span className="text-[16px] leading-none">+</span> Add Integration
           </button>
         </div>
       </div>
+
+      {hasApiAccess === false && (
+        <div className="p-4 rounded-xl border border-primary/20 bg-primary/[0.04] flex items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle size={18} className="text-primary shrink-0 mt-0.5" />
+            <div>
+              <p className="text-[13px] font-medium text-fg">API integrations require Growth plan or higher</p>
+              <p className="text-[12px] text-fg-secondary mt-0.5">
+                Your current plan ({userPlan}) includes website and file connectors only.
+                Upgrade to connect Shopify, WooCommerce, or custom REST APIs for live order and product data.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/billing"
+            className="shrink-0 px-4 py-2 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary-hover transition-colors"
+          >
+            Upgrade Plan
+          </Link>
+        </div>
+      )}
 
       {/* Stats Row */}
       {totalCalls > 0 && (

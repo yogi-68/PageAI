@@ -2,20 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDodoClientForUser, isDevUser, getProductIdForUser, isMockMode, PLANS, PlanId, YEARLY_PRICES } from '@/lib/dodo';
 import { getAdminClient } from '@/lib/supabase';
 import { validateEnv } from '@/lib/env';
+import { getSessionUser } from '@/lib/auth-server';
 
 export async function POST(request: NextRequest) {
     const envErr = validateEnv('billing');
     if (envErr) return envErr;
 
+    const user = await getSessionUser(request);
+    if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
-        const { planId, userId, billing = 'monthly' } = await request.json() as {
+        const { planId, billing = 'monthly' } = await request.json() as {
             planId: string;
-            userId: string;
             billing?: 'monthly' | 'annual';
         };
 
-        if (!planId || !userId) {
-            return NextResponse.json({ error: 'planId and userId are required' }, { status: 400 });
+        const userId = user.id;
+
+        if (!planId) {
+            return NextResponse.json({ error: 'planId is required' }, { status: 400 });
         }
 
         const plan = PLANS[planId as PlanId];
@@ -25,14 +32,12 @@ export async function POST(request: NextRequest) {
 
         const isAnnual = billing === 'annual';
 
-        // ── Mock mode: skip Dodo entirely ──────────────────────────────────────
         if (isMockMode()) {
             const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
             const mockUrl = `${appUrl}/api/billing/mock-complete?planId=${planId}&userId=${userId}&billing=${billing}`;
             return NextResponse.json({ success: true, url: mockUrl });
         }
 
-        // Fetch user profile first — email determines whether to use sandbox or live payments
         const admin = getAdminClient();
         const { data: profile } = await admin
             .from('profiles')
@@ -44,7 +49,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        // Developer email → Dodo sandbox; everyone else → live payments
         const userTestMode = isDevUser(profile.email);
         const productId = getProductIdForUser(planId, isAnnual, userTestMode);
 
@@ -65,14 +69,6 @@ export async function POST(request: NextRequest) {
         const willGetTrial = !isAnnual && plan.trialDays > 0 && !profile.has_used_trial;
         const trialDays = willGetTrial ? plan.trialDays : 0;
 
-        if (willGetTrial) {
-            await admin
-                .from('profiles')
-                .update({ has_used_trial: true })
-                .eq('id', userId)
-                .eq('has_used_trial', false); // idempotent: only update if still false
-        }
-
         const subscription = await dodo.subscriptions.create({
             billing: {
                 city: '',
@@ -84,7 +80,6 @@ export async function POST(request: NextRequest) {
             customer: {
                 email: profile.email,
                 name: profile.full_name || profile.email,
-                // In test mode the stored customer_id is from the live environment — skip it
                 ...(!userTestMode && profile.dodo_customer_id && { customer_id: profile.dodo_customer_id }),
             },
             product_id: productId,
@@ -100,7 +95,6 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        // Only persist customer_id when in live mode (test IDs must not overwrite live IDs)
         if (!userTestMode && subscription.customer?.customer_id && !profile.dodo_customer_id) {
             await admin
                 .from('profiles')
@@ -108,10 +102,18 @@ export async function POST(request: NextRequest) {
                 .eq('id', userId);
         }
 
+        const paymentUrl = (subscription as any).payment_link || (subscription as any).url;
+        if (!paymentUrl) {
+            console.error('[billing/checkout] No payment URL from Dodo', { subscriptionId: subscription.subscription_id });
+            return NextResponse.json(
+                { error: 'Payment provider did not return a checkout URL. Please try again or contact support.' },
+                { status: 502 }
+            );
+        }
+
         return NextResponse.json({
             success: true,
-            url: (subscription as any).payment_link || (subscription as any).url ||
-                `/dashboard/billing?session=${subscription.subscription_id}`,
+            url: paymentUrl,
             subscriptionId: subscription.subscription_id,
         });
     } catch (error: any) {

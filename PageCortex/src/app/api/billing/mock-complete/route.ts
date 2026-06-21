@@ -1,26 +1,21 @@
 /**
- * Mock billing complete handler — only active when DODO_MOCK_PAYMENTS=true
- *
- * Simulates the webhook flow entirely in-app so developers can test the full
- * billing pipeline (plan upgrades, add-ons, usage limits) without a Dodo account.
- *
- * Flow (mock mode):
- *   1. User clicks "Upgrade" on billing page
- *   2. /api/billing/checkout returns { url: '/api/billing/mock-complete?planId=starter&userId=...' }
- *   3. This route applies the plan change to the DB (same as webhook would)
- *   4. Redirects to /dashboard/billing?mock_upgraded=true
- *
- * NEVER reachable in production — returns 403 if DODO_MOCK_PAYMENTS is not 'true'.
+ * Mock billing complete handler — only active when DODO_MOCK_PAYMENTS=true (non-production)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { getMessageLimit, getPageLimit, getChatbotLimit, isMockMode } from '@/lib/dodo';
 import { validateEnv } from '@/lib/env';
+import { getSessionUser } from '@/lib/auth-server';
 
 export async function GET(request: NextRequest) {
     if (!isMockMode()) {
         return NextResponse.json({ error: 'Mock mode is not enabled' }, { status: 403 });
+    }
+
+    const user = await getSessionUser(request);
+    if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const envErr = validateEnv('supabase');
@@ -29,20 +24,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const planId = searchParams.get('planId');
     const addonId = searchParams.get('addonId');
-    const userId = searchParams.get('userId');
+    const userId = user.id;
     const billing = searchParams.get('billing') || 'monthly';
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-    if (!userId) {
-        return NextResponse.redirect(`${appUrl}/dashboard/billing?error=missing_userId`);
-    }
 
     const admin = getAdminClient();
 
     try {
         if (planId && planId !== 'free') {
-            // Simulate subscription activation
             const resolved = planId as string;
             await admin.from('profiles').update({
                 plan: resolved,

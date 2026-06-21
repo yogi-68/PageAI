@@ -6,15 +6,9 @@ import { supabase } from '@/lib/supabase';
 import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Sk } from '@/components/ui/Skeleton';
+import { BILLING_PLANS, comparePlans, getPlanButtonLabel } from '@/lib/plans-shared';
 
-// Plans — features kept in sync with PLANS in lib/dodo.ts
-const plans = [
-  { id: 'free',       name: 'Free',       price: 0,   trial: false, features: ['1 Chatbot', '100 messages/month', '200 Pages indexed', 'Fast AI only', 'Basic analytics', 'Website connector', 'PageCortex branding'] },
-  { id: 'starter',   name: 'Starter',    price: 29,  trial: true,  features: ['1 Chatbot', '4,000 messages/month', '1,000 Pages indexed', 'Smart AI routing', 'Website + File upload', 'Remove PageCortex branding', 'Email support'] },
-  { id: 'growth',    name: 'Growth',     price: 69,  popular: true, trial: true, features: ['3 Chatbots', '10,000 messages/month', '10,000 Pages indexed', 'Advanced AI + Smart routing', 'All data connectors', 'Advanced analytics', 'Priority support', 'Custom system prompts'] },
-  { id: 'scale',     name: 'Scale',      price: 199, trial: false, features: ['10 Chatbots', '40,000 messages/month', '50,000 Pages indexed', 'All AI models', 'All data connectors', 'Dedicated support'] },
-  { id: 'enterprise', name: 'Enterprise', price: -1, trial: false, features: ['Unlimited Chatbots', 'Unlimited messages', 'Unlimited pages', 'All AI tiers', 'All data connectors', 'Dedicated account manager', 'Custom integrations'] },
-];
+const plans = BILLING_PLANS;
 
 const MESSAGE_ADDONS = [
   { id: '1000_messages', label: '+1,000 Messages', price: 4, perK: '$4.00/K', badge: null },
@@ -96,14 +90,40 @@ export default function BillingPage() {
     }
   }, [searchParams, refreshProfile]);
 
-  const handleUpgrade = async (planId: string) => {
-    if (planId === (profile?.plan || 'free') || planId === 'free' || planId === 'enterprise') return;
+  const handleCancelSubscription = async () => {
+    setLoading('free');
+    try {
+      const res = await fetch('/api/billing/cancel', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message || 'Subscription cancelled');
+        refreshProfile();
+      } else {
+        toast.error(data.error || 'Failed to cancel subscription');
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+    setLoading(null);
+  };
+
+  const handlePlanChange = async (planId: string) => {
+    const action = comparePlans(planId, profile?.plan || 'free');
+    if (action === 'current' || action === 'contact') return;
+
+    if (planId === 'free') {
+      if ((profile?.plan || 'free') === 'free') return;
+      if (!confirm('Cancel your subscription and downgrade to the Free plan?')) return;
+      await handleCancelSubscription();
+      return;
+    }
+
     setLoading(planId);
     try {
       const res = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId, userId: user?.id }),
+        body: JSON.stringify({ planId }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
@@ -120,7 +140,7 @@ export default function BillingPage() {
       const res = await fetch('/api/billing/addons/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ addonId, userId: user?.id }),
+        body: JSON.stringify({ addonId }),
       });
       const data = await res.json();
       if (data.url) {
@@ -176,7 +196,15 @@ export default function BillingPage() {
       </div>
 
       {/* Sandbox mode indicator — only visible to the developer account */}
-      {isDeveloper && (billingMode?.testMode || billingMode?.mockMode) && (
+      {isDeveloper && billingMode?.mockMode && (
+        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg border border-danger/30 bg-danger/[0.04]">
+          <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-danger/20 text-danger uppercase tracking-wide">Mock</span>
+          <p className="text-[12px] text-fg-secondary">
+            <span className="font-medium text-danger">Mock payments active</span> — checkout skips Dodo and upgrades instantly. Set <code className="text-[11px]">DODO_MOCK_PAYMENTS=false</code> to test real checkout locally.
+          </p>
+        </div>
+      )}
+      {isDeveloper && billingMode?.testMode && !billingMode?.mockMode && (
         <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg border border-warning/30 bg-warning/[0.04]">
           <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-warning/20 text-warning uppercase tracking-wide">Dev</span>
           <p className="text-[12px] text-fg-secondary">
@@ -291,8 +319,10 @@ export default function BillingPage() {
       {/* Plan Cards */}
       <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-4">
         {plans.map(plan => {
-          const isCurrent = plan.id === currentPlan;
+          const planAction = comparePlans(plan.id, currentPlan);
+          const isCurrent = planAction === 'current';
           const isEnterprise = plan.id === 'enterprise';
+          const buttonLabel = getPlanButtonLabel(planAction, loading === plan.id);
           return (
             <div key={plan.id} className={`relative flex flex-col p-5 rounded-xl border transition-all duration-200 ${(plan as any).popular ? 'border-primary bg-primary/[0.04]' : 'border-edge bg-surface/40'} ${isCurrent ? 'ring-1 ring-primary/40' : ''}`}>
               {(plan as any).popular && <span className="absolute -top-2.5 left-4 px-2.5 py-0.5 rounded-md bg-primary text-white text-[11px] font-semibold">Popular</span>}
@@ -317,8 +347,8 @@ export default function BillingPage() {
                 ))}
               </ul>
               <button
-                onClick={() => isEnterprise ? window.open('mailto:support@pagecortex.com?subject=Enterprise%20Plan', '_blank') : handleUpgrade(plan.id)}
-                disabled={isCurrent || loading === plan.id}
+                onClick={() => isEnterprise ? window.open('mailto:support@pagecortex.com?subject=Enterprise%20Plan', '_blank') : handlePlanChange(plan.id)}
+                disabled={isCurrent || loading === plan.id || planAction === 'contact'}
                 className={`w-full py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
                   isCurrent
                     ? 'bg-edge/50 text-fg-muted cursor-default'
@@ -326,11 +356,12 @@ export default function BillingPage() {
                       ? 'bg-primary text-white hover:bg-primary-hover'
                       : isEnterprise
                         ? 'bg-[#a78bfa]/10 text-[#a78bfa] border border-[#a78bfa]/20 hover:bg-[#a78bfa]/20'
-                        : 'border border-edge text-fg hover:bg-surface-elevated/50 hover:border-edge-light'
+                        : planAction === 'downgrade'
+                          ? 'border border-warning/30 text-warning hover:bg-warning/[0.06]'
+                          : 'border border-edge text-fg hover:bg-surface-elevated/50 hover:border-edge-light'
                 } disabled:opacity-50`}
               >
-                {loading === plan.id ? 'Loading...' :
-                  isCurrent ? 'Current Plan' : isEnterprise ? 'Contact Sales' : plan.price === 0 ? 'Downgrade' : 'Upgrade'}
+                {buttonLabel}
               </button>
             </div>
           );

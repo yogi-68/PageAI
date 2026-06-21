@@ -107,10 +107,46 @@ function isEndpointAllowed(url: string, allowedEndpoints: string[]): boolean {
 }
 
 // ─── Build Auth Headers ───────────────────────────────────
+export function normalizeIntegrationCredentials(
+    type: IntegrationType,
+    raw: Record<string, string>
+): Record<string, string> {
+    if (type === 'shopify') {
+        return raw.apiKey ? { apiKey: raw.apiKey } : {};
+    }
+    if (type === 'woocommerce') {
+        const cred: Record<string, string> = {};
+        if (raw.consumerKey) cred.consumerKey = raw.consumerKey;
+        if (raw.consumerSecret) cred.consumerSecret = raw.consumerSecret;
+        return cred;
+    }
+    // custom
+    if (raw.authHeader) {
+        const trimmed = raw.authHeader.trim();
+        const authHeader = trimmed.includes(':')
+            ? trimmed
+            : `Authorization: ${trimmed.toLowerCase().startsWith('bearer ') ? trimmed : `Bearer ${trimmed}`}`;
+        return { authHeader };
+    }
+    if (raw.authValue) {
+        const authType = (raw.authType || 'Bearer Token').toLowerCase();
+        if (authType.includes('bearer')) {
+            const token = raw.authValue.replace(/^Bearer\s+/i, '');
+            return { authHeader: `Authorization: Bearer ${token}` };
+        }
+        return { apiKey: raw.authValue };
+    }
+    if (raw.apiKey) {
+        return { apiKey: raw.apiKey };
+    }
+    return {};
+}
+
 function buildAuthHeaders(
     type: IntegrationType,
     credentials: Record<string, string>
 ): Record<string, string> {
+    const normalized = normalizeIntegrationCredentials(type, credentials);
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -119,22 +155,30 @@ function buildAuthHeaders(
 
     switch (type) {
         case 'shopify':
-            if (credentials.apiKey) {
-                headers['X-Shopify-Access-Token'] = credentials.apiKey;
+            if (normalized.apiKey) {
+                headers['X-Shopify-Access-Token'] = normalized.apiKey;
             }
             break;
         case 'woocommerce': {
-            // WooCommerce uses HTTP Basic auth with consumer key + secret
-            const wcCred = `${credentials.consumerKey || ''}:${credentials.consumerSecret || ''}`;
+            const wcCred = `${normalized.consumerKey || ''}:${normalized.consumerSecret || ''}`;
             headers['Authorization'] = `Basic ${Buffer.from(wcCred).toString('base64')}`;
             break;
         }
         case 'custom':
-            if (credentials.authHeader) {
-                const [headerName, ...rest] = credentials.authHeader.split(':');
-                headers[headerName.trim()] = rest.join(':').trim();
-            } else if (credentials.apiKey) {
-                headers['Authorization'] = `Bearer ${credentials.apiKey}`;
+            if (normalized.authHeader) {
+                const trimmed = normalized.authHeader.trim();
+                if (trimmed.includes(':')) {
+                    const [headerName, ...rest] = trimmed.split(':');
+                    headers[headerName.trim()] = rest.join(':').trim();
+                } else if (trimmed.toLowerCase().startsWith('bearer ')) {
+                    headers['Authorization'] = trimmed;
+                } else {
+                    headers['Authorization'] = `Bearer ${trimmed}`;
+                }
+            } else if (normalized.apiKey) {
+                headers['Authorization'] = normalized.apiKey.startsWith('Bearer ')
+                    ? normalized.apiKey
+                    : `Bearer ${normalized.apiKey}`;
             }
             break;
     }
@@ -181,8 +225,25 @@ export async function getIntegrationsPublic(userId: string): Promise<ClientInteg
 }
 
 /**
- * Test connectivity to an integration's base URL.
- * Tries a lightweight GET/HEAD request and records the result.
+ * Resolve a probe URL for connectivity testing per integration type.
+ */
+function getIntegrationProbePath(
+    type: IntegrationType,
+    allowedEndpoints: string[]
+): string {
+    switch (type) {
+        case 'shopify':
+            return '/admin/api/2024-01/shop.json';
+        case 'woocommerce':
+            return allowedEndpoints[0] || '/wp-json/wc/v3/system_status';
+        case 'custom':
+            return allowedEndpoints[0] || '/';
+    }
+}
+
+/**
+ * Test connectivity to an integration's API.
+ * Probes a type-specific endpoint rather than the bare base URL.
  */
 export async function testIntegration(
     integrationId: string,
@@ -200,8 +261,11 @@ export async function testIntegration(
     if (!row) return { success: false, message: 'Integration not found', latencyMs: 0 };
 
     const credentials = decryptCredentials(row.encrypted_credentials || '');
-    const headers = buildAuthHeaders(row.type as IntegrationType, credentials);
-    const testUrl = row.base_url.replace(/\/$/, '');
+    const integrationType = row.type as IntegrationType;
+    const headers = buildAuthHeaders(integrationType, credentials);
+    const base = row.base_url.replace(/\/$/, '');
+    const probePath = getIntegrationProbePath(integrationType, row.allowed_endpoints || []);
+    const testUrl = `${base}${probePath.startsWith('/') ? probePath : `/${probePath}`}`;
 
     const start = Date.now();
     let success = false;
@@ -218,10 +282,19 @@ export async function testIntegration(
         });
         clearTimeout(timeout);
 
-        success = res.status < 500;
-        message = success
-            ? `Connected — HTTP ${res.status}`
-            : `Server error — HTTP ${res.status}`;
+        if (res.status === 401 || res.status === 403) {
+            success = false;
+            message = `Authentication failed — HTTP ${res.status}. Check your credentials.`;
+        } else if (res.status >= 500) {
+            success = false;
+            message = `Server error — HTTP ${res.status}`;
+        } else if (res.status === 404) {
+            success = true;
+            message = `Reachable — HTTP 404 on probe path (verify allowed endpoints)`;
+        } else {
+            success = true;
+            message = `Connected — HTTP ${res.status}`;
+        }
     } catch (err: any) {
         if (err?.name === 'AbortError') {
             message = 'Connection timed out (8s)';
@@ -358,7 +431,8 @@ export async function createIntegration(params: {
     allowedEndpoints: string[];
 }): Promise<{ id: string } | { error: string }> {
     const admin = getAdminClient();
-    const encrypted = encryptCredentials(params.credentials);
+    const normalized = normalizeIntegrationCredentials(params.type, params.credentials);
+    const encrypted = encryptCredentials(normalized);
 
     const { data, error } = await admin
         .from('client_integrations')
@@ -397,7 +471,15 @@ export async function updateIntegration(params: {
     if (params.allowedEndpoints !== undefined) updates.allowed_endpoints = params.allowedEndpoints;
     if (params.isEnabled !== undefined) updates.is_enabled = params.isEnabled;
     if (params.credentials !== undefined) {
-        updates.encrypted_credentials = encryptCredentials(params.credentials);
+        const { data: existing } = await admin
+            .from('client_integrations')
+            .select('type')
+            .eq('id', params.id)
+            .eq('user_id', params.userId)
+            .single();
+        const intType = (existing?.type || 'custom') as IntegrationType;
+        const normalized = normalizeIntegrationCredentials(intType, params.credentials);
+        updates.encrypted_credentials = encryptCredentials(normalized);
     }
 
     const { error } = await admin

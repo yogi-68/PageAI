@@ -1,12 +1,4 @@
-/**
- * /api/integrations — CRUD for client API integrations.
- * Requires authenticated Supabase session (dashboard use only).
- * Credentials are always stored encrypted; never returned to the client.
- */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import {
     getIntegrationsPublic,
     createIntegration,
@@ -14,32 +6,9 @@ import {
     type IntegrationType,
 } from '@/lib/api-integrations';
 import { getAdminClient } from '@/lib/supabase';
+import { getSessionUser } from '@/lib/auth-server';
 import { formatOperationalError, checkIntegrationLimit, createUsageLimitError } from '@/lib/operational-errors';
-
-async function getSessionUser(request?: NextRequest) {
-    if (request) {
-        const authHeader = request.headers.get('Authorization');
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const token = authHeader.substring(7);
-            const supabaseAuth = createServerClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-                { cookies: { getAll: () => [] } }
-            );
-            const { data: { user } } = await supabaseAuth.auth.getUser(token);
-            if (user) return user;
-        }
-    }
-
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        { cookies: { getAll: () => cookieStore.getAll() } }
-    );
-    const { data: { user } } = await supabase.auth.getUser();
-    return user;
-}
+import { validateEnv } from '@/lib/env';
 
 // GET /api/integrations — list all integrations for the current user
 export async function GET(request: NextRequest) {
@@ -64,6 +33,9 @@ export async function POST(request: NextRequest) {
         const error = formatOperationalError(new Error('Unauthorized'), 'authentication');
         return NextResponse.json({ error: error.message }, { status: 401 });
     }
+
+    const envErr = validateEnv('integrations');
+    if (envErr) return envErr;
 
     let body: {
         name?: string;
@@ -95,7 +67,6 @@ export async function POST(request: NextRequest) {
         }, { status: 400 });
     }
 
-    // Validate URL format
     try { 
         new URL(baseUrl); 
     } catch {
@@ -104,7 +75,21 @@ export async function POST(request: NextRequest) {
         }, { status: 400 });
     }
 
-    // Check integration limit based on plan
+    const admin = getAdminClient();
+    const { data: profile } = await admin
+        .from('profiles')
+        .select('plan, api_access')
+        .eq('id', user.id)
+        .single();
+
+    if (!profile?.api_access) {
+        return NextResponse.json({
+            error: 'API integrations require a Growth plan or higher.',
+            suggestion: 'Upgrade your plan on the billing page to connect live data sources.',
+            code: 'PLAN_UPGRADE_REQUIRED',
+        }, { status: 403 });
+    }
+
     try {
         const existingIntegrations = await getIntegrationsPublic(user.id);
         const limitCheck = await checkIntegrationLimit(user.id, existingIntegrations.length);
@@ -116,11 +101,10 @@ export async function POST(request: NextRequest) {
                 error: formatted.message,
                 suggestion: formatted.suggestion,
                 code: 'USAGE_LIMIT_EXCEEDED'
-            }, { status: 402 }); // 402 Payment Required
+            }, { status: 402 });
         }
     } catch (err) {
         console.error('Failed to check integration limit:', err);
-        // Continue anyway - don't block integration creation on limit check failures
     }
 
     const result = await createIntegration({

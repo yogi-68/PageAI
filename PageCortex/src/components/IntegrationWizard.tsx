@@ -12,7 +12,7 @@ interface WizardProps {
 }
 
 interface IntegrationType {
-  id: 'shopify' | 'woocommerce' | 'supabase' | 'firebase' | 'rest' | 'graphql';
+  id: 'shopify' | 'woocommerce' | 'rest';
   name: string;
   description: string;
   logo: string;
@@ -35,32 +35,11 @@ const INTEGRATION_TYPES: IntegrationType[] = [
     capabilities: ['Orders', 'Products', 'Customers', 'Inventory'],
   },
   {
-    id: 'supabase',
-    name: 'Supabase',
-    description: 'Postgres database',
-    logo: '⚡',
-    capabilities: ['Database queries', 'RPC functions', 'Real-time data'],
-  },
-  {
-    id: 'firebase',
-    name: 'Firebase',
-    description: 'Google backend platform',
-    logo: '🔥',
-    capabilities: ['Firestore queries', 'Real-time database', 'Auth'],
-  },
-  {
     id: 'rest',
     name: 'Custom REST API',
     description: 'Any REST endpoint',
     logo: '🔌',
     capabilities: ['Custom endpoints', 'Flexible auth', 'Any HTTP method'],
-  },
-  {
-    id: 'graphql',
-    name: 'GraphQL API',
-    description: 'Graph query language',
-    logo: '◈',
-    capabilities: ['Flexible queries', 'Type safety', 'Single endpoint'],
   },
 ];
 
@@ -129,12 +108,9 @@ export default function IntegrationWizard({ isOpen, onClose, onComplete }: Wizar
     try {
       // Map wizard integration types to API types
       const typeMapping: Record<string, 'shopify' | 'woocommerce' | 'custom'> = {
-        'shopify': 'shopify',
-        'woocommerce': 'woocommerce',
-        'rest': 'custom',
-        'graphql': 'custom',
-        'supabase': 'custom',
-        'firebase': 'custom',
+        shopify: 'shopify',
+        woocommerce: 'woocommerce',
+        rest: 'custom',
       };
 
       const apiType = typeMapping[selectedType.id] || 'custom';
@@ -142,13 +118,14 @@ export default function IntegrationWizard({ isOpen, onClose, onComplete }: Wizar
       // Build integration name
       const name = connectionDetails.name || `${selectedType.name} Integration`;
 
-      // Build credentials object from connection details
-      const credentials: Record<string, string> = {};
+      // Build and normalize credentials for backend
+      const rawCredentials: Record<string, string> = {};
       Object.entries(connectionDetails).forEach(([key, value]) => {
         if (key !== 'baseUrl' && key !== 'name' && value) {
-          credentials[key] = value;
+          rawCredentials[key] = value;
         }
       });
+      const credentials = normalizeWizardCredentials(apiType, rawCredentials);
 
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (session?.access_token) {
@@ -441,7 +418,7 @@ function ConnectionDetailsStep({
         {/* Base URL field (always show) */}
         <div>
           <label className="block text-sm font-medium text-[#edf0f7] mb-2">
-            {type.id === 'shopify' ? 'Store URL' : type.id === 'woocommerce' ? 'Site URL' : type.id === 'supabase' ? 'Project URL' : 'Base URL'}
+            {type.id === 'shopify' ? 'Store URL' : type.id === 'woocommerce' ? 'Site URL' : 'Base URL'}
             <span className="text-[#f87171] ml-1">*</span>
           </label>
           <input
@@ -451,7 +428,6 @@ function ConnectionDetailsStep({
             placeholder={
               type.id === 'shopify' ? 'https://your-store.myshopify.com' :
               type.id === 'woocommerce' ? 'https://your-store.com' :
-              type.id === 'supabase' ? 'https://xxx.supabase.co' :
               'https://api.your-domain.com'
             }
             className="w-full px-4 py-3 bg-[#1a1f35] border border-[#2a3155] rounded-lg text-[#edf0f7] placeholder:text-[#8892b0]/50 focus:outline-none focus:border-[#4f6df5] transition-colors"
@@ -755,22 +731,46 @@ function getFieldsForType(type: string) {
       { name: 'consumerKey', label: 'Consumer Key', type: 'password', placeholder: 'ck_...', required: true },
       { name: 'consumerSecret', label: 'Consumer Secret', type: 'password', placeholder: 'cs_...', required: true },
     ],
-    supabase: [
-      { name: 'serviceKey', label: 'Service Role Key', type: 'password', placeholder: 'eyJ...', required: true, help: 'Found in Project Settings → API' },
-      { name: 'allowedFunctions', label: 'Allowed RPC Functions (comma-separated)', type: 'text', placeholder: 'get_order_status,track_shipment', required: false },
-    ],
-    firebase: [
-      { name: 'projectId', label: 'Project ID', type: 'text', placeholder: 'your-project-id', required: true },
-      { name: 'serviceAccount', label: 'Service Account JSON', type: 'password', placeholder: 'Paste JSON here', required: true },
-    ],
     rest: [
       { name: 'authType', label: 'Auth Type', type: 'text', placeholder: 'Bearer Token / API Key', required: false },
-      { name: 'authValue', label: 'Auth Value', type: 'password', placeholder: 'Your token/key', required: true },
-    ],
-    graphql: [
-      { name: 'authHeader', label: 'Authorization Header', type: 'password', placeholder: 'Bearer your-token', required: true },
+      { name: 'authValue', label: 'Auth Value', type: 'password', placeholder: 'Your token or API key', required: true },
     ],
   };
 
   return fields[type] || [];
+}
+
+/** Client-side mirror of server credential normalization */
+function normalizeWizardCredentials(
+  type: 'shopify' | 'woocommerce' | 'custom',
+  raw: Record<string, string>
+): Record<string, string> {
+  if (type === 'shopify') {
+    return raw.apiKey ? { apiKey: raw.apiKey } : {};
+  }
+  if (type === 'woocommerce') {
+    const cred: Record<string, string> = {};
+    if (raw.consumerKey) cred.consumerKey = raw.consumerKey;
+    if (raw.consumerSecret) cred.consumerSecret = raw.consumerSecret;
+    return cred;
+  }
+  if (raw.authHeader) {
+    const trimmed = raw.authHeader.trim();
+    const authHeader = trimmed.includes(':')
+      ? trimmed
+      : `Authorization: ${trimmed.toLowerCase().startsWith('bearer ') ? trimmed : `Bearer ${trimmed}`}`;
+    return { authHeader };
+  }
+  if (raw.authValue) {
+    const authType = (raw.authType || 'Bearer Token').toLowerCase();
+    if (authType.includes('bearer')) {
+      const token = raw.authValue.replace(/^Bearer\s+/i, '');
+      return { authHeader: `Authorization: Bearer ${token}` };
+    }
+    return { apiKey: raw.authValue };
+  }
+  if (raw.apiKey) {
+    return { apiKey: raw.apiKey };
+  }
+  return {};
 }

@@ -3,18 +3,24 @@ import { getDodoClientForUser, isDevUser, getAddonProductIdForUser, isMockMode, 
 import { getAdminClient } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 import { validateEnv } from '@/lib/env';
+import { getSessionUser } from '@/lib/auth-server';
 
-// POST /api/billing/addons/checkout — purchase a prepaid message add-on
 export async function POST(request: NextRequest) {
     const envErr = validateEnv('billing');
     if (envErr) return envErr;
 
+    const user = await getSessionUser(request);
+    if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
         const body = await request.json();
-        const { addonId, userId } = body as { addonId: string; userId: string };
+        const { addonId } = body as { addonId: string };
+        const userId = user.id;
 
-        if (!addonId || !userId) {
-            return NextResponse.json({ error: 'addonId and userId are required' }, { status: 400 });
+        if (!addonId) {
+            return NextResponse.json({ error: 'addonId is required' }, { status: 400 });
         }
 
         const addon = MESSAGE_ADDONS[addonId as AddonId];
@@ -22,7 +28,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid add-on ID' }, { status: 400 });
         }
 
-        // ── Mock mode: skip Dodo entirely ──────────────────────────────────────
         if (isMockMode()) {
             const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
             const mockUrl = `${appUrl}/api/billing/mock-complete?addonId=${addonId}&userId=${userId}`;
@@ -40,7 +45,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        // Developer email → Dodo sandbox; everyone else → live payments
         const userTestMode = isDevUser(profile.email);
         const productId = getAddonProductIdForUser(addonId, userTestMode);
 
@@ -62,12 +66,10 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // One-time payment for an add-on (not a subscription)
         const payment = await (dodo as any).payments.create({
             customer: {
                 email: profile.email,
                 name: profile.full_name || profile.email,
-                // In test mode the stored customer_id is from the live environment — skip it
                 ...(!userTestMode && profile.dodo_customer_id && { customer_id: profile.dodo_customer_id }),
             },
             product_cart: [{ product_id: productId, quantity: 1 }],
@@ -83,7 +85,10 @@ export async function POST(request: NextRequest) {
 
         const url = payment.payment_link || payment.url;
         if (!url) {
-            throw new Error('No payment URL returned from Dodo');
+            return NextResponse.json(
+                { error: 'Payment provider did not return a checkout URL. Please try again or contact support.' },
+                { status: 502 }
+            );
         }
 
         logger.info('billing', `Add-on checkout created`, {

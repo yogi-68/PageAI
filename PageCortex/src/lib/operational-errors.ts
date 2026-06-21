@@ -5,6 +5,9 @@
  * Never exposes: stack traces, SQL errors, provider secrets, internal IDs, raw API payloads.
  */
 
+import { getAdminClient } from './supabase';
+import { getIntegrationLimit } from './dodo';
+
 export interface OperationalError {
   message: string;
   suggestion?: string;
@@ -376,26 +379,24 @@ function formatGenericError(message: string): OperationalError {
 export async function checkIntegrationLimit(
   userId: string,
   currentCount: number
-): Promise<{ allowed: boolean; limit: number; plan: string }> {
-  // TODO: Implement actual plan checking from database
-  // For now, use a simple tiered system
-  
-  const planLimits = {
-    free: 1,
-    starter: 3,
-    growth: 10,
-    scale: 999,
-  };
+): Promise<{ allowed: boolean; limit: number; plan: string; apiAccess: boolean }> {
+  const admin = getAdminClient();
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('plan, api_access')
+    .eq('id', userId)
+    .single();
 
-  // Mock: assume user is on free plan
-  const userPlan = 'free';
-  const limit = planLimits[userPlan];
+  const userPlan = profile?.plan || 'free';
+  const apiAccess = profile?.api_access ?? false;
+  const limit = getIntegrationLimit(userPlan);
 
-  return {
-    allowed: currentCount < limit,
-    limit,
-    plan: userPlan,
-  };
+  if (!apiAccess || limit === 0) {
+    return { allowed: false, limit: 0, plan: userPlan, apiAccess };
+  }
+
+  const allowed = limit === -1 || currentCount < limit;
+  return { allowed, limit: limit === -1 ? 999999 : limit, plan: userPlan, apiAccess };
 }
 
 /**
