@@ -137,7 +137,7 @@ export default function Navbar() {
                 href="/signup"
                 className="text-[13.5px] font-semibold px-5 py-2.5 rounded-full bg-fg text-bg hover:opacity-90 transition-all duration-200 flex items-center gap-1.5 shadow-sm"
               >
-                Get Started Free →
+                Start free →
               </Link>
             </>
           )}
@@ -241,7 +241,7 @@ export default function Navbar() {
                       onClick={() => setOpen(false)}
                       className="block text-[14px] font-semibold text-center px-4 py-3 rounded-full bg-fg text-bg hover:opacity-90 transition-all"
                     >
-                      Get Started Free →
+                      Start free →
                     </Link>
                   </>
                 )}

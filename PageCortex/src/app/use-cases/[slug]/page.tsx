@@ -182,7 +182,7 @@ export default async function UseCaseDetailPage({ params }: Props) {
               href="/signup"
               className="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-primary hover:bg-primary-hover text-white text-[15px] font-medium transition-all hover:shadow-[0_0_24px_rgba(79,109,245,0.25)]"
             >
-              Get Started Free →
+              Start free →
             </Link>
           </div>
         </section>

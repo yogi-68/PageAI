@@ -1,6 +1,7 @@
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import type { Metadata } from 'next';
+import { getAppUrl } from '@/lib/app-url';
 
 export const metadata: Metadata = {
   title: 'API Reference — REST API for AI Chatbot Integration',
@@ -98,6 +99,7 @@ const methodColors: Record<string, string> = {
 };
 
 export default function ApiReferencePage() {
+  const appUrl = getAppUrl();
   return (
     <div className="min-h-screen bg-bg text-fg">
       <Navbar />
@@ -105,7 +107,7 @@ export default function ApiReferencePage() {
         <div className="max-w-[820px] mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-[13px] font-medium mb-6">API Reference</div>
           <h1 className="text-[42px] md:text-[52px] font-bold tracking-[-0.03em] leading-[1.1] mb-4">REST API</h1>
-          <p className="text-[17px] text-fg-secondary leading-relaxed mb-4">Base URL: <code className="text-primary bg-surface px-2 py-0.5 rounded-md text-[14px]">https://pagecortex.vercel.app</code></p>
+          <p className="text-[17px] text-fg-secondary leading-relaxed mb-4">Base URL: <code className="text-primary bg-surface px-2 py-0.5 rounded-md text-[14px]">{appUrl}</code></p>
           <p className="text-[15px] text-fg-secondary mb-12">All requests accept and return JSON. Authenticated endpoints require a valid Supabase session token in the <code className="text-fg text-[13px] bg-surface px-1.5 py-0.5 rounded">Authorization: Bearer {'<token>'}</code> header.</p>
 
           <div className="space-y-8">

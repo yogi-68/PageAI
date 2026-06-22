@@ -6,7 +6,7 @@ Embed a PageCortex chatbot on any website in under 2 minutes.
 
 ## Quick Start
 
-After creating a bot in the [PageCortex Dashboard](https://pagecortex.vercel.app/dashboard/bots), copy the **Bot ID** from the bot settings and use one of the methods below.
+After creating a bot in the [PageCortex Dashboard](https://www.pagecortex.com/dashboard/bots), copy the **Bot ID** from the bot settings and use one of the methods below.
 
 ---
 
@@ -16,7 +16,7 @@ Paste this before `</body>` on any HTML page:
 
 ```html
 <script
-  src="https://pagecortex.vercel.app/widget.js"
+  src="https://www.pagecortex.com/widget.js"
   data-bot-id="YOUR_BOT_ID"
 ></script>
 ```
@@ -35,7 +35,7 @@ Paste this before `</body>` on any HTML page:
 
 ```html
 <script
-  src="https://pagecortex.vercel.app/widget.js"
+  src="https://www.pagecortex.com/widget.js"
   data-bot-id="bot_abc123"
   data-color="#2563eb"
   data-position="right"
@@ -71,7 +71,7 @@ export default function PageCortexChat({
 }: PageCortexChatProps) {
   useEffect(() => {
     const script = document.createElement('script');
-    script.src = 'https://pagecortex.vercel.app/widget.js';
+    script.src = 'https://www.pagecortex.com/widget.js';
     script.setAttribute('data-bot-id', botId);
     script.setAttribute('data-color', color);
     script.setAttribute('data-position', position);
@@ -130,7 +130,7 @@ let script;
 
 onMounted(() => {
   script = document.createElement('script');
-  script.src = 'https://pagecortex.vercel.app/widget.js';
+  script.src = 'https://www.pagecortex.com/widget.js';
   script.setAttribute('data-bot-id', props.botId);
   script.setAttribute('data-color', props.color);
   script.setAttribute('data-position', props.position);
@@ -171,7 +171,7 @@ export class PageCortexChatComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.script = document.createElement('script');
-    this.script.src = 'https://pagecortex.vercel.app/widget.js';
+    this.script.src = 'https://www.pagecortex.com/widget.js';
     this.script.setAttribute('data-bot-id', this.botId);
     this.script.setAttribute('data-color', this.color);
     this.script.setAttribute('data-position', this.position);
@@ -208,7 +208,7 @@ export class PageCortexChatComponent implements OnInit, OnDestroy {
 
   onMount(() => {
     script = document.createElement('script');
-    script.src = 'https://pagecortex.vercel.app/widget.js';
+    script.src = 'https://www.pagecortex.com/widget.js';
     script.setAttribute('data-bot-id', botId);
     script.setAttribute('data-color', color);
     script.setAttribute('data-position', position);
@@ -234,7 +234,7 @@ Add this to your theme's `footer.php` before `</body>`, or use a plugin like **I
 
 ```html
 <script
-  src="https://pagecortex.vercel.app/widget.js"
+  src="https://www.pagecortex.com/widget.js"
   data-bot-id="YOUR_BOT_ID"
 ></script>
 ```
@@ -245,7 +245,7 @@ Add this to your theme's `footer.php` before `</body>`, or use a plugin like **I
 function pagecortex_enqueue_widget() {
     wp_enqueue_script(
         'PageCortex-widget',
-        'https://pagecortex.vercel.app/widget.js',
+        'https://www.pagecortex.com/widget.js',
         array(),
         null,
         true
@@ -263,7 +263,7 @@ Go to **Online Store → Themes → Edit code → theme.liquid** and paste befor
 
 ```html
 <script
-  src="https://pagecortex.vercel.app/widget.js"
+  src="https://www.pagecortex.com/widget.js"
   data-bot-id="YOUR_BOT_ID"
 ></script>
 ```
@@ -276,7 +276,7 @@ Go to **Site Settings → Custom Code → Footer Code** and paste:
 
 ```html
 <script
-  src="https://pagecortex.vercel.app/widget.js"
+  src="https://www.pagecortex.com/widget.js"
   data-bot-id="YOUR_BOT_ID"
 ></script>
 ```
@@ -288,7 +288,7 @@ Go to **Site Settings → Custom Code → Footer Code** and paste:
 For custom integrations, call the chat API directly:
 
 ```bash
-curl -X POST https://pagecortex.vercel.app/api/chat \
+curl -X POST https://www.pagecortex.com/api/chat \
   -H "Content-Type: application/json" \
   -d '{
     "query": "What is your return policy?",
@@ -359,5 +359,5 @@ If no domains are configured, the bot works on any domain.
 
 ## Need Help?
 
-- Dashboard: [pagecortex.vercel.app/dashboard](https://pagecortex.vercel.app/dashboard)
+- Dashboard: [pagecortex.vercel.app/dashboard](https://www.pagecortex.com/dashboard)
 - Email: support@pagecortex.com

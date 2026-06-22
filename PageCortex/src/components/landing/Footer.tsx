@@ -20,7 +20,6 @@ const footerLinks = {
   Resources: [
     { label: 'Documentation', href: '/docs' },
     { label: 'API Reference', href: '/api-reference' },
-    { label: 'Changelog', href: '/changelog' },
     { label: 'Blog', href: '/blog' },
   ],
   Company: [

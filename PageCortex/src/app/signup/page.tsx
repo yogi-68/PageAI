@@ -7,10 +7,10 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 
 const benefits = [
-  'Answer trial users\' pricing questions 24/7',
-  'Handle integration and setup questions automatically',
-  'Set up in under 5 minutes — no coding',
-  'Free forever plan — no credit card required',
+  'Instant answers to pricing questions — even at 3 AM',
+  'Covers integration and setup questions without your team',
+  'One script tag on your site — live in under 5 minutes',
+  'Free plan to start — no credit card required',
 ];
 
 export default function SignupPage() {
@@ -42,15 +42,18 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-bg flex">
-      {/* Left panel - marketing */}
       <div className="hidden lg:flex lg:w-[480px] xl:w-[520px] flex-col justify-between p-10 bg-surface/50 border-r border-edge">
         <div>
           <Link href="/" className="inline-flex items-center gap-2 mb-12 group">
             <Image src="/logo.png" alt="PageCortex" width={32} height={32} className="rounded-lg" />
             <span className="text-[17px] font-semibold text-fg">PageCortex</span>
           </Link>
-          <h2 className="text-[26px] font-bold text-fg tracking-[-0.03em] leading-[1.2] mb-4">Convert more trial users — starting today</h2>
-          <p className="text-[14.5px] text-fg-secondary leading-relaxed mb-8">PageCortex answers pre-sales questions from your docs and website so SaaS trial users convert instead of churning silently.</p>
+          <h2 className="text-[26px] font-bold text-fg tracking-[-0.03em] leading-[1.2] mb-4">
+            Stop losing trial users to unanswered questions
+          </h2>
+          <p className="text-[14.5px] text-fg-secondary leading-relaxed mb-8">
+            Train an AI assistant on your website and docs. It handles pricing, integration, and setup questions 24/7 — so more trials convert to paid.
+          </p>
           <ul className="space-y-3">
             {benefits.map((b) => (
               <li key={b} className="flex items-center gap-3 text-[14px] text-fg-secondary">
@@ -62,7 +65,6 @@ export default function SignupPage() {
         </div>
       </div>
 
-      {/* Right panel - form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-[400px]">
           <div className="lg:hidden mb-8">
@@ -73,7 +75,7 @@ export default function SignupPage() {
           </div>
 
           <h1 className="text-[28px] font-bold text-fg tracking-[-0.03em] mb-2">Create your account</h1>
-          <p className="text-[14px] text-fg-secondary mb-8">Get started free — no credit card required</p>
+          <p className="text-[14px] text-fg-secondary mb-8">Free to start — no credit card required</p>
 
           <div className="grid grid-cols-2 gap-3 mb-6">
             <button onClick={signInWithGoogle} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-edge bg-surface/40 hover:bg-surface/70 text-[13.5px] font-medium text-fg transition-all duration-200">
@@ -110,14 +112,14 @@ export default function SignupPage() {
             </div>
 
             <button type="submit" disabled={loading} className="w-full py-2.5 rounded-lg bg-primary hover:bg-primary-hover text-white text-[14px] font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_24px_rgba(79,109,245,0.25)]">
-              {loading ? 'Creating...' : 'Create account'}
+              {loading ? 'Creating account...' : 'Create free account'}
             </button>
           </form>
 
           <p className="text-[12px] text-fg-muted text-center mt-4">
             By creating an account, you agree to our{' '}
-            <Link href="#" className="text-fg-secondary hover:text-fg transition-colors">Terms of Service</Link> and{' '}
-            <Link href="#" className="text-fg-secondary hover:text-fg transition-colors">Privacy Policy</Link>.
+            <Link href="/terms" className="text-fg-secondary hover:text-fg transition-colors">Terms of Service</Link> and{' '}
+            <Link href="/privacy" className="text-fg-secondary hover:text-fg transition-colors">Privacy Policy</Link>.
           </p>
 
           <p className="text-center text-[13px] text-fg-muted mt-6">

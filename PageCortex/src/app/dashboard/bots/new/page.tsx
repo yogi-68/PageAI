@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { useRouter } from "next/navigation";
+import { getAppUrl } from "@/lib/app-url";
 
 type Step = "source" | "crawl" | "customize" | "deploy";
 
@@ -611,7 +612,7 @@ export default function NewBotPage() {
                                 <span className="text-[12px] font-medium text-fg-secondary">Embed Code</span>
                                 <button
                                     onClick={async () => {
-                                        const code = `<script\n  src="${process.env.NEXT_PUBLIC_APP_URL || 'https://pagecortex.vercel.app'}/widget.js"\n  data-bot-id="${botId}"\n  data-color="${primaryColor}"\n  data-position="${position}"\n  async\n><\/script>`;
+                                        const code = `<script\n  src="${getAppUrl()}/widget.js"\n  data-bot-id="${botId}"\n  data-color="${primaryColor}"\n  data-position="${position}"\n  async\n><\/script>`;
                                         try { await navigator.clipboard.writeText(code); } catch { const el = document.createElement('textarea'); el.value = code; el.style.position = 'fixed'; el.style.opacity = '0'; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); }
                                     }}
                                     className="px-3 py-1 rounded-md bg-primary/10 text-primary text-[12px] font-medium hover:bg-primary/20 transition-colors"
@@ -621,7 +622,7 @@ export default function NewBotPage() {
                             </div>
                             <pre className="p-4 text-[13px] text-fg/80 font-mono overflow-x-auto">
 {`<script
-  src="https://pagecortex.vercel.app/widget.js"
+  src="${getAppUrl()}/widget.js"
   data-bot-id="${botId || 'bot_xxxxx'}"
   data-color="${primaryColor}"
   data-position="${position}"

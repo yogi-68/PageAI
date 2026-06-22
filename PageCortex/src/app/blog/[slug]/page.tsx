@@ -212,7 +212,7 @@ export default async function BlogPostPage({ params }: Props) {
             <h3 className="text-[20px] font-bold text-fg mb-2">Ready to convert more visitors?</h3>
             <p className="text-[14px] text-fg-secondary mb-5">Start free — no credit card required. Set up in under 5 minutes.</p>
             <Link href="/signup" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-[14px] font-medium transition-all hover:shadow-[0_0_24px_rgba(79,109,245,0.25)]">
-              Get Started Free →
+              Start free →
             </Link>
           </div>
         </article>

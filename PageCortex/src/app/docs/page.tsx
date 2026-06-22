@@ -1,7 +1,10 @@
+import type { Metadata } from 'next';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import Link from 'next/link';
-import type { Metadata } from 'next';
+import { getAppUrl } from '@/lib/app-url';
+
+const appUrl = getAppUrl();
 
 export const metadata: Metadata = {
   title: 'Documentation — How to Set Up & Embed Your AI Chatbot',
@@ -28,9 +31,9 @@ const steps = [
     title: 'Create Your Account',
     description: 'Sign up for free — no credit card required. Your free plan includes 1 chatbot, 50 messages/month, and 100 pages indexed.',
     actions: [
-      'Visit pagecortex.vercel.app and click "Get started free"',
-      'Enter your email and create a password',
-      'Confirm your email and you\'re in',
+      `Go to ${appUrl}/signup and create your free account`,
+      'Enter your work email and a password',
+      'Confirm your email, then open the dashboard',
     ],
     tip: 'Start with the free plan to explore the platform, then upgrade when you\'re ready to go live.',
   },
@@ -81,11 +84,11 @@ const steps = [
       'The chat widget appears automatically on all pages',
     ],
     code: `<script
-  src="https://pagecortex.vercel.app/widget.js"
+  src="${appUrl}/widget.js"
   data-bot-id="YOUR_BOT_ID"
   async
 ></script>`,
-    tip: 'Works with any website — Shopify, WordPress, Webflow, plain HTML, or React apps.',
+    tip: 'Paste before </body> on your marketing site, pricing page, or docs portal. See platform-specific guides below if needed.',
   },
 ];
 
