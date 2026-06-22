@@ -6,10 +6,10 @@ import { TrendingDown, Clock, HelpCircle } from 'lucide-react';
 const problems = [
   {
     icon: TrendingDown,
-    title: 'Lost Trial Signups',
-    description: 'Visitors with buying intent leave your site without converting. Every unanswered pricing question is a lost trial signup.',
-    stat: '67%',
-    statLabel: 'of buyers leave due to unanswered questions',
+    title: 'Pricing confusion kills trials',
+    description: 'Trial users compare plans, hit edge cases, and leave without asking. Confusion ends trials faster than price objections.',
+    stat: '42%',
+    statLabel: 'abandon when pricing is unclear',
     color: 'text-danger',
     bgColor: 'bg-danger/8',
     borderColor: 'border-danger/15',
@@ -17,10 +17,10 @@ const problems = [
   },
   {
     icon: Clock,
-    title: 'Pricing Confusion',
-    description: "Prospects can't figure out which plan fits their needs. Confusion kills conversions faster than high prices.",
-    stat: '42%',
-    statLabel: 'abandon checkout over pricing confusion',
+    title: 'Integration questions go unanswered',
+    description: '"Does this work with Slack?" "Can we connect to Salesforce?" If they cannot find the answer in 30 seconds, they check your competitor.',
+    stat: '67%',
+    statLabel: 'of buyers leave without getting answers',
     color: 'text-warning',
     bgColor: 'bg-warning/8',
     borderColor: 'border-warning/15',
@@ -28,10 +28,10 @@ const problems = [
   },
   {
     icon: HelpCircle,
-    title: 'Missed Buyer Intent',
-    description: '"Is this right for me?" "Do you integrate with X?" — high-intent questions go unanswered outside business hours.',
+    title: 'Setup questions cause support overload',
+    description: 'Onboarding friction, seat limits, and API access questions pile up in your inbox — while silent trial users churn without ever reaching out.',
     stat: '40%',
-    statLabel: 'of purchase decisions happen after hours',
+    statLabel: 'of trial decisions happen after hours',
     color: 'text-violet',
     bgColor: 'bg-violet/8',
     borderColor: 'border-violet/15',
@@ -52,11 +52,11 @@ export default function ProblemSection() {
         >
           <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-danger mb-4">The Problem</p>
           <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.12] tracking-[-0.035em] mb-4">
-            Your website is leaking
-            <br className="hidden sm:block" /> qualified leads
+            Your trial users are churning
+            <br className="hidden sm:block" /> before they ever talk to you
           </h2>
-          <p className="text-[16px] text-fg-secondary max-w-[500px] mx-auto leading-relaxed">
-            Without instant answers to buying questions, your visitors choose competitors instead.
+          <p className="text-[16px] text-fg-secondary max-w-[540px] mx-auto leading-relaxed">
+            Silent churn is the norm in SaaS — users leave when pre-sales questions go unanswered, not when they file a support ticket.
           </p>
         </motion.div>
 

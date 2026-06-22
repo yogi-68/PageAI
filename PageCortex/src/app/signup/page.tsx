@@ -7,8 +7,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 
 const benefits = [
-  'Convert more visitors into free trials',
-  'Answer buyer objections 24/7 automatically',
+  'Answer trial users\' pricing questions 24/7',
+  'Handle integration and setup questions automatically',
   'Set up in under 5 minutes — no coding',
   'Free forever plan — no credit card required',
 ];
@@ -49,8 +49,8 @@ export default function SignupPage() {
             <Image src="/logo.png" alt="PageCortex" width={32} height={32} className="rounded-lg" />
             <span className="text-[17px] font-semibold text-fg">PageCortex</span>
           </Link>
-          <h2 className="text-[26px] font-bold text-fg tracking-[-0.03em] leading-[1.2] mb-4">Start converting visitors into customers today</h2>
-          <p className="text-[14.5px] text-fg-secondary leading-relaxed mb-8">Join thousands of businesses using AI-powered chat to automate support and drive growth.</p>
+          <h2 className="text-[26px] font-bold text-fg tracking-[-0.03em] leading-[1.2] mb-4">Convert more trial users — starting today</h2>
+          <p className="text-[14.5px] text-fg-secondary leading-relaxed mb-8">PageCortex answers pre-sales questions from your docs and website so SaaS trial users convert instead of churning silently.</p>
           <ul className="space-y-3">
             {benefits.map((b) => (
               <li key={b} className="flex items-center gap-3 text-[14px] text-fg-secondary">
@@ -59,13 +59,6 @@ export default function SignupPage() {
               </li>
             ))}
           </ul>
-        </div>
-        <div className="p-5 rounded-xl border border-edge bg-bg/40">
-          <blockquote className="text-[14px] text-fg-secondary leading-relaxed mb-3">
-            &ldquo;PageCortex reduced our support tickets by 60% in the first month. The setup was incredibly simple.&rdquo;
-          </blockquote>
-          <p className="text-[13px] font-medium text-fg">Sarah Kim</p>
-          <p className="text-[12px] text-fg-muted">VP of Support, TechFlow</p>
         </div>
       </div>
 

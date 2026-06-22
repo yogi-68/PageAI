@@ -4,8 +4,8 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Blog — AI Pre-Sales Tips, Guides & Updates',
-  description: 'Explore the PageCortex blog for guides on AI pre-sales assistants, conversion optimization, RAG technology, and best practices for boosting trial signups.',
+  title: 'Blog — SaaS Trial Conversion & Pre-Sales Guides',
+  description: 'Guides on reducing SaaS trial churn, answering pre-sales questions automatically, trial conversion benchmarks, and Chatbase/Intercom alternatives.',
   alternates: { canonical: 'https://pagecortex.com/blog' },
 };
 
@@ -21,6 +21,145 @@ export interface BlogPost {
 }
 
 export const posts: BlogPost[] = [
+  {
+    title: 'Why SaaS Trial Users Don\'t Convert (and the One Question They Needed Answered)',
+    excerpt: 'The 5 silent reasons free trials fail, why pricing confusion is the #1 killer, and how answering pre-sales questions before they give up changes trial-to-paid conversion.',
+    date: '2025-06-01',
+    readTime: '6 min',
+    category: 'Trial Conversion',
+    featured: true,
+    slug: 'why-saas-trial-users-dont-convert',
+    content: `Most SaaS churn during free trials isn't loud — users don't open a ticket or email you. They hit a question, can't find the answer, and leave. That's silent churn, and it's the problem PageCortex was built to fix.
+
+## The 5 silent reasons free trials fail
+
+1. **Pricing confusion** — They can't tell which plan fits their team size or usage.
+2. **Integration uncertainty** — "Does this work with Slack/Salesforce/HubSpot?" goes unanswered.
+3. **Setup anxiety** — They assume onboarding will take days and bail early.
+4. **Comparison paralysis** — They can't see how you differ from Intercom, Chatbase, or a competitor.
+5. **After-hours decisions** — They evaluate your product at night when your team is offline.
+
+## Why pricing confusion is the #1 churn trigger
+
+Your pricing page lists plans, but trial users ask edge-case questions: annual billing, seat limits, overages, startup discounts. Static FAQs cover 10 questions — real buyers have infinite variations. When confusion wins, the trial ends without a conversation.
+
+## The "3am question" problem
+
+Roughly 40% of buying decisions happen outside business hours. If a trial user can't get an answer at 11pm, they don't wait until morning — they try your competitor or abandon the evaluation entirely.
+
+## How to fix it without hiring support staff
+
+Identify your top 10 pre-sales questions (pricing, integrations, setup, security, cancellation). Make sure the answers live in crawlable pages or docs. Then deploy an AI assistant trained on that content so every question gets answered in under 2 seconds — 24/7.
+
+## What good trial conversion looks like
+
+Opt-in free trials typically convert at 15–25%; freemium models often sit at 2–5%. If you're below benchmark, unanswered pre-sales questions are usually a major contributor — not product quality alone.
+
+---
+
+**What if every question got answered in under 2 seconds?** That's what PageCortex does for SaaS teams — pricing, integration, and setup questions answered from your own content, with human handoff when confidence is low.
+
+If your trial users are leaving without asking questions, they didn't get the answer they needed. [Start free →](/signup)`,
+  },
+  {
+    title: 'How to Answer Pre-Sales Questions Automatically (Without Hiring Support Staff)',
+    excerpt: 'A step-by-step guide to identifying your top trial-user questions, building a knowledge base, and deploying AI that answers them 24/7.',
+    date: '2025-05-28',
+    readTime: '5 min',
+    category: 'How-To',
+    slug: 'pre-sales-questions-automated',
+    content: `Early-stage SaaS founders answer the same six questions dozens of times per week: pricing fit, integrations, setup time, data security, seat limits, and cancellation policy. Here's how to automate that without hiring a support team.
+
+## Step 1: Audit your top 10 pre-sales questions
+
+Pull from support inbox, sales calls, and live chat logs. Group by theme: pricing, integrations, setup, security, comparisons.
+
+## Step 2: Publish clear answers in crawlable content
+
+Each answer should live on a public page or doc — pricing FAQ, integration directory, security page. AI can only answer what exists in your knowledge base.
+
+## Step 3: Train an AI on your content
+
+Tools like PageCortex crawl your site automatically, index docs and FAQs, and deploy a chat widget that answers from your content — not generic AI knowledge.
+
+## Step 4: Embed on high-intent pages
+
+Put the assistant on your pricing page, homepage, and docs — wherever trial users evaluate you. Pre-sales questions happen before signup, not after.
+
+## Step 5: Review unanswered questions weekly
+
+Every question the bot couldn't answer confidently is a content gap. Fix the gap, re-crawl, and conversion improves over time.
+
+---
+
+PageCortex answers these questions automatically using your docs. [Free to try →](/signup)`,
+  },
+  {
+    title: 'SaaS Trial-to-Paid Conversion Benchmarks: What\'s Actually Normal in 2025',
+    excerpt: 'Industry benchmarks for opt-in trials vs freemium, why silent churn drags numbers down, and the role of unanswered pre-sales questions.',
+    date: '2025-05-22',
+    readTime: '5 min',
+    category: 'Benchmarks',
+    slug: 'saas-trial-conversion-benchmarks',
+    content: `Founders constantly ask: "Is a 3% trial conversion rate normal?" Here's what the data actually says — and what to do if you're below benchmark.
+
+## Opt-in free trial benchmarks
+
+Product-led SaaS companies with opt-in trials typically see **15–25%** trial-to-paid conversion when onboarding and positioning are solid. Top quartile teams exceed 30%.
+
+## Freemium benchmarks
+
+Freemium models convert at **2–5%** on average — lower because the bar to start is minimal and intent varies widely.
+
+## Why most teams underperform
+
+Silent churn from unanswered pricing, integration, and setup questions is one of the most fixable causes of below-benchmark conversion. Users leave without ever contacting you.
+
+## The fix: pre-sales automation
+
+Answering questions before trial users give up is one of the highest-ROI levers for early-stage SaaS — no extra sales headcount required.
+
+---
+
+If you're below benchmark, unanswered questions are usually part of the story. [See how PageCortex helps →](/signup)`,
+  },
+  {
+    title: 'Best Intercom Alternatives for Early-Stage SaaS (Under $50/Month)',
+    excerpt: 'Honest comparison of Crisp, Tawk.to, Tidio, Help Scout, and PageCortex for startups that need AI pre-sales — not enterprise support suites.',
+    date: '2025-05-18',
+    readTime: '7 min',
+    category: 'Comparison',
+    slug: 'intercom-alternative-startups',
+    content: `Intercom starts at $74/seat/month and scales fast. If you're pre-Series A and need to answer pre-sales questions — not run a full support org — here are better fits.
+
+## Crisp
+
+Strong live chat for SMBs. Less focused on AI trained on your docs for pre-sales. Good if you want human-first chat with some automation.
+
+## Tawk.to
+
+Free live chat. No AI knowledge base from your website. Fine for basic chat, not for trial conversion automation.
+
+## Tidio
+
+Affordable chatbot builder with templates. Better for e-commerce flows than SaaS pre-sales from your docs.
+
+## Help Scout
+
+Excellent email support platform. Not an AI pre-sales layer for your marketing site.
+
+## PageCortex
+
+Purpose-built for SaaS pre-sales: crawls your site, answers pricing/integration/setup questions from your content, tracks unanswered questions, and starts free. Growth plan at $69/mo vs Intercom's enterprise pricing.
+
+## When Intercom still wins
+
+You need ticketing, team inbox, proactive messaging, and deep CRM integrations at scale. PageCortex wins when your goal is **trial conversion from your website**, not replacing a support department.
+
+---
+
+Compare [PageCortex vs Chatbase for SaaS →](/use-cases/chatbase-alternative) or [view pricing →](/pricing).`,
+  },
   {
     title: 'How AI Pre-Sales Assistants Are Boosting SaaS Trial Conversions in 2025',
     excerpt: 'Discover how SaaS companies are using AI-powered pre-sales assistants to answer buyer objections instantly, reduce pricing confusion, and increase trial signups by 3x.',
@@ -308,7 +447,7 @@ export default function BlogPage() {
           <div className="text-center">
             <p className="text-[13px] font-medium uppercase tracking-[0.1em] text-primary mb-4">Blog</p>
             <h1 className="text-[clamp(2rem,4vw,3rem)] font-bold text-fg tracking-[-0.03em] mb-4">Insights &amp; Resources</h1>
-            <p className="text-[16px] text-fg-secondary max-w-[520px] mx-auto leading-relaxed">Practical guides on AI pre-sales, conversion optimization, and growing your SaaS.</p>
+            <p className="text-[16px] text-fg-secondary max-w-[520px] mx-auto leading-relaxed">Practical guides for SaaS founders on trial conversion, pre-sales automation, and reducing silent churn.</p>
           </div>
         </section>
 

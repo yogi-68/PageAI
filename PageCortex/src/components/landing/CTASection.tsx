@@ -20,24 +20,22 @@ export default function CTASection() {
           className="text-center"
         >
           <div className="max-w-[700px] mx-auto p-12 rounded-[2rem] border border-primary/15 bg-surface/80 backdrop-blur-sm relative overflow-hidden">
-            {/* Decorative gradient top bar */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-violet to-primary/50 rounded-t-[2rem]" />
 
             <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-primary mb-4">Get Started</p>
 
             <h2 className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-bold leading-[1.12] tracking-[-0.035em] mb-4">
-              Ready to convert more visitors?
+              Stop losing trial users to unanswered questions
             </h2>
             <p className="text-[16px] text-fg-secondary max-w-[440px] mx-auto leading-relaxed mb-8">
-              Join 2,000+ SaaS teams using PageCortex to turn pricing questions into trial signups.
-              Start free — no credit card required.
+              Used by early-stage SaaS teams to answer pricing, integration, and setup questions 24/7. Start free — no credit card required.
             </p>
             <div className="flex items-center justify-center gap-3 mb-6 flex-wrap">
               <Link
                 href="/signup"
                 className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-fg text-bg text-[15px] font-semibold transition-all duration-300 hover:opacity-90 hover:scale-[1.02] shadow-lg shadow-black/10"
               >
-                Get Started Free <ArrowRight className="w-4 h-4" />
+                Answer trial questions automatically (free) <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 href="#pricing"

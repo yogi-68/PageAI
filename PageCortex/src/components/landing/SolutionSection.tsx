@@ -49,11 +49,11 @@ export default function SolutionSection() {
         >
           <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-primary mb-4">The Solution</p>
           <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.12] tracking-[-0.035em] mb-4">
-            Your AI pre-sales assistant.
-            <br className="hidden sm:block" /> Always closing.
+            Answer pre-sales questions
+            <br className="hidden sm:block" /> before trials churn
           </h2>
           <p className="text-[16px] text-fg-secondary max-w-[520px] mx-auto leading-relaxed">
-            PageCortex trains on your website and product content, then answers every buyer question accurately — converting visitors into trials and demos.
+            PageCortex trains on your SaaS website and docs, then handles pricing, integration, and setup questions instantly — so trial users convert instead of leaving silently.
           </p>
         </motion.div>
 
@@ -87,7 +87,7 @@ export default function SolutionSection() {
             href="/signup"
             className="inline-flex items-center gap-2 text-[14px] font-semibold text-primary hover:text-primary-hover transition-colors duration-200"
           >
-            Start converting visitors today <ArrowRight className="w-4 h-4" />
+            Start answering trial questions today <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
       </div>

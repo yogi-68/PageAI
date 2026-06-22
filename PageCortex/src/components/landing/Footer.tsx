@@ -10,12 +10,12 @@ const footerLinks = {
     { label: 'Blog', href: '/blog' },
   ],
   'Use Cases': [
-    { label: 'AI Assistant for Website', href: '/use-cases/ai-assistant-for-website' },
-    { label: 'AI Chatbot for Website', href: '/use-cases/ai-chatbot-for-website' },
-    { label: 'Chatbot for SaaS', href: '/use-cases/chatbot-for-saas' },
-    { label: 'No-Code Chatbot Builder', href: '/use-cases/no-code-chatbot-builder' },
+    { label: 'Why Trial Users Don\'t Convert', href: '/blog/why-saas-trial-users-dont-convert' },
+    { label: 'Answer Pre-Sales Questions Automatically', href: '/blog/pre-sales-questions-automated' },
+    { label: 'SaaS Trial Conversion Benchmarks', href: '/blog/saas-trial-conversion-benchmarks' },
     { label: 'Chatbase Alternative', href: '/use-cases/chatbase-alternative' },
-    { label: 'Embed Chatbot', href: '/use-cases/embed-chatbot-on-website' },
+    { label: 'Intercom Alternative for Startups', href: '/blog/intercom-alternative-startups' },
+    { label: 'AI Chatbot for SaaS', href: '/use-cases/chatbot-for-saas' },
   ],
   Resources: [
     { label: 'Documentation', href: '/docs' },
@@ -45,7 +45,7 @@ export default function Footer() {
               <span className="text-[16px] font-bold text-fg tracking-tight">PageCortex</span>
             </Link>
             <p className="text-[13.5px] text-fg-secondary leading-relaxed max-w-[240px]">
-              AI pre-sales assistant that converts website visitors into trials and demos. Powered by advanced RAG technology.
+              PageCortex helps SaaS companies convert more trial users by answering their pre-sales questions instantly, 24/7.
             </p>
 
             {/* Social links */}

@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
 const faqs = [
-  { q: 'How does PageCortex work?', a: 'PageCortex crawls your website or connects to data sources (Notion, Google Drive, etc.), semantically chunks your content, and stores embeddings in a vector database. When a visitor asks a question, our hybrid search finds the best context, and our AI generates an accurate, cited answer — grounded in your actual content.' },
-  { q: 'Do I need coding skills?', a: "No. Enter your URL, wait for the crawl, customize appearance, and copy the embed code. It's a single script tag that works on any website." },
+  { q: 'What is PageCortex?', a: 'PageCortex is an AI pre-sales assistant built for SaaS companies. It answers trial users\' pricing, integration, and setup questions instantly using your website, docs, and FAQs — so more trials convert to paid instead of churning silently.' },
+  { q: 'How does PageCortex work?', a: 'PageCortex crawls your SaaS website or connects to data sources (Notion, Google Drive, etc.), builds a searchable knowledge base, and uses hybrid search plus AI to answer pre-sales questions with source citations — grounded in your actual content.' },
+  { q: 'Do I need coding skills?', a: "No. Enter your URL, wait for the crawl, customize appearance, and copy one script tag onto your SaaS marketing site or docs. Platform-specific setup guides are in our documentation." },
   { q: 'How accurate are the responses?', a: 'Our advanced RAG pipeline with query rewriting, hybrid search, and re-ranking achieves 95-98% accuracy. The chatbot only answers from your actual content — eliminating hallucinations.' },
   { q: 'Can I customize the chatbot?', a: 'Yes — colors, position, welcome message, bot name, and avatar. Starter plans and above also remove PageCortex branding.' },
   { q: 'What data sources are supported?', a: 'Website crawling, sitemap import, and file uploads on all plans. Growth adds Notion and Google Drive. Scale adds Zendesk, Confluence, and GitBook. Enterprise supports custom API connectors.' },

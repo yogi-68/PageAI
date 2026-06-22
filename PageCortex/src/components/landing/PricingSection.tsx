@@ -237,7 +237,7 @@ export default function PricingSection() {
             Simple, transparent pricing
           </h2>
           <p className="text-[16px] text-fg-secondary max-w-[500px] mx-auto leading-relaxed">
-            More conversations, more pages, better ROI than any competitor. Start free, upgrade when you see results.
+            Start free on your SaaS site. Upgrade when trial users start converting because their questions get answered.
           </p>
         </motion.div>
 
@@ -329,7 +329,7 @@ export default function PricingSection() {
                   href={plan.id === 'free' ? '/signup' : `/signup?plan=${plan.id}${annual ? '&billing=annual' : ''}`}
                   className={`block text-center text-[13.5px] font-semibold py-2.5 rounded-2xl transition-all duration-200 mt-5 ${plan.ctaClass}`}
                 >
-                  {plan.id === 'free' ? 'Start Free' : plan.trial ? 'Start Free Trial' : 'Get Started'}
+                  {plan.id === 'free' ? 'Answer trial questions (free)' : plan.trial ? 'Start free trial' : 'Get started'}
                 </Link>
               </div>
 

@@ -3,8 +3,8 @@ import Footer from '@/components/landing/Footer';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'About PageCortex — Our Mission & How It Works',
-  description: 'PageCortex turns your website into a 24/7 AI sales assistant. Learn about our mission, how our RAG technology works, and why businesses trust us.',
+  title: 'About PageCortex — AI Pre-Sales for SaaS Trial Conversion',
+  description: 'PageCortex helps SaaS companies convert more trial users by answering pre-sales questions instantly from their website and docs.',
   alternates: { canonical: 'https://www.pagecortex.com/about' },
   openGraph: {
     title: 'About PageCortex — Our Mission & How It Works',
@@ -22,8 +22,8 @@ export default function AboutPage() {
       <section className="pt-32 pb-24 px-6">
         <div className="max-w-[760px] mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-[13px] font-medium mb-6">About us</div>
-          <h1 className="text-[42px] md:text-[52px] font-bold tracking-[-0.03em] leading-[1.1] mb-6">Turning websites into<br /><span className="text-primary">intelligent sales assistants</span></h1>
-          <p className="text-[18px] text-fg-secondary leading-relaxed mb-16">PageCortex makes it simple for any business to deploy an AI assistant trained on their own website — answering real customer questions, qualifying leads, and driving conversions around the clock.</p>
+          <h1 className="text-[42px] md:text-[52px] font-bold tracking-[-0.03em] leading-[1.1] mb-6">Turning SaaS trials into<br /><span className="text-primary">paying customers</span></h1>
+          <p className="text-[18px] text-fg-secondary leading-relaxed mb-16">PageCortex helps SaaS companies answer pre-sales questions instantly — so trial users get the clarity they need before they churn silently.</p>
 
           <div className="grid sm:grid-cols-3 gap-5">
             {[
@@ -44,7 +44,7 @@ export default function AboutPage() {
           <div className="mt-16 space-y-10">
             <div>
               <h2 className="text-[22px] font-bold text-fg mb-3">Our mission</h2>
-              <p className="text-[15px] text-fg-secondary leading-relaxed">Every website has a wealth of information trapped in pages that visitors never find. PageCortex bridges that gap — turning your existing content into an always-on AI assistant that speaks your language, knows your products, and helps your customers instantly.</p>
+              <p className="text-[15px] text-fg-secondary leading-relaxed">Every SaaS company loses trial users to unanswered pricing, integration, and setup questions. PageCortex bridges that gap — turning your existing docs and website into an always-on pre-sales assistant that helps trial users convert.</p>
             </div>
             <div>
               <h2 className="text-[22px] font-bold text-fg mb-3">How it works</h2>
@@ -56,9 +56,9 @@ export default function AboutPage() {
                 {[
                   'Answers are always grounded in your actual website content — no hallucinations',
                   'Set up in minutes — paste one script tag, your bot is live',
-                  'Handles pricing questions, feature comparisons, and buyer objections automatically',
+                  'Handles pricing, integration, and setup questions trial users actually ask',
                   'Tracks unanswered questions so you know exactly what content to add',
-                  'Works on any platform — WordPress, Shopify, Wix, React, and more',
+                  'Embeds on your SaaS site with one script tag — see docs for platform setup',
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-[15px] text-fg-secondary">
                     <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 shrink-0" />

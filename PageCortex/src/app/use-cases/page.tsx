@@ -209,8 +209,8 @@ export const useCases: UseCasePage[] = [
 ];
 
 export const metadata: Metadata = {
-  title: 'Use Cases — AI Assistant for Every Website | PageCortex',
-  description: 'Explore how PageCortex powers AI assistants for websites, SaaS chatbots, no-code chatbot builders, and more. Find the perfect solution for your use case.',
+  title: 'Use Cases — AI Pre-Sales for SaaS Companies',
+  description: 'How SaaS teams use PageCortex to answer pre-sales questions, reduce trial churn, and compare alternatives like Chatbase and Intercom.',
   alternates: { canonical: 'https://pagecortex.com/use-cases' },
 };
 
@@ -223,10 +223,10 @@ export default function UseCasesPage() {
           <div className="text-center">
             <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-primary mb-4">Use Cases</p>
             <h1 className="text-[clamp(2rem,4vw,3rem)] font-bold text-fg tracking-[-0.035em] mb-4">
-              AI-Powered Solutions for Every Website
+              AI pre-sales for SaaS trial conversion
             </h1>
             <p className="text-[16px] text-fg-secondary max-w-[560px] mx-auto leading-relaxed">
-              From SaaS pre-sales to e-commerce support, PageCortex adapts to your specific use case.
+              Purpose-built for SaaS companies that need to answer pricing, integration, and setup questions before trial users churn.
             </p>
           </div>
         </section>
