@@ -1,18 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import { Send, Loader2, CheckCircle, XCircle, Clock, Activity } from 'lucide-react';
+import { Send, Loader2, Activity } from 'lucide-react';
+
+interface IntegrationOption {
+  id: string;
+  name: string;
+  type: string;
+}
 
 interface TestResult {
   query: string;
   timestamp: string;
   intent: 'rag' | 'tool' | 'both';
   toolUsed?: string;
-  apiEndpoint?: string;
   latencyMs: number;
   confidence: number;
   response: string;
-  sanitizedData?: any;
+  sanitizedData?: Record<string, unknown>;
+  error?: string;
   routingDetails: {
     intentClassificationMs: number;
     ragRetrievalMs: number;
@@ -22,78 +28,103 @@ interface TestResult {
 }
 
 const EXAMPLE_QUERIES = [
-  "Where is my order 1234?",
-  "Track shipment ABX22",
-  "Is this product available?",
-  "When will order 998 arrive?",
-  "Do you have this in stock?",
+  'Where is my order 1234?',
+  'Track shipment ABX22',
+  'Is this product available?',
+  'When will order 998 arrive?',
+  'Do you have this in stock?',
   "What's the status of order #5421?",
 ];
 
-export default function LiveTestConsole() {
+interface LiveTestConsoleProps {
+  integrations?: IntegrationOption[];
+}
+
+export default function LiveTestConsole({ integrations = [] }: LiveTestConsoleProps) {
   const [query, setQuery] = useState('');
+  const [integrationId, setIntegrationId] = useState(integrations[0]?.id ?? '');
   const [testing, setTesting] = useState(false);
   const [results, setResults] = useState<TestResult[]>([]);
   const [selectedResult, setSelectedResult] = useState<TestResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleTest = async () => {
     if (!query.trim() || testing) return;
 
     setTesting(true);
-    const startTime = Date.now();
+    setError(null);
 
     try {
-      // Simulate API call (replace with actual endpoint)
-      await new Promise(r => setTimeout(r, 2000));
-      
+      const res = await fetch('/api/integrations/query-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: query.trim(),
+          ...(integrationId ? { integrationId } : {}),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Test failed');
+        return;
+      }
+
       const result: TestResult = {
-        query,
-        timestamp: new Date().toISOString(),
-        intent: 'tool',
-        toolUsed: 'getOrderStatus',
-        apiEndpoint: '/orders/1234',
-        latencyMs: Date.now() - startTime,
-        confidence: 0.95,
-        response: "Your order #1234 is currently in transit and is expected to arrive by May 15th. You can track your package using the tracking number: TRK123456789.",
-        sanitizedData: {
-          orderId: "1234",
-          status: "shipped",
-          estimatedDelivery: "2026-05-15",
-          trackingNumber: "TRK123456789"
-        },
-        routingDetails: {
-          intentClassificationMs: 145,
-          ragRetrievalMs: 0,
-          toolExecutionMs: 842,
-          llmGenerationMs: 1013,
-        },
+        query: data.query,
+        timestamp: data.timestamp,
+        intent: data.intent,
+        toolUsed: data.toolUsed,
+        latencyMs: data.latencyMs,
+        confidence: data.confidence ?? 0,
+        response: data.response,
+        sanitizedData: data.sanitizedData,
+        error: data.error,
+        routingDetails: data.routingDetails,
       };
 
-      setResults(prev => [result, ...prev]);
+      setResults((prev) => [result, ...prev]);
       setSelectedResult(result);
-    } catch (error) {
-      console.error('Test failed:', error);
+    } catch (err) {
+      console.error('Test failed:', err);
+      setError('Network error — please try again.');
+    } finally {
+      setTesting(false);
     }
-
-    setTesting(false);
   };
 
   return (
     <div className="rounded-xl border border-edge bg-surface/40 overflow-hidden">
-      {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-edge bg-[#1a1f35]/30">
         <div className="flex items-center gap-2">
           <Activity size={18} className="text-[#4f6df5]" />
           <h2 className="text-[14px] font-semibold text-fg">Live Test Console</h2>
         </div>
         <span className="text-[11px] px-2 py-1 rounded-md bg-[#4f6df5]/10 text-[#4f6df5] font-medium">
-          Beta
+          Live routing
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-0 divide-x divide-edge">
-        {/* Left: Query Input */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-edge">
         <div className="p-5 space-y-4">
+          {integrations.length > 1 && (
+            <div>
+              <label className="block text-[12px] font-medium text-fg mb-2">Integration</label>
+              <select
+                value={integrationId}
+                onChange={(e) => setIntegrationId(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-edge bg-surface text-fg text-[13px] focus:outline-none focus:border-accent/60"
+              >
+                {integrations.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.name} ({i.type})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="block text-[12px] font-medium text-fg mb-2">Test Query</label>
             <textarea
@@ -111,7 +142,6 @@ export default function LiveTestConsole() {
             />
           </div>
 
-          {/* Example queries */}
           <div>
             <label className="block text-[11px] font-medium text-fg-muted mb-2 uppercase tracking-wide">
               Examples
@@ -129,7 +159,10 @@ export default function LiveTestConsole() {
             </div>
           </div>
 
-          {/* Run button */}
+          {error && (
+            <p className="text-[12px] text-red-400">{error}</p>
+          )}
+
           <button
             onClick={handleTest}
             disabled={!query.trim() || testing}
@@ -148,7 +181,6 @@ export default function LiveTestConsole() {
             )}
           </button>
 
-          {/* Recent tests */}
           <div className="pt-4 border-t border-edge">
             <label className="block text-[11px] font-medium text-fg-muted mb-2 uppercase tracking-wide">
               Recent Tests ({results.length})
@@ -173,14 +205,14 @@ export default function LiveTestConsole() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-edge/60 text-fg-muted capitalize">
+                      {result.intent}
+                    </span>
                     {result.toolUsed && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#22c55e]/10 text-[#22c55e] font-mono">
                         {result.toolUsed}
                       </span>
                     )}
-                    <span className="text-[10px] text-fg-muted">
-                      {new Date(result.timestamp).toLocaleTimeString()}
-                    </span>
                   </div>
                 </button>
               ))}
@@ -188,19 +220,17 @@ export default function LiveTestConsole() {
           </div>
         </div>
 
-        {/* Right: Results */}
         <div className="p-5">
           {!selectedResult ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
               <div className="text-[48px] mb-3">🧪</div>
               <p className="text-[14px] font-medium text-fg mb-1">No test selected</p>
               <p className="text-[12px] text-fg-secondary">
-                Run a test query to see results
+                Run a test query to see intent routing and API results
               </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Metrics */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg bg-[#1a1f35] border border-edge">
                   <div className="text-[11px] text-fg-muted mb-1">Intent</div>
@@ -220,15 +250,6 @@ export default function LiveTestConsole() {
                 </div>
               </div>
 
-              {/* API Endpoint */}
-              {selectedResult.apiEndpoint && (
-                <div className="p-3 rounded-lg bg-[#1a1f35] border border-edge">
-                  <div className="text-[11px] text-fg-muted mb-1.5">API Endpoint</div>
-                  <div className="text-[12px] font-mono text-[#4f6df5]">{selectedResult.apiEndpoint}</div>
-                </div>
-              )}
-
-              {/* Latency Breakdown */}
               <div className="p-3 rounded-lg bg-[#1a1f35] border border-edge">
                 <div className="text-[11px] text-fg-muted mb-3 font-medium uppercase tracking-wide">
                   Latency Breakdown
@@ -245,7 +266,6 @@ export default function LiveTestConsole() {
                 </div>
               </div>
 
-              {/* Sanitized Data */}
               {selectedResult.sanitizedData && (
                 <div className="p-3 rounded-lg bg-[#1a1f35] border border-edge">
                   <div className="text-[11px] text-fg-muted mb-2 font-medium uppercase tracking-wide">
@@ -257,13 +277,12 @@ export default function LiveTestConsole() {
                 </div>
               )}
 
-              {/* Final Response */}
               <div className="p-3 rounded-lg bg-[#1a1f35] border border-edge">
                 <div className="text-[11px] text-fg-muted mb-2 font-medium uppercase tracking-wide">
-                  AI Response
+                  {selectedResult.error ? 'Error' : 'AI Response'}
                 </div>
-                <p className="text-[12px] text-fg leading-relaxed">
-                  {selectedResult.response}
+                <p className={`text-[12px] leading-relaxed ${selectedResult.error ? 'text-red-400' : 'text-fg'}`}>
+                  {selectedResult.error || selectedResult.response}
                 </p>
               </div>
             </div>

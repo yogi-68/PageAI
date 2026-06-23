@@ -92,6 +92,45 @@ const steps = [
   },
 ];
 
+const integrationTypes = [
+  {
+    name: 'Shopify',
+    plan: 'Growth+',
+    summary: 'Connect your Shopify store via the Admin API for live order, product, and shipping lookups.',
+    credentials: ['Admin API access token (shpat_...)'],
+    baseUrl: 'https://your-store.myshopify.com',
+    endpoints: ['/admin/api/2024-01/orders/', '/admin/api/2024-01/products/', '/admin/api/2024-01/shipping_zones.json'],
+    tools: ['Order status', 'Shipment tracking', 'Product availability', 'Shipping estimate'],
+  },
+  {
+    name: 'WooCommerce',
+    plan: 'Growth+',
+    summary: 'Connect WooCommerce REST API for order and inventory questions during chat.',
+    credentials: ['Consumer Key (ck_...)', 'Consumer Secret (cs_...)'],
+    baseUrl: 'https://your-store.com',
+    endpoints: ['/wp-json/wc/v3/orders/', '/wp-json/wc/v3/products/', '/wp-json/wc/v3/shipping/'],
+    tools: ['Order status', 'Shipment tracking', 'Product availability', 'Shipping estimate'],
+  },
+  {
+    name: 'Custom REST API',
+    plan: 'Growth+',
+    summary: 'Any REST API with GET endpoints. Whitelist paths and pass auth via header.',
+    credentials: ['Authorization header (e.g. Bearer token or API key)'],
+    baseUrl: 'https://api.yourcompany.com',
+    endpoints: ['/orders/', '/products/', '/shipments/', '/shipping/'],
+    tools: ['Configurable per endpoint whitelist'],
+  },
+];
+
+const knowledgeSources = [
+  { name: 'Website crawl', plans: 'All plans', status: 'Available' },
+  { name: 'Sitemap import', plans: 'Starter+', status: 'Available' },
+  { name: 'File upload (PDF, DOCX, TXT, MD)', plans: 'Starter+', status: 'Available' },
+  { name: 'Notion', plans: 'Growth+', status: 'Coming soon' },
+  { name: 'Google Drive', plans: 'Growth+', status: 'Coming soon' },
+  { name: 'GitBook, Zendesk, Confluence', plans: 'Scale+', status: 'Coming soon' },
+];
+
 const faqs = [
   {
     q: 'How long does it take to set up a chatbot?',
@@ -202,6 +241,103 @@ export default function DocsPage() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Integrations */}
+      <section id="integrations" className="px-6 pb-20 border-t border-edge scroll-mt-24">
+        <div className="max-w-[760px] mx-auto pt-20">
+          <h2 className="text-[30px] font-bold tracking-tight mb-2">Integrations</h2>
+          <p className="text-[16px] text-fg-secondary mb-10 leading-relaxed">
+            PageCortex has two layers: <strong className="text-fg font-medium">knowledge sources</strong> that teach your bot from static content (RAG),
+            and <strong className="text-fg font-medium">live API integrations</strong> that let it look up real orders, products, and shipping during chat.
+          </p>
+
+          <h3 className="text-[18px] font-bold text-fg mb-4">Knowledge sources</h3>
+          <div className="rounded-xl border border-edge overflow-hidden mb-12">
+            <table className="w-full text-left text-[13px]">
+              <thead className="bg-surface/60 border-b border-edge">
+                <tr>
+                  <th className="px-4 py-3 font-semibold text-fg">Source</th>
+                  <th className="px-4 py-3 font-semibold text-fg">Plans</th>
+                  <th className="px-4 py-3 font-semibold text-fg">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {knowledgeSources.map((s) => (
+                  <tr key={s.name} className="border-b border-edge last:border-0">
+                    <td className="px-4 py-3 text-fg-secondary">{s.name}</td>
+                    <td className="px-4 py-3 text-fg-secondary">{s.plans}</td>
+                    <td className="px-4 py-3 text-fg-secondary">{s.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <h3 className="text-[18px] font-bold text-fg mb-4">Live API integrations (Growth+)</h3>
+          <div className="space-y-6 mb-10">
+            {integrationTypes.map((item) => (
+              <div key={item.name} className="p-5 rounded-xl border border-edge bg-surface/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <h4 className="text-[16px] font-bold text-fg">{item.name}</h4>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{item.plan}</span>
+                </div>
+                <p className="text-[14px] text-fg-secondary mb-4">{item.summary}</p>
+                <div className="grid sm:grid-cols-2 gap-4 text-[13px]">
+                  <div>
+                    <p className="font-semibold text-fg mb-1">Base URL</p>
+                    <code className="text-fg-secondary">{item.baseUrl}</code>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-fg mb-1">Credentials</p>
+                    <ul className="text-fg-secondary space-y-0.5">
+                      {item.credentials.map((c) => (
+                        <li key={c}>• {c}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-fg mb-1">Suggested endpoints</p>
+                    <ul className="text-fg-secondary space-y-0.5 font-mono text-[12px]">
+                      {item.endpoints.map((e) => (
+                        <li key={e}>{e}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-fg mb-1">AI tools enabled</p>
+                    <ul className="text-fg-secondary space-y-0.5">
+                      {item.tools.map((t) => (
+                        <li key={t}>• {t}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <h3 className="text-[18px] font-bold text-fg mb-4">Setup steps</h3>
+          <ol className="space-y-3 mb-6">
+            {[
+              'Upgrade to Growth or Scale (live API integrations require API access on your plan).',
+              'Open Dashboard → Integrations and click Add integration.',
+              'Choose Shopify, WooCommerce, or Custom REST. Enter your store URL and API credentials.',
+              'Add allowed endpoint paths — only whitelisted paths can be called by the AI.',
+              'Click Test to verify connectivity, then enable the integration.',
+              'Use the Live Test Console on the same page to simulate customer queries like "Where is my order 1234?"',
+            ].map((step, i) => (
+              <li key={i} className="flex gap-3 text-[14px] text-fg-secondary">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary text-[12px] font-bold flex items-center justify-center">{i + 1}</span>
+                {step}
+              </li>
+            ))}
+          </ol>
+          <p className="text-[13px] text-fg-secondary">
+            Credentials are AES-256 encrypted server-side and never exposed to visitors or included in chat prompts.
+            Sensitive fields (emails, payment info, tokens) are stripped from API responses before the AI sees them.
+          </p>
         </div>
       </section>
 

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Brain, Globe, MessageSquare, Zap, Code2, Palette, BarChart3, Shield, Database } from 'lucide-react';
+import { inViewOnce } from '@/lib/landing-motion';
 
 const features = [
   { icon: Brain, title: '95–98% accurate answers, never guesses', desc: 'Every response is grounded in your docs, pricing pages, and FAQs — with source citations so trial users trust what they read.', color: 'text-primary', bg: 'bg-primary/8', border: 'border-primary/12' },
@@ -19,13 +20,7 @@ export default function FeaturesSection() {
   return (
     <section id="features" className="py-24 relative">
       <div className="max-w-[1280px] mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
-        >
+        <motion.div {...inViewOnce} className="text-center mb-16">
           <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-primary mb-4">Features</p>
           <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.12] tracking-[-0.035em] mb-4">
             Built to convert
@@ -40,10 +35,8 @@ export default function FeaturesSection() {
           {features.map((f, i) => (
             <motion.div
               key={f.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ delay: i * 0.05, duration: 0.4 }}
+              {...inViewOnce}
+              transition={{ ...inViewOnce.transition, delay: i * 0.04 }}
               className={`group p-6 rounded-3xl border ${f.border} bg-surface hover:bg-surface-elevated/60 transition-all duration-300 hover:scale-[1.01]`}
             >
               <div className={`w-11 h-11 rounded-2xl ${f.bg} flex items-center justify-center mb-4 transition-all duration-300`}>

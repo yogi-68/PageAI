@@ -10,6 +10,7 @@ import { ChevronDown } from 'lucide-react';
 
 const mainLinks = [
   { label: 'Features', href: '/#features' },
+  { label: 'Integrations', href: '/#integrations' },
   { label: 'Use Cases', href: '/use-cases' },
   { label: 'Pricing', href: '/#pricing' },
   { label: 'Blog', href: '/blog' },
@@ -77,7 +78,7 @@ function DropdownMenu({ label, items }: { label: string; items: { label: string;
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -118,7 +119,9 @@ export default function Navbar() {
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-3 shrink-0">
           <ThemeToggle />
-          {user ? (
+          {loading ? (
+            <div className="w-[120px] h-9 rounded-full bg-surface-elevated/60 animate-pulse" aria-hidden />
+          ) : user ? (
             <Link
               href="/dashboard"
               className="text-[13.5px] font-semibold px-5 py-2.5 rounded-full bg-fg text-bg hover:opacity-90 transition-all duration-200 flex items-center gap-1.5"
@@ -219,7 +222,9 @@ export default function Navbar() {
                   <span className="text-[14px] font-medium text-fg-secondary">Theme</span>
                   <ThemeToggle />
                 </div>
-                {user ? (
+                {loading ? (
+                  <div className="h-11 rounded-full bg-surface-elevated/60 animate-pulse" aria-hidden />
+                ) : user ? (
                   <Link
                     href="/dashboard"
                     onClick={() => setOpen(false)}

@@ -4,6 +4,7 @@ import HeroSection from "@/components/landing/HeroSection";
 import ProblemSection from "@/components/landing/ProblemSection";
 import SolutionSection from "@/components/landing/SolutionSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
+import IntegrationsSection from "@/components/landing/IntegrationsSection";
 import ProductDemoSection from "@/components/landing/ProductDemoSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
@@ -39,6 +40,7 @@ export default function Home() {
       <ProblemSection />
       <SolutionSection />
       <FeaturesSection />
+      <IntegrationsSection />
       <ProductDemoSection />
       <HowItWorksSection />
       <TestimonialsSection />

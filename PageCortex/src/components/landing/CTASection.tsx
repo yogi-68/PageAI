@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { inViewOnce } from '@/lib/landing-motion';
 import { ArrowRight, Check } from 'lucide-react';
 
 export default function CTASection() {
@@ -12,13 +13,7 @@ export default function CTASection() {
       </div>
 
       <div className="relative max-w-[1280px] mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.5 }}
-          className="text-center"
-        >
+        <motion.div {...inViewOnce} className="text-center">
           <div className="max-w-[700px] mx-auto p-12 rounded-[2rem] border border-primary/15 bg-surface/80 backdrop-blur-sm relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-violet to-primary/50 rounded-t-[2rem]" />
 

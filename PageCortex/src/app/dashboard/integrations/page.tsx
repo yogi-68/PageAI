@@ -506,7 +506,13 @@ export default function IntegrationsPage() {
 
       {/* Live Test Console */}
       {integrations.some(i => i.is_enabled) && (
-        <LiveTestConsole />
+        <LiveTestConsole
+          integrations={integrations.filter(i => i.is_enabled).map(i => ({
+            id: i.id,
+            name: i.name,
+            type: i.type,
+          }))}
+        />
       )}
 
       {/* Tool Stats */}

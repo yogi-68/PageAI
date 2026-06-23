@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { inViewOnce } from '@/lib/landing-motion';
 
 export default function ProductDemoSection() {
   return (
@@ -10,13 +11,7 @@ export default function ProductDemoSection() {
       </div>
 
       <div className="relative max-w-[1280px] mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-14"
-        >
+        <motion.div {...inViewOnce} className="text-center mb-14">
           <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-primary mb-4">Product Preview</p>
           <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.12] tracking-[-0.035em] mb-4">
             A complete AI chatbot
@@ -27,12 +22,7 @@ export default function ProductDemoSection() {
           </p>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: [0.25, 0.4, 0.25, 1] }}
-        >
+        <motion.div {...inViewOnce}>
           {/* Dashboard mockup */}
           <div className="rounded-3xl border border-edge bg-surface overflow-hidden shadow-2xl shadow-black/6 dark:shadow-black/30">
             {/* Top bar */}
@@ -44,10 +34,8 @@ export default function ProductDemoSection() {
                   <div className="w-2.5 h-2.5 rounded-full bg-success/60" />
                 </div>
                 <div className="w-px h-4 bg-edge mx-1" />
-                <div className="w-5 h-5 rounded-md bg-primary/15 flex items-center justify-center">
-                  <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-                    <path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H7l-3 3V11H4a2 2 0 01-2-2V4z" fill="#5b3df5" />
-                  </svg>
+                <div className="w-5 h-5 rounded-md bg-primary/15 flex items-center justify-center text-primary">
+                  <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M2 4a2 2 0 012-2h8a2 2 0 012 2v5a2 2 0 01-2 2H7l-3 3V11H4a2 2 0 01-2-2V4z" /></svg>
                 </div>
                 <span className="text-[12.5px] font-semibold text-fg">Dashboard</span>
               </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { inViewOnce } from '@/lib/landing-motion';
 import { TrendingUp, Zap, CheckCircle2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -34,19 +35,12 @@ const solutions = [
 export default function SolutionSection() {
   return (
     <section className="py-24 relative">
-      {/* Subtle gradient */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-primary/[0.04] rounded-full blur-[120px]" />
       </div>
 
       <div className="relative max-w-[1280px] mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
-        >
+        <motion.div {...inViewOnce} className="text-center mb-16">
           <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-primary mb-4">The Solution</p>
           <h2 className="text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold leading-[1.12] tracking-[-0.035em] mb-4">
             Answer pre-sales questions
@@ -61,10 +55,8 @@ export default function SolutionSection() {
           {solutions.map((s, i) => (
             <motion.div
               key={s.title}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{ delay: i * 0.1, duration: 0.5 }}
+              {...inViewOnce}
+              transition={{ ...inViewOnce.transition, delay: i * 0.08 }}
               className={`group relative p-6 rounded-3xl border ${s.border} ${s.bg} hover:scale-[1.01] transition-all duration-300`}
             >
               <div className={`w-11 h-11 rounded-2xl bg-surface/80 border ${s.border} flex items-center justify-center mb-5`}>
@@ -76,13 +68,7 @@ export default function SolutionSection() {
           ))}
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          className="text-center"
-        >
+        <motion.div {...inViewOnce} className="text-center">
           <Link
             href="/signup"
             className="inline-flex items-center gap-2 text-[14px] font-semibold text-primary hover:text-primary-hover transition-colors duration-200"

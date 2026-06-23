@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { inViewOnce } from '@/lib/landing-motion';
 import { CheckCircle2 } from 'lucide-react';
 
 const guarantees = [
@@ -59,10 +60,7 @@ export default function TestimonialsSection() {
     <section className="py-24 relative">
       <div className="max-w-[1280px] mx-auto px-6">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.5 }}
+          {...inViewOnce}
           className="text-center mb-16"
         >
           <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-primary mb-4">Our promises</p>
@@ -79,10 +77,8 @@ export default function TestimonialsSection() {
           {guarantees.map((g, i) => (
             <motion.div
               key={g.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ delay: i * 0.05, duration: 0.4 }}
+              {...inViewOnce}
+              transition={{ ...inViewOnce.transition, delay: i * 0.05 }}
               className={`p-6 rounded-3xl border ${g.tagBorder} bg-surface hover:bg-surface-elevated/60 hover:scale-[1.01] transition-all duration-300 flex flex-col`}
             >
               {/* Tag */}

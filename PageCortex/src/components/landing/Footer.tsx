@@ -4,6 +4,7 @@ import Image from 'next/image';
 const footerLinks = {
   Product: [
     { label: 'Features', href: '/#features' },
+    { label: 'Integrations', href: '/#integrations' },
     { label: 'Pricing', href: '/#pricing' },
     { label: 'How It Works', href: '/#how-it-works' },
     { label: 'Use Cases', href: '/use-cases' },

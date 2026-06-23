@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { inViewOnce } from '@/lib/landing-motion';
 import { ChevronDown } from 'lucide-react';
 
 const faqs = [
@@ -10,7 +11,9 @@ const faqs = [
   { q: 'Do I need coding skills?', a: "No. Enter your URL, wait for the crawl, customize appearance, and copy one script tag onto your SaaS marketing site or docs. Platform-specific setup guides are in our documentation." },
   { q: 'How accurate are the responses?', a: 'Our advanced RAG pipeline with query rewriting, hybrid search, and re-ranking achieves 95-98% accuracy. The chatbot only answers from your actual content — eliminating hallucinations.' },
   { q: 'Can I customize the chatbot?', a: 'Yes — colors, position, welcome message, bot name, and avatar. Starter plans and above also remove PageCortex branding.' },
-  { q: 'What data sources are supported?', a: 'Website crawling, sitemap import, and file uploads on all plans. Growth adds Notion and Google Drive. Scale adds Zendesk, Confluence, and GitBook. Enterprise supports custom API connectors.' },
+  { q: 'What data sources are supported?', a: 'Website crawling on all plans; sitemap import and file uploads on Starter+. Notion and Google Drive are coming soon on Growth+. Live API integrations (Shopify, WooCommerce, Custom REST) are available on Growth+ for real-time order and product lookups.' },
+  { q: 'What live integrations does PageCortex support?', a: 'Growth and Scale plans support Shopify (Admin API), WooCommerce (REST API), and Custom REST APIs. Your bot can look up order status, track shipments, check product availability, and estimate shipping — credentials are encrypted and only whitelisted API paths are called.' },
+  { q: 'How do I connect Shopify or WooCommerce?', a: 'Go to Dashboard → Integrations, click Add integration, choose your platform, enter your store URL and API credentials, whitelist allowed endpoints (e.g. /orders/, /products/), then run Test connection. Full setup steps are in our documentation under Integrations.' },
   { q: 'How long does setup take?', a: 'Most users go from signup to a live chatbot in under 5 minutes. Crawling takes 30 seconds to 2 minutes depending on site size.' },
   { q: 'What AI models do you use?', a: 'PageCortex uses OpenAI GPT-4.1 family models. Free plans use GPT-4.1 Mini only. Starter adds smart routing between GPT-4.1 Mini and GPT-4.1 based on query complexity. Growth and above unlock both GPT-4.1 Mini and full GPT-4.1 with smart routing.' },
   { q: 'What happens at my message limit?', a: "You'll be notified at 80% usage. At the limit, you can enable automatic overage at $4 per 1,000 extra messages, or the bot shows a friendly message directing visitors to contact you. Upgrade anytime." },
@@ -25,10 +28,7 @@ export default function FAQSection() {
     <section id="faq" className="py-24 relative">
       <div className="max-w-[720px] mx-auto px-6">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.5 }}
+          {...inViewOnce}
           className="text-center mb-14"
         >
           <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-primary mb-4">FAQ</p>
@@ -43,10 +43,8 @@ export default function FAQSection() {
             return (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ delay: i * 0.04, duration: 0.3 }}
+                {...inViewOnce}
+                transition={{ ...inViewOnce.transition, delay: i * 0.04 }}
                 className={`rounded-2xl border overflow-hidden transition-all duration-200 ${
                   isOpen
                     ? 'border-primary/25 bg-primary/[0.02]'

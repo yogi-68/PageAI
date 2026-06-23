@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { inViewOnce } from '@/lib/landing-motion';
 import { Globe, Cpu, Rocket } from 'lucide-react';
 
 const steps = [
@@ -44,10 +45,7 @@ export default function HowItWorksSection() {
     <section id="how-it-works" className="py-24 relative">
       <div className="max-w-[1280px] mx-auto px-6">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.5 }}
+          {...inViewOnce}
           className="text-center mb-16"
         >
           <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-primary mb-4">How It Works</p>
@@ -68,10 +66,8 @@ export default function HowItWorksSection() {
             {steps.map((step, i) => (
               <motion.div
                 key={step.num}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-80px' }}
-                transition={{ delay: i * 0.15, duration: 0.5 }}
+                {...inViewOnce}
+                transition={{ ...inViewOnce.transition, delay: i * 0.15 }}
                 className="relative"
               >
                 {/* Step icon circle */}

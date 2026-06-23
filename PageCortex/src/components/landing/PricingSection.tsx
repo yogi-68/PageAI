@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { inViewOnce } from '@/lib/landing-motion';
 import { Check } from 'lucide-react';
 
 interface FeatureGroup {
@@ -226,10 +227,7 @@ export default function PricingSection() {
     <section id="pricing" className="py-24 relative">
       <div className="max-w-[1280px] mx-auto px-6">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.5 }}
+          {...inViewOnce}
           className="text-center mb-12"
         >
           <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-primary mb-4">Pricing</p>
@@ -266,10 +264,8 @@ export default function PricingSection() {
           {plans.map((plan, i) => (
             <motion.div
               key={plan.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ delay: i * 0.08, duration: 0.4 }}
+              {...inViewOnce}
+              transition={{ ...inViewOnce.transition, delay: i * 0.08 }}
               className={`relative rounded-3xl border transition-all duration-300 flex flex-col hover:scale-[1.01] ${plan.cardClass}`}
             >
               {/* Badge */}
@@ -358,10 +354,8 @@ export default function PricingSection() {
 
         {/* Trust perks */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ delay: 0.3, duration: 0.4 }}
+          {...inViewOnce}
+          transition={{ ...inViewOnce.transition, delay: 0.3 }}
           className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-10"
         >
           {[
@@ -380,10 +374,8 @@ export default function PricingSection() {
 
         {/* Competitor comparison callout */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ delay: 0.35, duration: 0.4 }}
+          {...inViewOnce}
+          transition={{ ...inViewOnce.transition, delay: 0.35 }}
           className="mt-8 mx-auto max-w-3xl rounded-3xl border border-primary/15 bg-primary/[0.02] px-6 py-6"
         >
           <p className="text-center text-[13px] font-bold text-fg mb-4">How PageCortex compares at $69/month</p>
@@ -407,10 +399,8 @@ export default function PricingSection() {
 
         {/* Add-ons */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ delay: 0.2, duration: 0.5 }}
+          {...inViewOnce}
+          transition={{ ...inViewOnce.transition, delay: 0.2 }}
           className="mt-16"
         >
           <div className="text-center mb-8">

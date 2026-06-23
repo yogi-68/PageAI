@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { TrendingDown, Clock, HelpCircle } from 'lucide-react';
+import { inViewOnce } from '@/lib/landing-motion';
 
 const problems = [
   {
@@ -44,10 +45,7 @@ export default function ProblemSection() {
     <section className="py-24 relative">
       <div className="max-w-[1280px] mx-auto px-6">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.5 }}
+          {...inViewOnce}
           className="text-center mb-16"
         >
           <p className="text-[12.5px] font-semibold uppercase tracking-[0.12em] text-danger mb-4">The Problem</p>
@@ -64,10 +62,8 @@ export default function ProblemSection() {
           {problems.map((p, i) => (
             <motion.div
               key={p.title}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{ delay: i * 0.1, duration: 0.5, ease: [0.25, 0.4, 0.25, 1] }}
+              {...inViewOnce}
+              transition={{ ...inViewOnce.transition, delay: i * 0.08 }}
               className={`group p-6 rounded-3xl border ${p.borderColor} ${p.bgColor} hover:scale-[1.01] transition-all duration-300`}
             >
               <div className={`w-11 h-11 rounded-2xl ${p.accentColor} flex items-center justify-center mb-5`}>

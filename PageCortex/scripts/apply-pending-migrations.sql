@@ -1,8 +1,9 @@
 -- Apply pending production migrations in Supabase Dashboard → SQL Editor
 -- Do NOT use \i — it only works in psql, not the Supabase SQL Editor.
 --
--- Run this file instead (billing + subscription columns):
---   scripts/apply-billing-migrations.sql
+-- Run these scripts in order on an EXISTING database:
+--   1. scripts/apply-integrations-migrations.sql   (if Integrations page fails / missing tables)
+--   2. scripts/apply-billing-migrations.sql        (billing page + subscription dates)
 --
 -- Or run each migration file contents manually in order:
 --   supabase/migrations/20260512_api_integrations.sql
@@ -11,3 +12,4 @@
 --   supabase/migrations/20260624_protect_subscription_date_fields.sql
 --
 -- NEVER run supabase/schema.sql on an existing database (causes "profiles already exists").
+-- schema.sql is for fresh installs only and now includes client_integrations.
