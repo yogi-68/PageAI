@@ -103,35 +103,26 @@ export async function POST(request: NextRequest) {
         // 4. Execute RAG pipeline
         // If RAG fails after increment, we roll back the usage charge.
 
-        // Resolve data sources + client integrations in parallel for latency savings
-        const [
-            { data: allUserSources },
-            clientIntegrations,
-        ] = await Promise.all([
-            admin
-                .from('data_sources')
-                .select('id')
-                .eq('user_id', bot.user_id)
-                .eq('status', 'indexed'),
+        // Resolve THIS bot's own data sources + client integrations in parallel for latency savings.
+        // Scoped strictly to this bot — never pull the account's other data sources here, or every
+        // bot on a multi-bot account would leak every other bot's site content into its answers.
+        const [clientIntegrations] = await Promise.all([
             getIntegrationsForUser(bot.user_id),
         ]);
 
-        const allSourceIds = new Set<string>(allUserSources?.map((s: { id: string }) => s.id) ?? []);
+        const ownSourceIds = new Set<string>(bot.data_source_ids ?? []);
 
-        // Also include any explicitly set IDs on the bot (even if not yet indexed)
-        for (const id of (bot.data_source_ids ?? [])) allSourceIds.add(id);
-
-        // Also include the website's datasource if set
+        // Also include the website's datasource, but only once it's actually indexed
         if (bot.website_id) {
             const { data: ws } = await admin
                 .from('websites')
-                .select('data_source_id')
+                .select('data_source_id, status')
                 .eq('id', bot.website_id)
                 .single();
-            if (ws?.data_source_id) allSourceIds.add(ws.data_source_id);
+            if (ws?.data_source_id && ws.status === 'indexed') ownSourceIds.add(ws.data_source_id);
         }
 
-        const resolvedDataSourceIds = Array.from(allSourceIds);
+        const resolvedDataSourceIds = Array.from(ownSourceIds);
 
         const ragConfig = {
             userId: bot.user_id,
@@ -143,6 +134,7 @@ export async function POST(request: NextRequest) {
             model: allowedModel,
             temperature: bot.temperature || 0.2,
             maxTokens: bot.max_tokens || 1024,
+            confidenceThreshold: bot.confidence_threshold ?? undefined,
             fallbackMessage: bot.fallback_message || undefined,
             integrations: clientIntegrations,
         };

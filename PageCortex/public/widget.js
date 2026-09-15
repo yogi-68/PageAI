@@ -375,8 +375,9 @@
     closeBtn.addEventListener("click", toggle);
 
     function addMessage(role, text) {
-        // Remove any existing suggestion chips before appending a new message
+        // Remove any existing suggestion chips/source tags before appending a new message
         removeSuggestions();
+        removeSources();
         const msg = document.createElement("div");
         msg.className = `pagecortex-msg ${role}`;
         msg.innerHTML = `
@@ -410,6 +411,33 @@
     function removeSuggestions() {
         const el = document.getElementById("pagecortex-suggestions");
         if (el) el.remove();
+    }
+
+    function removeSources() {
+        const el = document.getElementById("pagecortex-sources");
+        if (el) el.remove();
+    }
+
+    function showSources(sources) {
+        removeSources();
+        if (!sources || sources.length === 0) return;
+        const div = document.createElement("div");
+        div.className = "pagecortex-sources";
+        div.id = "pagecortex-sources";
+        sources.forEach(function(s) {
+            if (!s || !s.url) return;
+            const link = document.createElement("a");
+            link.className = "pagecortex-source-tag";
+            link.href = s.url;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent = s.title || s.url;
+            div.appendChild(link);
+        });
+        if (div.children.length > 0) {
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
     }
 
     function showTyping() {
@@ -477,7 +505,6 @@
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
                 let botText = "";
-                let sources = [];
 
                 // Create bot message bubble for streaming with cursor
                 const msg = document.createElement("div");
@@ -568,6 +595,9 @@
                                     }
                                     messages.scrollTop = messages.scrollHeight;
                                 } else if (parsed.type === 'done') {
+                                    if (parsed.sources && parsed.sources.length > 0) {
+                                        showSources(parsed.sources);
+                                    }
                                     if (parsed.suggestions && parsed.suggestions.length > 0) {
                                         showSuggestions(parsed.suggestions);
                                     }
@@ -601,6 +631,7 @@
                 if (data.success) {
                     conversationId = data.conversationId;
                     addMessage("bot", data.answer);
+                    if (data.sources && data.sources.length > 0) showSources(data.sources);
                     if (data.suggestions && data.suggestions.length > 0) showSuggestions(data.suggestions);
                 } else {
                     addMessage("bot", "Sorry, I encountered an error. Please try again.");

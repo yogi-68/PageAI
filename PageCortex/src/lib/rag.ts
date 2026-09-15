@@ -103,7 +103,8 @@ async function hybridSearch(
     }
 }
 
-// Fallback: pure vector search
+// Fallback: pure vector search. If this also fails, return no chunks rather than
+// guessing — a safe "I don't know" beats silently answering from wrong/random content.
 async function vectorOnlySearch(
     queryEmbedding: number[],
     userId: string,
@@ -117,31 +118,15 @@ async function vectorOnlySearch(
             query_embedding: queryEmbedding,
             match_count: matchCount,
             filter_user_id: userId,
+            filter_data_source_ids: dataSourceIds || null,
         });
         if (!error && data) return data as RAGChunk[];
-    } catch {
-        // fall through to manual
+        if (error) console.error('match_chunks fallback error:', error);
+    } catch (err) {
+        console.error('match_chunks fallback threw:', err);
     }
 
-    const { data } = await admin
-        .from('chunks')
-        .select('id, content, token_count, heading, page_url, page_title, doc_type, metadata')
-        .eq('user_id', userId)
-        .limit(matchCount);
-
-    return ((data || []) as any[]).map((c) => ({
-        chunk_id: c.id,
-        content: c.content,
-        token_count: c.token_count || 0,
-        heading: c.heading,
-        page_url: c.page_url,
-        page_title: c.page_title,
-        doc_type: c.doc_type,
-        metadata: c.metadata || {},
-        vector_score: 0.5,
-        text_score: 0,
-        combined_score: 0.5,
-    }));
+    return [];
 }
 
 // ─── Re-Ranking ───────────────────────────────────────────
@@ -304,9 +289,11 @@ export async function executeRAG(
 
     const confidence = estimateConfidence(rankedChunks);
 
-    // 5. If no tool data and no chunks — fallback
-    if (!toolContext && rankedChunks.length === 0) {
-        await trackUnansweredQuestion(botId, config.userId, query, confidence, 'no_chunks');
+    // 5. If no tool data and (no chunks OR confidence too low) — fallback
+    const confidenceThreshold = config.confidenceThreshold ?? 0.65;
+    if (!toolContext && (rankedChunks.length === 0 || confidence < confidenceThreshold)) {
+        const reason = rankedChunks.length === 0 ? 'no_chunks' : 'low_confidence';
+        await trackUnansweredQuestion(botId, config.userId, query, confidence, reason);
         return {
             answer: config.fallbackMessage || "I don't have enough context to answer that yet, but I'd love to help! Could you try rephrasing your question, or would you like me to connect you with our team?",
             sources: [],
@@ -465,8 +452,10 @@ export function executeRAGStream(
 
                 const confidence = estimateConfidence(rankedChunks);
 
-                if (!toolContext && rankedChunks.length === 0) {
-                    await trackUnansweredQuestion(botId, config.userId, query, confidence, 'no_chunks');
+                const confidenceThreshold = config.confidenceThreshold ?? 0.65;
+                if (!toolContext && (rankedChunks.length === 0 || confidence < confidenceThreshold)) {
+                    const reason = rankedChunks.length === 0 ? 'no_chunks' : 'low_confidence';
+                    await trackUnansweredQuestion(botId, config.userId, query, confidence, reason);
 
                     const fallback = config.fallbackMessage ||
                         "I don't have enough context to answer that yet, but I'd love to help! " +

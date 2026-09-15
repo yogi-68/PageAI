@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth';
 import { ThemeProvider } from '@/lib/theme';
+import AdSense from '@/components/AdSense';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -186,6 +187,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           data-domain="pagecortex.com"
           src="https://datafa.st/js/script.js"
         ></script>
+        <AdSense />
       </head>
       <body className="antialiased">
         <ThemeProvider>

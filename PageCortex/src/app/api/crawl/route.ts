@@ -59,7 +59,7 @@ function discoverLinks(html: string, baseUrl: string, allowedPaths: string[], bl
 async function fetchPageContent(
     pageUrl: string,
     crawlMode: string
-): Promise<{ title: string; text: string; headings: string[]; html: string } | null> {
+): Promise<{ title: string; text: string; headings: string[]; html: string; finalUrl: string } | null> {
     // ── SPA mode: go straight to Jina AI Reader ──────────────────────────
     if (crawlMode === 'spa') {
         return jinaFetch(pageUrl);
@@ -76,12 +76,15 @@ async function fetchPageContent(
         if (!ct.includes('html')) return null;
         const html = await res.text();
         const { title, text, headings } = extractText(html, pageUrl);
+        // Use the post-redirect URL as the page's identity so redirected pages
+        // (e.g. www → apex, trailing slash normalization) aren't stored/cited under a stale URL.
+        const finalUrl = res.url || pageUrl;
         // If static extraction gives <200 chars AND mode is auto, try Jina AI
         if (text.length < 200 && crawlMode === 'auto') {
             const jina = await jinaFetch(pageUrl);
             if (jina) return jina;
         }
-        return text.length >= 50 ? { title, text, headings, html } : null;
+        return text.length >= 50 ? { title, text, headings, html, finalUrl } : null;
     } catch {
         // If static fetch fails and mode is auto, try Jina AI
         if (crawlMode === 'auto') return jinaFetch(pageUrl);
@@ -91,7 +94,7 @@ async function fetchPageContent(
 
 // Jina AI Reader: renders JS-heavy pages and returns clean markdown
 // Free, no API key required, respects robots.txt
-async function jinaFetch(pageUrl: string): Promise<{ title: string; text: string; headings: string[]; html: string } | null> {
+async function jinaFetch(pageUrl: string): Promise<{ title: string; text: string; headings: string[]; html: string; finalUrl: string } | null> {
     try {
         const jinaUrl = `https://r.jina.ai/${pageUrl}`;
         const res = await fetch(jinaUrl, {
@@ -111,7 +114,7 @@ async function jinaFetch(pageUrl: string): Promise<{ title: string; text: string
         const headings: string[] = [];
         const headingMatches = markdown.matchAll(/^#{1,4}\s+(.+)$/gm);
         for (const m of headingMatches) headings.push(m[1].trim());
-        return { title, text: markdown, headings, html: '' };
+        return { title, text: markdown, headings, html: '', finalUrl: pageUrl };
     } catch {
         return null;
     }
@@ -242,14 +245,16 @@ export async function POST(request: NextRequest) {
                 const result = await fetchPageContent(normalized, mode);
                 if (!result) continue;
 
-                const { title, text, headings, html } = result;
+                const { title, text, headings, html, finalUrl } = result;
                 const wordCount = text.split(/\s+/).length;
                 const hash = crypto.createHash('md5').update(text).digest('hex');
-                pages.push({ url: normalized, title, text, wordCount, headings, hash });
+                const pageUrl = finalUrl.replace(/\/$/, '');
+                if (pageUrl !== normalized) visited.add(pageUrl);
+                pages.push({ url: pageUrl, title, text, wordCount, headings, hash });
 
                 // Discover links (only when we have raw HTML — Jina mode won't yield new links)
                 if (html) {
-                    const links = discoverLinks(html, normalized, allowedPaths, blockedPaths);
+                    const links = discoverLinks(html, pageUrl, allowedPaths, blockedPaths);
                     for (const link of links) {
                         if (!visited.has(link.replace(/\/$/, '')) && queue.length + visited.size < maxPages) {
                             queue.push(link);
@@ -261,15 +266,17 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 4. Store documents and chunks in Supabase
-        // Delete old chunks for this data source
-        await admin.from('chunks').delete().eq('data_source_id', dataSourceId);
+        // 4. Store documents and chunks in Supabase.
+        // Per-page status is tracked (instead of assuming every crawled page ends up
+        // 'indexed') so document-upsert failures and dropped chunk batches are visible
+        // in the response rather than silently swallowed.
+        const pageStatus = new Map<string, { status: 'indexed' | 'partial' | 'error'; error?: string; chunksExpected: number; chunksStored: number }>();
 
-        const allChunks: { content: string; heading: string | null; pageUrl: string; pageTitle: string; docType: string; tokenCount: number; chunkIndex: number }[] = [];
+        const allChunks: { content: string; heading: string | null; pageUrl: string; pageTitle: string; docType: string; tokenCount: number; chunkIndex: number; metadata: Record<string, string> }[] = [];
 
         for (const page of pages) {
             // Upsert document
-            const { data: doc } = await admin
+            const { data: doc, error: docErr } = await admin
                 .from('documents')
                 .upsert(
                     {
@@ -290,10 +297,15 @@ export async function POST(request: NextRequest) {
                 .select('id')
                 .single();
 
-            if (!doc) continue;
+            if (!doc) {
+                console.error(`Document upsert failed for ${page.url}:`, docErr);
+                pageStatus.set(page.url, { status: 'error', error: docErr?.message || 'Document upsert failed', chunksExpected: 0, chunksStored: 0 });
+                continue;
+            }
 
             // Chunk with semantic-aware chunking (600 token target, 120 overlap)
             const chunks = chunkHTMLContent(page.text, page.title, page.url);
+            pageStatus.set(page.url, { status: 'indexed', chunksExpected: chunks.length, chunksStored: 0 });
 
             for (const chunk of chunks) {
                 allChunks.push({
@@ -304,6 +316,7 @@ export async function POST(request: NextRequest) {
                     docType: 'page',
                     tokenCount: chunk.tokenCount,
                     chunkIndex: chunk.chunkIndex,
+                    metadata: chunk.metadata,
                 });
             }
         }
@@ -343,17 +356,33 @@ export async function POST(request: NextRequest) {
                     page_url: chunk.pageUrl,
                     page_title: chunk.pageTitle,
                     doc_type: chunk.docType,
-                    metadata: {},
+                    metadata: chunk.metadata,
                 }));
 
                 const validRows = chunkRows.filter(r => r.document_id);
+                const droppedCount = chunkRows.length - validRows.length;
+                if (droppedCount > 0) {
+                    console.error(`${droppedCount} chunk(s) in batch ${i} dropped — no resolved document_id`);
+                }
+
                 if (validRows.length > 0) {
+                    // Replace old chunks per-document (not per-data-source) right before inserting
+                    // the fresh ones, so a failure partway through a re-crawl only leaves stale
+                    // duplicates for not-yet-processed pages instead of wiping the whole knowledge base.
+                    const docIdsInBatch = [...new Set(validRows.map(r => r.document_id as string))];
+                    const { error: deleteErr } = await admin.from('chunks').delete().in('document_id', docIdsInBatch);
+                    if (deleteErr) console.error(`Old chunk delete error at batch ${i}:`, deleteErr);
+
                     const { error: insertErr } = await admin.from('chunks').insert(validRows);
                     if (insertErr) {
                         console.error(`Chunk insert error at batch ${i}:`, insertErr);
                         embeddingError = insertErr.message;
                     } else {
                         totalChunksStored += validRows.length;
+                        for (const row of validRows) {
+                            const s = pageStatus.get(row.page_url);
+                            if (s) s.chunksStored += 1;
+                        }
                     }
                 }
             } catch (err: any) {
@@ -363,6 +392,15 @@ export async function POST(request: NextRequest) {
                     embeddingError = err?.message || 'Embedding generation failed';
                 }
             }
+        }
+
+        // Downgrade any page whose chunks didn't all make it into storage from 'indexed' to 'partial'
+        for (const [url, s] of pageStatus) {
+            if (s.status === 'indexed' && s.chunksExpected > 0 && s.chunksStored < s.chunksExpected) {
+                s.status = 'partial';
+                s.error = embeddingError || 'Some chunks for this page were not stored';
+            }
+            pageStatus.set(url, s);
         }
 
         // If we crawled pages but couldn't generate any embeddings, surface the error.
@@ -425,12 +463,16 @@ export async function POST(request: NextRequest) {
             success: true,
             websiteId: siteId,
             dataSourceId,
-            pages: pages.map(p => ({
-                url: p.url,
-                title: p.title,
-                wordCount: p.wordCount,
-                status: 'indexed',
-            })),
+            pages: pages.map(p => {
+                const s = pageStatus.get(p.url);
+                return {
+                    url: p.url,
+                    title: p.title,
+                    wordCount: p.wordCount,
+                    status: s?.status || 'error',
+                    ...(s?.error ? { error: s.error } : {}),
+                };
+            }),
             stats: {
                 totalPages: pages.length,
                 totalWords,
