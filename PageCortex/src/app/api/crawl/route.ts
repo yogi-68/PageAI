@@ -1,124 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as cheerio from 'cheerio';
 import { getAdminClient } from '@/lib/supabase';
-import { generateEmbedding, generateEmbeddings } from '@/lib/openai';
+import { generateEmbeddings } from '@/lib/openai';
 import { chunkHTMLContent } from '@/lib/chunker';
 import { rateLimitCrawl } from '@/lib/rate-limit';
 import { invalidateCache } from '@/lib/cache';
+import {
+    FETCH_CONCURRENCY,
+    discoverLinks,
+    fetchPageContent,
+    fetchSitemapUrls,
+    normalizeUrl,
+    toCrawlableUrl,
+} from '@/lib/crawler';
 import crypto from 'crypto';
 
-// Extract text content from HTML
-function extractText(html: string, pageUrl: string): { title: string; text: string; headings: string[] } {
-    const $ = cheerio.load(html);
-    $('script, style, nav, footer, header, iframe, noscript, svg, [aria-hidden="true"]').remove();
-
-    const title = $('title').text().trim() || $('h1').first().text().trim() || pageUrl;
-    const headings: string[] = [];
-    $('h1, h2, h3, h4').each((_, el) => {
-        const h = $(el).text().trim();
-        if (h) headings.push(h);
-    });
-
-    const text = $('body').text().replace(/\s+/g, ' ').trim();
-    return { title, text, headings };
-}
-
-// Discover links from a page
-function discoverLinks(html: string, baseUrl: string, allowedPaths: string[], blockedPaths: string[]): string[] {
-    const $ = cheerio.load(html);
-    const links: Set<string> = new Set();
-    const base = new URL(baseUrl);
-
-    $('a[href]').each((_, el) => {
-        try {
-            const href = $(el).attr('href');
-            if (!href) return;
-            const resolved = new URL(href, baseUrl);
-            if (resolved.hostname !== base.hostname) return;
-
-            resolved.hash = '';
-            const clean = resolved.toString().replace(/\/$/, '');
-            const path = resolved.pathname;
-
-            // Skip files
-            if (/\.(pdf|jpg|jpeg|png|gif|svg|css|js|zip|mp4|mp3|woff|woff2|ico)$/i.test(clean)) return;
-
-            // Check allowed paths
-            if (allowedPaths.length > 0 && !allowedPaths.some(p => path.startsWith(p))) return;
-
-            // Check blocked paths
-            if (blockedPaths.some(p => path.startsWith(p))) return;
-
-            links.add(clean);
-        } catch { /* skip invalid URLs */ }
-    });
-    return Array.from(links);
-}
-
-// Fetch a page using Cheerio (fast) with optional Jina AI SPA fallback
-async function fetchPageContent(
-    pageUrl: string,
-    crawlMode: string
-): Promise<{ title: string; text: string; headings: string[]; html: string; finalUrl: string } | null> {
-    // ── SPA mode: go straight to Jina AI Reader ──────────────────────────
-    if (crawlMode === 'spa') {
-        return jinaFetch(pageUrl);
-    }
-
-    // ── Static / Auto: try Cheerio first ────────────────────────────────
-    try {
-        const res = await fetch(pageUrl, {
-            headers: { 'User-Agent': 'PageCortex Bot/2.0 (+https://www.pagecortex.com)' },
-            signal: AbortSignal.timeout(15000),
-        });
-        if (!res.ok) return null;
-        const ct = res.headers.get('content-type') || '';
-        if (!ct.includes('html')) return null;
-        const html = await res.text();
-        const { title, text, headings } = extractText(html, pageUrl);
-        // Use the post-redirect URL as the page's identity so redirected pages
-        // (e.g. www → apex, trailing slash normalization) aren't stored/cited under a stale URL.
-        const finalUrl = res.url || pageUrl;
-        // If static extraction gives <200 chars AND mode is auto, try Jina AI
-        if (text.length < 200 && crawlMode === 'auto') {
-            const jina = await jinaFetch(pageUrl);
-            if (jina) return jina;
-        }
-        return text.length >= 50 ? { title, text, headings, html, finalUrl } : null;
-    } catch {
-        // If static fetch fails and mode is auto, try Jina AI
-        if (crawlMode === 'auto') return jinaFetch(pageUrl);
-        return null;
-    }
-}
-
-// Jina AI Reader: renders JS-heavy pages and returns clean markdown
-// Free, no API key required, respects robots.txt
-async function jinaFetch(pageUrl: string): Promise<{ title: string; text: string; headings: string[]; html: string; finalUrl: string } | null> {
-    try {
-        const jinaUrl = `https://r.jina.ai/${pageUrl}`;
-        const res = await fetch(jinaUrl, {
-            headers: {
-                'User-Agent': 'PageCortex Bot/2.0',
-                'X-Return-Format': 'markdown',
-            },
-            signal: AbortSignal.timeout(30000),
-        });
-        if (!res.ok) return null;
-        const markdown = await res.text();
-        if (markdown.length < 50) return null;
-        // Extract title from first # heading in markdown
-        const titleMatch = markdown.match(/^#\s+(.+)$/m);
-        const title = titleMatch ? titleMatch[1].trim() : pageUrl;
-        // Extract headings from markdown
-        const headings: string[] = [];
-        const headingMatches = markdown.matchAll(/^#{1,4}\s+(.+)$/gm);
-        for (const m of headingMatches) headings.push(m[1].trim());
-        return { title, text: markdown, headings, html: '', finalUrl: pageUrl };
-    } catch {
-        return null;
-    }
-}
+// Sitemap discovery + up to maxPages fetches + embedding batches take far longer
+// than the platform default, which would otherwise cut a crawl short after the
+// first page or two.
+export const maxDuration = 300;
 
 
 export async function POST(request: NextRequest) {
@@ -177,7 +76,7 @@ export async function POST(request: NextRequest) {
         }
         // ─────────────────────────────────────────────────────────────────────
 
-        const baseUrl = url.replace(/\/$/, '');
+        const baseUrl = normalizeUrl(url);
 
         // 1. Create or get data source
         let dataSourceId: string;
@@ -230,39 +129,70 @@ export async function POST(request: NextRequest) {
             await admin.from('websites').update({ status: 'crawling' }).eq('id', siteId);
         }
 
-        // 3. BFS Crawl
+        // 3. Crawl. The queue is seeded from the sitemap as well as the entry URL:
+        // on a JS-rendered site the served HTML has no <a href> at all, so link
+        // discovery alone would index the entry page and stop there.
+        const sitemapUrls = await fetchSitemapUrls(baseUrl, allowedPaths, blockedPaths, maxPages);
+
         const visited = new Set<string>();
+        const queued = new Set<string>([baseUrl]);
         const queue = [baseUrl];
+        for (const u of sitemapUrls) {
+            if (queued.has(u)) continue;
+            queued.add(u);
+            queue.push(u);
+        }
+
         const pages: { url: string; title: string; text: string; wordCount: number; headings: string[]; hash: string }[] = [];
+        const seenPageUrls = new Set<string>();
 
+        const enqueue = (link: string) => {
+            const normalized = normalizeUrl(link);
+            if (queued.has(normalized) || visited.has(normalized)) return;
+            if (queued.size >= maxPages) return;
+            queued.add(normalized);
+            queue.push(normalized);
+        };
+
+        // Fetch in parallel batches — a serial loop would spend the whole function
+        // budget waiting on network round-trips.
         while (queue.length > 0 && visited.size < maxPages) {
-            const currentUrl = queue.shift()!;
-            const normalized = currentUrl.replace(/\/$/, '');
-            if (visited.has(normalized)) continue;
-            visited.add(normalized);
+            const batch: string[] = [];
+            while (queue.length > 0 && batch.length < FETCH_CONCURRENCY && visited.size + batch.length < maxPages) {
+                const next = normalizeUrl(queue.shift()!);
+                if (visited.has(next) || batch.includes(next)) continue;
+                batch.push(next);
+            }
+            if (batch.length === 0) break;
+            for (const u of batch) visited.add(u);
 
-            try {
-                const result = await fetchPageContent(normalized, mode);
+            const results = await Promise.all(
+                batch.map(u => fetchPageContent(u, mode).catch(() => null))
+            );
+
+            for (let i = 0; i < batch.length; i++) {
+                const result = results[i];
                 if (!result) continue;
 
-                const { title, text, headings, html, finalUrl } = result;
+                const { title, text, headings, html, finalUrl, markdownLinks } = result;
                 const wordCount = text.split(/\s+/).length;
                 const hash = crypto.createHash('md5').update(text).digest('hex');
-                const pageUrl = finalUrl.replace(/\/$/, '');
-                if (pageUrl !== normalized) visited.add(pageUrl);
+                const pageUrl = normalizeUrl(finalUrl);
+                if (pageUrl !== batch[i]) visited.add(pageUrl);
+                // Two queued URLs can redirect to the same destination, which would
+                // otherwise index the same page twice and skew the chunk counts.
+                if (seenPageUrls.has(pageUrl)) continue;
+                seenPageUrls.add(pageUrl);
                 pages.push({ url: pageUrl, title, text, wordCount, headings, hash });
 
-                // Discover links (only when we have raw HTML — Jina mode won't yield new links)
-                if (html) {
-                    const links = discoverLinks(html, pageUrl, allowedPaths, blockedPaths);
-                    for (const link of links) {
-                        if (!visited.has(link.replace(/\/$/, '')) && queue.length + visited.size < maxPages) {
-                            queue.push(link);
-                        }
-                    }
-                }
-            } catch {
-                // Skip failed pages
+                // Expand the frontier. Static pages yield HTML links; Jina-rendered
+                // pages only ever yield markdown links.
+                const links = html
+                    ? discoverLinks(html, pageUrl, allowedPaths, blockedPaths)
+                    : (markdownLinks || [])
+                        .map(l => toCrawlableUrl(l, new URL(pageUrl), allowedPaths, blockedPaths))
+                        .filter((l): l is string => Boolean(l));
+                for (const link of links) enqueue(link);
             }
         }
 
@@ -328,7 +258,13 @@ export async function POST(request: NextRequest) {
 
         for (let i = 0; i < allChunks.length; i += BATCH_SIZE) {
             const batch = allChunks.slice(i, i + BATCH_SIZE);
-            const texts = batch.map(c => c.content);
+            // Embed each chunk together with its page title and heading. Body text on
+            // marketing pages rarely names its own subject ("it", "the platform"), so a
+            // vector built from the body alone won't match a question that names the
+            // product or company. The stored `content` stays raw for display.
+            const texts = batch.map(c =>
+                [c.pageTitle, c.heading].filter(Boolean).join(' › ') + '\n' + c.content
+            );
 
             try {
                 const embeddings = await generateEmbeddings(texts);
@@ -478,6 +414,7 @@ export async function POST(request: NextRequest) {
                 totalWords,
                 totalChunks: totalChunksStored,
                 estimatedTokens: Math.ceil(totalWords * 1.3),
+                sitemapUrlsFound: sitemapUrls.length,
             },
         });
     } catch (error: any) {

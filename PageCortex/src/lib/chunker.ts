@@ -35,6 +35,11 @@ function extractSections(text: string): { heading: string | null; content: strin
 
     const sections: { heading: string | null; content: string }[] = [];
     let currentHeading: string | null = null;
+    // A heading line is also real page copy — on marketing pages the tagline and value
+    // propositions match this pattern, and they are often the only place the product is
+    // actually described. Carry them into the section body as well as recording them as
+    // the heading, or they never reach the index at all.
+    let pendingHeadings: string[] = [];
 
     for (const part of parts) {
         const trimmed = part.trim();
@@ -42,9 +47,19 @@ function extractSections(text: string): { heading: string | null; content: strin
 
         if (/^#{1,6}\s+/.test(trimmed) || /^[A-Z][A-Za-z\s]{2,60}:?\s*$/.test(trimmed)) {
             currentHeading = trimmed.replace(/^#+\s+/, '').replace(/:$/, '').trim();
+            pendingHeadings.push(currentHeading);
         } else {
-            sections.push({ heading: currentHeading, content: trimmed });
+            const content = pendingHeadings.length > 0
+                ? `${pendingHeadings.join('\n')}\n\n${trimmed}`
+                : trimmed;
+            pendingHeadings = [];
+            sections.push({ heading: currentHeading, content });
         }
+    }
+
+    // Headings with no body after them still carry meaning worth indexing
+    if (pendingHeadings.length > 0) {
+        sections.push({ heading: currentHeading, content: pendingHeadings.join('\n') });
     }
 
     if (sections.length === 0 && text.trim()) {
@@ -81,10 +96,31 @@ export function chunkText(text: string, options: ChunkOptions = {}): ChunkResult
     const chunks: ChunkResult[] = [];
     let chunkIndex = 0;
 
-    for (const section of sections) {
-        const paragraphs = splitIntoParagraphs(section.content);
+    const pushChunk = (content: string, heading: string | null) => {
+        const trimmed = content.trim();
+        if (!trimmed) return;
+        chunks.push({
+            content: trimmed,
+            tokenCount: estimateTokens(trimmed),
+            chunkIndex: chunkIndex++,
+            heading,
+            metadata: {
+                ...(pageUrl && { pageUrl }),
+                ...(pageTitle && { pageTitle }),
+                ...(docType && { docType }),
+            },
+        });
+    };
 
-        let currentChunk = '';
+    // currentChunk deliberately carries across section boundaries. Flushing per section
+    // meant any section that never reached minChars was dropped on the floor, which on a
+    // page built from many short blocks silently discarded most of the content.
+    let currentChunk = '';
+    let chunkHeading: string | null = null;
+
+    for (const section of sections) {
+        if (!currentChunk) chunkHeading = section.heading;
+        const paragraphs = splitIntoParagraphs(section.content);
 
         for (const paragraph of paragraphs) {
             if (currentChunk.length + paragraph.length + 2 <= targetChars) {
@@ -92,21 +128,12 @@ export function chunkText(text: string, options: ChunkOptions = {}): ChunkResult
                 currentChunk += (currentChunk ? '\n\n' : '') + paragraph;
             } else if (currentChunk.length >= minChars) {
                 // Current chunk is big enough, save it
-                chunks.push({
-                    content: currentChunk,
-                    tokenCount: estimateTokens(currentChunk),
-                    chunkIndex: chunkIndex++,
-                    heading: section.heading,
-                    metadata: {
-                        ...(pageUrl && { pageUrl }),
-                        ...(pageTitle && { pageTitle }),
-                        ...(docType && { docType }),
-                    },
-                });
+                pushChunk(currentChunk, chunkHeading);
 
                 // Start new chunk with overlap from end of previous
                 const overlapText = currentChunk.slice(-overlapChars);
                 currentChunk = overlapText + '\n\n' + paragraph;
+                chunkHeading = section.heading;
             } else {
                 // Current chunk too small, keep adding
                 currentChunk += (currentChunk ? '\n\n' : '') + paragraph;
@@ -115,43 +142,19 @@ export function chunkText(text: string, options: ChunkOptions = {}): ChunkResult
             // Handle very long paragraphs that exceed target
             while (currentChunk.length > targetChars * 1.5) {
                 const splitPoint = findBestSplitPoint(currentChunk, targetChars);
-                const chunkContent = currentChunk.slice(0, splitPoint).trim();
-
-                if (chunkContent.length >= minChars) {
-                    chunks.push({
-                        content: chunkContent,
-                        tokenCount: estimateTokens(chunkContent),
-                        chunkIndex: chunkIndex++,
-                        heading: section.heading,
-                        metadata: {
-                            ...(pageUrl && { pageUrl }),
-                            ...(pageTitle && { pageTitle }),
-                            ...(docType && { docType }),
-                        },
-                    });
-                }
+                pushChunk(currentChunk.slice(0, splitPoint), chunkHeading);
 
                 // Keep overlap
                 const overlapStart = Math.max(0, splitPoint - overlapChars);
                 currentChunk = currentChunk.slice(overlapStart).trim();
+                chunkHeading = section.heading;
             }
         }
-
-        // Flush remaining content
-        if (currentChunk.trim().length >= minChars) {
-            chunks.push({
-                content: currentChunk.trim(),
-                tokenCount: estimateTokens(currentChunk.trim()),
-                chunkIndex: chunkIndex++,
-                heading: section.heading,
-                metadata: {
-                    ...(pageUrl && { pageUrl }),
-                    ...(pageTitle && { pageTitle }),
-                    ...(docType && { docType }),
-                },
-            });
-        }
     }
+
+    // Final flush keeps the tail even when it is under minChars — a short remainder is
+    // still indexable content, and dropping it loses the end of every document.
+    pushChunk(currentChunk, chunkHeading);
 
     return chunks;
 }

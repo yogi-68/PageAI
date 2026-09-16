@@ -53,7 +53,7 @@ export default function NewBotPage() {
                 body: JSON.stringify({
                     url: url.trim(),
                     userId: user.id,
-                    maxPages: 20,
+                    maxPages: 50,
                     mode: crawlMode,
                 }),
             });

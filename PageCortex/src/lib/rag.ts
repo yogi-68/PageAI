@@ -180,8 +180,18 @@ function selectModel(query: string, confidence: number, requestedModel: string =
 }
 
 // ─── Context Builder ──────────────────────────────────────
+// Each passage is labelled with the page it came from. Chunk text alone often omits
+// the subject — a product page's body says "it" and "the device", and only the title
+// names the product — so an unlabelled context makes the model answer "I don't know"
+// to questions the knowledge base actually covers.
 function buildContext(chunks: RAGChunk[]): string {
-    return chunks.map((c) => c.content).join('\n\n---\n\n');
+    return chunks
+        .map((c) => {
+            const label = [c.page_title, c.heading].filter(Boolean).join(' › ');
+            const source = c.page_url ? `\nSource: ${c.page_url}` : '';
+            return label ? `[${label}]${source}\n${c.content}` : `${c.content}${source}`;
+        })
+        .join('\n\n---\n\n');
 }
 
 // ─── Cache Key Generation ─────────────────────────────────
